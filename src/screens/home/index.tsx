@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-import { PixelHeaderBackground } from "../../components/PixelHeaderBackground";
-import { PixelParrot } from "../../components/PixelParrot";
 import { ResourceBar } from "../../components/ResourceBar";
 import { colors } from "../../constants/colors";
 import { habitChips, pathItems, userStats, type HabitId, type PathItem } from "../../constants/home";
+import { images } from "../../constants/images";
 import { shadows } from "../../styles/shadows";
 
 export function HomeScreen() {
@@ -25,26 +24,22 @@ export function HomeScreen() {
 function HeroGreeting() {
   return (
     <View className="mt-5 overflow-hidden rounded-lg border border-[#D8EAF4] bg-[#DFF5FF]">
-      <View className="absolute left-0 right-0 top-0 h-full">
-        <PixelHeaderBackground />
-      </View>
-
       <View className="min-h-[210px] px-4 pb-4 pt-4">
+        <Image
+          source={images.parrotDirtHeader}
+          resizeMode="contain"
+          className="absolute inset-0 h-full w-full"
+        />
         <Text className="text-base font-bold text-[#0B2551]">Good morning,</Text>
         <View className="mt-1 flex-row items-center">
           <Text className="text-3xl font-black text-[#0B2551]">{userStats.name}!</Text>
           <Ionicons name="partly-sunny" size={25} color={colors.gold} style={{ marginLeft: 8 }} />
         </View>
 
-        <View className="mt-8 flex-row items-end justify-between">
-          <View className="max-w-[155px] rounded-lg border border-[#E6EDF2] bg-[#FFFDF7] p-3" style={shadows.card}>
-            <Text className="text-sm font-semibold leading-5 text-[#0B2551]">
-              Let's sketch something awesome today!
-            </Text>
-          </View>
-          <View className="mr-4">
-            <PixelParrot size="lg" />
-          </View>
+        <View className="mt-8 max-w-[155px] rounded-lg border border-[#E6EDF2] bg-[#FFFDF7] p-3" style={shadows.card}>
+          <Text className="text-sm font-semibold leading-5 text-[#0B2551]">
+            Let's sketch something awesome today!
+          </Text>
         </View>
       </View>
     </View>
