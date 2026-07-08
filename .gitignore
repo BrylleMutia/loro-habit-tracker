@@ -1,0 +1,4 @@
+node_modules/
+.expo/
+expo-web*.log
+tmp/imagegen/
