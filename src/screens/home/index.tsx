@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import { PixelParrot } from "../../components/PixelParrot";
 import { ResourceBar } from "../../components/ResourceBar";
 import { colors } from "../../constants/colors";
 import { habitChips, pathItems, userStats, type HabitId, type PathItem } from "../../constants/home";
@@ -24,12 +25,16 @@ export function HomeScreen() {
 function HeroGreeting() {
   return (
     <View className="mt-5 overflow-hidden rounded-lg border border-[#D8EAF4] bg-[#DFF5FF]">
-      <View className="min-h-[210px] px-4 pb-4 pt-4">
+      <View className="min-h-[210px] pt-4">
         <Image
-          source={images.parrotDirtHeader}
-          resizeMode="contain"
+          source={images.headerBackground}
+          resizeMode="cover"
           className="absolute inset-0 h-full w-full"
         />
+        <View className="absolute bottom-5 right-1">
+          <PixelParrot size="lg" mirrorX />
+        </View>
+        <View className="pl-10 pt-5">
         <Text className="text-base font-bold text-[#0B2551]">Good morning,</Text>
         <View className="mt-1 flex-row items-center">
           <Text className="text-3xl font-black text-[#0B2551]">{userStats.name}!</Text>
@@ -40,6 +45,7 @@ function HeroGreeting() {
           <Text className="text-sm font-semibold leading-5 text-[#0B2551]">
             Let's sketch something awesome today!
           </Text>
+        </View>
         </View>
       </View>
     </View>

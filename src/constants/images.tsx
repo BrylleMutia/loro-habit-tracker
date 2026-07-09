@@ -1,4 +1,4 @@
 export const images = {
-  parrotMascot: require("../assets/images/parrot-mascot.png"),
-  parrotDirtHeader: require("../assets/images/parrot-dirt-header-background.png")
+  headerBackground: require("../assets/images/header-background-pixel.png"),
+  parrotMascot: require("../assets/images/parrot-trail-captain.png"),
 } as const;

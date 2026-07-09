@@ -47,7 +47,7 @@ export const pathItems: PathItem[] = [
 ];
 
 export const userStats = {
-  name: "Avery",
+  name: "Brylle",
   hearts: 5,
   coins: "1,240",
   activeHabit: "Sketching",
