@@ -1,23 +1,30 @@
 {
   "expo": {
-    "name": "Loro Habit Tracker",
+    "name": "Loro - Habit Tracker",
     "slug": "loro-habit-tracker",
     "version": "0.1.0",
     "orientation": "portrait",
+    "icon": "./src/assets/images/app-logo-lory.png",
     "userInterfaceStyle": "light",
+    "description": "A gamified habit tracker where Lory guides daily quests, lessons, and streaks.",
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
+      "icon": "./src/assets/images/app-logo-lory.png",
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0F172A"
+        "foregroundImage": "./src/assets/images/app-logo-lory.png",
+        "backgroundColor": "#DAF7EE"
       }
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "name": "Loro - Habit Tracker",
+      "shortName": "Loro",
+      "favicon": "./src/assets/images/favicon-lory.png"
     },
     "plugins": [
       "expo-asset"
