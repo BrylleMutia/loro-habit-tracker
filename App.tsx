@@ -2,12 +2,15 @@ import "./global.css";
 
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { AppStateProvider } from "./src/contexts/appContext";
 import { AppNavigator } from "./src/navigation/AppNavigator";
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AppNavigator />
+      <AppStateProvider>
+        <AppNavigator />
+      </AppStateProvider>
     </SafeAreaProvider>
   );
 }

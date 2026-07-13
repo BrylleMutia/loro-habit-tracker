@@ -2,7 +2,8 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { colors } from "../constants/colors";
-import { tabs, type TabId } from "../constants/home";
+import { tabs } from "../constants/home";
+import type { TabId } from "../types/app";
 
 type BottomTabsProps = {
   activeTab: TabId;
@@ -23,6 +24,9 @@ export function BottomTabs({ activeTab, onChangeTab }: BottomTabsProps) {
                 isActive ? "bg-[#E7F4FF]" : "bg-transparent"
               }`}
               activeOpacity={0.82}
+              accessibilityLabel={`${tab.label} tab`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isActive }}
               onPress={() => onChangeTab(tab.id)}
             >
               <Ionicons name={tab.icon} size={21} color={isActive ? colors.blueDark : colors.tabInactive} />

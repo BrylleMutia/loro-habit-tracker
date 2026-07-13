@@ -2,8 +2,8 @@ import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { colors } from "../constants/colors";
-import type { TabItem } from "../constants/home";
 import { shadows } from "../styles/shadows";
+import type { TabItem } from "../types/app";
 import { PixelParrot } from "./PixelParrot";
 import { ResourceBar } from "./ResourceBar";
 

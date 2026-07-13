@@ -1,7 +1,7 @@
 import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-import type { IconName } from "../constants/home";
+import type { IconName } from "../types/app";
 
 type ResourcePillProps = {
   icon: IconName;
