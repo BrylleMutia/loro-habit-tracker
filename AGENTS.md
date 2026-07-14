@@ -64,10 +64,7 @@ Prefer Expo Go first. Only create a custom development build when a dependency r
 - Styling uses NativeWind class names directly in React Native components.
 - Icons come from `@expo/vector-icons/Ionicons`.
 - For state management: use React's Context API.
-- Keep UI edits consistent with the current compact mobile prototype style:
-  - rounded corners are mostly `rounded-lg` or smaller;
-  - theme-specific colors are centralized in the `mockups` array;
-  - repeated sections use local helper components in `App.tsx`.
+- Keep UI edits consistent with the current compact mobile prototype style.
 - Don't repeat yourself. Always make sure that components, functions, and objects are reusable within the whole application.
 - Don't overcomplicate logic and processes if it's doable in a simpler manner.
 - Always document the logic and processes by leaving comments and readable naming convention.
