@@ -52,22 +52,18 @@ Keep Expo-managed package versions compatible with SDK 54. Do not independently 
 
 Prefer Expo Go first. Only create a custom development build when a dependency requires native code unavailable in Expo Go.
 
-## Commands
-- `npm run start` starts Expo.
-- `npm run android` starts Expo for Android.
-- `npm run ios` starts Expo for iOS.
-- `npm run web` starts Expo web.
-- `npm run typecheck` runs `tsc --noEmit`.
-
 ## Best Practices and Conventions
 - TypeScript is strict via `tsconfig.json`.
 - Styling uses NativeWind class names directly in React Native components.
 - Icons come from `@expo/vector-icons/Ionicons`.
 - For state management: use React's Context API.
-- Keep UI edits consistent with the current compact mobile prototype style.
-- Don't repeat yourself. Always make sure that components, functions, and objects are reusable within the whole application.
+- Keep UI edits consistent with the current compact mobile prototype style:
+  - cards use the shared `rounded-card` token;
+  - colors, spacing, radii, and effects are centralized in `src/constants/themeTokens.js`;
+  - reusable cross-screen UI belongs in `src/components/`, while meaningful screen-local helpers may stay with their screen.
+- Don't repeat yourself. Extract shared components, functions, and objects when they are reused or contain meaningful independent behavior.
 - Don't overcomplicate logic and processes if it's doable in a simpler manner.
-- Always document the logic and processes by leaving comments and readable naming convention.
+- Prefer readable naming and self-documenting code. Add comments only for non-obvious business invariants or platform workarounds.
 
 
 ## Application Architecture

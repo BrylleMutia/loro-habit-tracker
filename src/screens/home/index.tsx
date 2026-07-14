@@ -13,10 +13,12 @@ import { ResourceBar } from "../../components/ResourceBar";
 import { colors } from "../../constants/colors";
 import { images } from "../../constants/images";
 import { useAppState } from "../../contexts/appContext";
+import { useScreenContentWidth } from "../../hooks/useScreenContentWidth";
 import { shadows } from "../../styles/shadows";
 import { HabitPathScreen } from "./HabitPathScreen";
 
 export function HomeScreen() {
+  const contentWidth = useScreenContentWidth();
   const [isPathVisible, setIsPathVisible] = useState(false);
   const [lootDropDetails, setLootDropDetails] = useState<LootDropDetails | null>(null);
 
@@ -27,15 +29,18 @@ export function HomeScreen() {
   return (
     <>
       <ScrollView
-        contentContainerClassName="px-5 pb-28 pt-3"
+        contentContainerClassName="pb-28 pt-3"
+        contentContainerStyle={{ width: "100%" }}
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
       >
-        <ResourceBar />
-        <HeroGreeting />
-        <ActiveHabitCard />
-        <DailyQuestCard onQuestCompleted={setLootDropDetails} />
-        <AdventurePathPreview onViewPath={() => setIsPathVisible(true)} />
+        <View className="self-center" style={{ width: contentWidth }}>
+          <ResourceBar />
+          <HeroGreeting />
+          <ActiveHabitCard />
+          <DailyQuestCard onQuestCompleted={setLootDropDetails} />
+          <AdventurePathPreview onViewPath={() => setIsPathVisible(true)} />
+        </View>
       </ScrollView>
 
       <QuestCelebrationModal

@@ -62,6 +62,8 @@ export function createInitialAppState({
       id: playerId,
       name: playerName,
       joinedAt: now,
+      avatarClassId: "warrior",
+      avatarVariant: "default",
       level: 1,
       xp: 0,
       xpToNextLevel: 100,

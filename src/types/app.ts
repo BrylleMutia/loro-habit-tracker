@@ -6,6 +6,8 @@ export type IconName = keyof typeof Ionicons.glyphMap;
 export type DateKey = string;
 export type AdventureNodeStatus = "done" | "active" | "locked";
 export type QuestTrackingType = "timed" | "one-time";
+export type AvatarClassId = "druid" | "mercenary" | "ranger" | "warrior" | "wizard";
+export type AvatarVariant = "default" | "alternate";
 
 export type TabItem = {
   id: TabId;
@@ -84,6 +86,8 @@ export type PlayerProfile = {
   id: string;
   name: string;
   joinedAt: string;
+  avatarClassId: AvatarClassId;
+  avatarVariant: AvatarVariant;
   level: number;
   xp: number;
   xpToNextLevel: number;
