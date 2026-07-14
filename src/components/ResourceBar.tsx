@@ -23,8 +23,8 @@ export function ResourceBar() {
         <ResourcePill icon="flame" value={dailyStreak.toString()} color={colors.red} />
         <ResourcePill icon="ellipse" value={coins.toLocaleString("en-US")} color={colors.gold} />
         <TouchableOpacity
-          className={`ml-2 h-9 w-9 items-center justify-center rounded-lg ${
-            dailyCheckInClaimedToday ? "bg-[#DDF7E5]" : "bg-[#E7F4FF]"
+          className={`ml-2 h-9 w-9 items-center justify-center rounded-card ${
+            dailyCheckInClaimedToday ? "bg-success-pale" : "bg-primary-soft"
           }`}
           activeOpacity={0.82}
           accessibilityLabel={dailyCheckInClaimedToday ? "Daily reward claimed" : "Claim daily reward"}

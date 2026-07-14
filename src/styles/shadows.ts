@@ -1,12 +1,15 @@
 import { Platform, StyleSheet } from "react-native";
 
+import { colors } from "../constants/colors";
+import { themeEffects } from "../constants/themeTokens";
+
 export const shadows = StyleSheet.create({
   card: Platform.select({
     web: {
-      boxShadow: "0 8px 18px rgba(122, 167, 191, 0.12)"
+      boxShadow: themeEffects.cardShadow
     },
     default: {
-      shadowColor: "#7AA7BF",
+      shadowColor: colors.shadow,
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.12,
       shadowRadius: 18,

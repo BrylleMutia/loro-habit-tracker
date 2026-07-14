@@ -20,20 +20,20 @@ export function AdventurePathPreview({ onViewPath }: AdventurePathPreviewProps) 
   }
 
   return (
-    <View className="mt-4 rounded-lg border border-[#E6EDF2] bg-[#FFFDF7] p-4" style={shadows.card}>
+    <View className="mt-4 rounded-card border border-line bg-surface-card p-4" style={shadows.card}>
       <View className="flex-row items-center justify-between">
         <View className="flex-1 pr-3">
-          <Text className="text-xs font-extrabold uppercase text-[#6D7890]">Adventure Path</Text>
-          <Text className="mt-1 text-lg font-black text-[#0B2551]">{section.title}</Text>
+          <Text className="text-xs font-extrabold uppercase text-content-muted">Adventure Path</Text>
+          <Text className="mt-1 text-lg font-black text-content">{section.title}</Text>
         </View>
         <TouchableOpacity
-          className="h-9 flex-row items-center rounded-lg bg-[#E7F4FF] px-3"
+          className="h-9 flex-row items-center rounded-card bg-primary-soft px-3"
           activeOpacity={0.82}
           accessibilityLabel="View full adventure path"
           accessibilityRole="button"
           onPress={onViewPath}
         >
-          <Text className="text-xs font-black text-[#2F80ED]">View Path</Text>
+          <Text className="text-xs font-black text-primary-strong">View Path</Text>
           <Ionicons name="chevron-forward" size={15} color={colors.blueDark} />
         </TouchableOpacity>
       </View>
@@ -48,8 +48,8 @@ export function AdventurePathPreview({ onViewPath }: AdventurePathPreviewProps) 
             />
             {index < activeAdventure.previewNodes.length - 1 ? (
               <View
-                className={`mt-5 h-[2px] flex-1 ${
-                  preview.status === "done" ? "bg-[#56C878]" : "bg-[#D8E1E8]"
+                className={`mt-5 h-path-line flex-1 ${
+                  preview.status === "done" ? "bg-success" : "bg-line-disabled"
                 }`}
               />
             ) : null}
@@ -73,14 +73,14 @@ function PreviewNode({
   const isActive = status === "active";
 
   return (
-    <View className="w-[74px] items-center">
+    <View className="w-path-node items-center">
       <View
-        className={`h-10 w-10 items-center justify-center rounded-full border-2 ${
+        className={`h-10 w-10 items-center justify-center rounded-pill border-2 ${
           isDone
-            ? "border-[#56C878] bg-[#56C878]"
+            ? "border-success bg-success"
             : isActive
-              ? "border-[#56A6F7] bg-[#56A6F7]"
-              : "border-[#C9D2DC] bg-[#F3F7F8]"
+              ? "border-primary bg-primary"
+              : "border-line-muted bg-surface-muted"
         }`}
       >
         {isDone ? (
@@ -91,8 +91,8 @@ function PreviewNode({
           <Ionicons name="lock-closed" size={15} color={colors.grayIcon} />
         )}
       </View>
-      <Text className="mt-2 text-[10px] font-extrabold uppercase text-[#7E899B]">Day {day}</Text>
-      <Text className="mt-1 text-center text-xs font-bold text-[#0B2551]" numberOfLines={2}>
+      <Text className="mt-2 text-micro font-extrabold uppercase text-content-subtle">Day {day}</Text>
+      <Text className="mt-1 text-center text-xs font-bold text-content" numberOfLines={2}>
         {title}
       </Text>
     </View>

@@ -12,10 +12,10 @@ type ResourcePillProps = {
 
 export function ResourcePill({ icon, value, color, suffix }: ResourcePillProps) {
   return (
-    <View className="ml-2 h-9 flex-row items-center rounded-lg border border-[#E6EDF2] bg-[#FFFDF7] px-3">
+    <View className="ml-2 h-9 flex-row items-center rounded-card border border-line bg-surface-card px-3">
       <Ionicons name={icon} size={16} color={color} />
-      <Text className="ml-1 text-sm font-black text-[#0B2551]">{value}</Text>
-      {suffix ? <Text className="ml-1 text-xs font-bold text-[#56A6F7]">{suffix}</Text> : null}
+      <Text className="ml-1 text-sm font-black text-content">{value}</Text>
+      {suffix ? <Text className="ml-1 text-xs font-bold text-primary">{suffix}</Text> : null}
     </View>
   );
 }

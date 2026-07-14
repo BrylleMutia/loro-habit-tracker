@@ -19,7 +19,7 @@ export function AppNavigator() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-[#EAF9EF]">
+    <SafeAreaView className="flex-1 bg-canvas-mint">
       <StatusBar style="dark" />
       <LinearGradient colors={[colors.sky, colors.mint, colors.cream]} className="flex-1">
         {activeTab === "home" ? <HomeScreen /> : null}

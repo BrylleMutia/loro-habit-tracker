@@ -63,9 +63,9 @@ export function MoreScreen() {
       >
         <ResourceBar />
         <View className="mt-5">
-          <Text className="text-xs font-extrabold uppercase text-[#2F80ED]">Prototype gallery</Text>
-          <Text className="mt-1 text-3xl font-black text-[#0B2551]">Celebration Lab</Text>
-          <Text className="mt-2 text-sm font-semibold leading-5 text-[#6D7890]">
+          <Text className="text-xs font-extrabold uppercase text-primary-strong">Prototype gallery</Text>
+          <Text className="mt-1 text-3xl font-black text-content">Celebration Lab</Text>
+          <Text className="mt-2 text-sm font-semibold leading-5 text-content-muted">
             Three moods for the moment a Daily Quest is completed.
           </Text>
         </View>
@@ -74,24 +74,24 @@ export function MoreScreen() {
           {celebrationSamples.map((sample) => (
             <View
               key={sample.id}
-              className="mb-3 flex-row items-center rounded-lg border border-[#E6EDF2] bg-[#FFFDF7] p-4"
+              className="mb-3 flex-row items-center rounded-card border border-line bg-surface-card p-4"
               style={shadows.card}
             >
               <View
-                className="h-12 w-12 items-center justify-center rounded-lg"
+                className="h-12 w-12 items-center justify-center rounded-card"
                 style={{ backgroundColor: sample.iconBackground }}
               >
                 <Ionicons name={sample.icon} size={24} color={sample.iconColor} />
               </View>
               <View className="ml-3 flex-1 pr-2">
-                <Text className="text-[10px] font-extrabold text-[#8792A4]">OPTION {sample.number}</Text>
-                <Text className="mt-1 text-lg font-black text-[#0B2551]">{sample.title}</Text>
-                <Text className="mt-1 text-xs font-semibold leading-4 text-[#6D7890]">
+                <Text className="text-micro font-extrabold text-content-icon">OPTION {sample.number}</Text>
+                <Text className="mt-1 text-lg font-black text-content">{sample.title}</Text>
+                <Text className="mt-1 text-xs font-semibold leading-4 text-content-muted">
                   {sample.tone}
                 </Text>
               </View>
               <TouchableOpacity
-                className="h-10 w-10 items-center justify-center rounded-lg bg-[#E7F4FF]"
+                className="h-10 w-10 items-center justify-center rounded-card bg-primary-soft"
                 activeOpacity={0.82}
                 accessibilityLabel={`Preview ${sample.title}`}
                 accessibilityRole="button"

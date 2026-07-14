@@ -28,7 +28,7 @@ export function HabitPathScreen({ onBack }: HabitPathScreenProps) {
       <ResourceBar />
       <View className="mt-5 flex-row items-center">
         <TouchableOpacity
-          className="h-10 w-10 items-center justify-center rounded-lg bg-[#FFFDF7]"
+          className="h-10 w-10 items-center justify-center rounded-card bg-surface-card"
           style={shadows.card}
           activeOpacity={0.82}
           accessibilityLabel="Back to Home"
@@ -38,15 +38,15 @@ export function HabitPathScreen({ onBack }: HabitPathScreenProps) {
           <Ionicons name="arrow-back" size={21} color={colors.ink} />
         </TouchableOpacity>
         <View className="ml-3 flex-1">
-          <Text className="text-xs font-extrabold uppercase text-[#6D7890]">{activeHabit.label}</Text>
-          <Text className="mt-1 text-2xl font-black text-[#0B2551]">Adventure Path</Text>
+          <Text className="text-xs font-extrabold uppercase text-content-muted">{activeHabit.label}</Text>
+          <Text className="mt-1 text-2xl font-black text-content">Adventure Path</Text>
         </View>
-        <View className="h-11 w-11 items-center justify-center rounded-lg bg-[#E7F4FF]">
+        <View className="h-11 w-11 items-center justify-center rounded-card bg-primary-soft">
           <Ionicons name={activeHabit.icon} size={23} color={colors.blueDark} />
         </View>
       </View>
 
-      <View className="mt-5 overflow-hidden rounded-lg border border-[#E6EDF2] bg-[#FFFDF7]" style={shadows.card}>
+      <View className="mt-5 overflow-hidden rounded-card border border-line bg-surface-card" style={shadows.card}>
         {activeHabit.sections.map((section, index) => (
           <ChapterSection
             key={section.id}
@@ -82,20 +82,20 @@ function ChapterSection({
   onClaim: () => void;
 }) {
   return (
-    <View className={isLast ? "" : "border-b border-[#E6EDF2]"}>
-      <View className="bg-[#F5FBFF] px-4 py-4">
+    <View className={isLast ? "" : "border-b border-line"}>
+      <View className="bg-surface-section px-4 py-4">
         <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-3">
-            <Text className="text-[10px] font-extrabold uppercase text-[#2F80ED]">
+            <Text className="text-micro font-extrabold uppercase text-primary-strong">
               Chapter {section.order}
             </Text>
-            <Text className="mt-1 text-lg font-black text-[#0B2551]">{section.title}</Text>
+            <Text className="mt-1 text-lg font-black text-content">{section.title}</Text>
           </View>
-          <Text className="text-xs font-black text-[#6D7890]">
+          <Text className="text-xs font-black text-content-muted">
             {completedCount}/{section.nodes.length}
           </Text>
         </View>
-        <Text className="mt-2 text-xs font-semibold leading-5 text-[#6D7890]">
+        <Text className="mt-2 text-xs font-semibold leading-5 text-content-muted">
           {section.description}
         </Text>
       </View>
@@ -111,12 +111,12 @@ function ChapterSection({
         ))}
 
         <TouchableOpacity
-          className={`mb-3 mt-1 min-h-[62px] flex-row items-center rounded-lg border px-3 ${
+          className={`mb-3 mt-1 min-h-quest-node flex-row items-center rounded-card border px-3 ${
             isClaimed
-              ? "border-[#BEE8CA] bg-[#F2FFF5]"
+              ? "border-line-success bg-surface-green"
               : isComplete
-                ? "border-[#FFE2A8] bg-[#FFF7EA]"
-                : "border-[#E6EDF2] bg-[#F6F8F9]"
+                ? "border-line-reward bg-canvas-cream"
+                : "border-line bg-surface-disabled"
           }`}
           activeOpacity={0.84}
           accessibilityLabel={`${isClaimed ? "Claimed" : isComplete ? "Claim" : "Locked"} ${section.title} reward`}
@@ -126,8 +126,8 @@ function ChapterSection({
           onPress={onClaim}
         >
           <View
-            className={`h-10 w-10 items-center justify-center rounded-lg ${
-              isComplete ? "bg-[#FFE2A8]" : "bg-[#E7EBEF]"
+            className={`h-10 w-10 items-center justify-center rounded-card ${
+              isComplete ? "bg-line-reward" : "bg-line-locked"
             }`}
           >
             <Ionicons
@@ -137,12 +137,12 @@ function ChapterSection({
             />
           </View>
           <View className="ml-3 flex-1">
-            <Text className="text-sm font-black text-[#0B2551]">Chapter Reward</Text>
-            <Text className="mt-1 text-xs font-semibold text-[#6D7890]">
+            <Text className="text-sm font-black text-content">Chapter Reward</Text>
+            <Text className="mt-1 text-xs font-semibold text-content-muted">
               {section.reward.coins} coins | {section.reward.xp} XP
             </Text>
           </View>
-          <Text className={`text-xs font-black ${isComplete ? "text-[#C78A12]" : "text-[#7E899B]"}`}>
+          <Text className={`text-xs font-black ${isComplete ? "text-reward-earned" : "text-content-subtle"}`}>
             {isClaimed ? "Claimed" : isComplete ? "Claim" : "Locked"}
           </Text>
         </TouchableOpacity>
@@ -164,15 +164,15 @@ function PathNodeRow({
   const isActive = status === "active";
 
   return (
-    <View className={`flex-row ${isLast ? "" : "border-b border-[#EEF2F4]"}`}>
+    <View className={`flex-row ${isLast ? "" : "border-b border-line-subtle"}`}>
       <View className="w-10 items-center py-3">
         <View
-          className={`h-8 w-8 items-center justify-center rounded-full border-2 ${
+          className={`h-8 w-8 items-center justify-center rounded-pill border-2 ${
             isDone
-              ? "border-[#56C878] bg-[#56C878]"
+              ? "border-success bg-success"
               : isActive
-                ? "border-[#56A6F7] bg-[#56A6F7]"
-                : "border-[#C9D2DC] bg-[#F3F7F8]"
+                ? "border-primary bg-primary"
+                : "border-line-muted bg-surface-muted"
           }`}
         >
           {isDone ? (
@@ -184,8 +184,8 @@ function PathNodeRow({
           )}
         </View>
       </View>
-      <View className="min-h-[62px] flex-1 flex-row items-center py-2 pl-2">
-        <View className="h-9 w-9 items-center justify-center rounded-lg bg-[#F3F7F8]">
+      <View className="min-h-quest-node flex-1 flex-row items-center py-2 pl-2">
+        <View className="h-9 w-9 items-center justify-center rounded-card bg-surface-muted">
           <Ionicons
             name={isActive || isDone ? node.icon : "lock-closed"}
             size={18}
@@ -193,10 +193,10 @@ function PathNodeRow({
           />
         </View>
         <View className="ml-3 flex-1">
-          <Text className="text-sm font-black text-[#0B2551]">{node.title}</Text>
-          <Text className="mt-1 text-xs font-semibold text-[#6D7890]">Day {node.day}</Text>
+          <Text className="text-sm font-black text-content">{node.title}</Text>
+          <Text className="mt-1 text-xs font-semibold text-content-muted">Day {node.day}</Text>
         </View>
-        {isActive ? <Text className="text-xs font-black text-[#2F80ED]">Today</Text> : null}
+        {isActive ? <Text className="text-xs font-black text-primary-strong">Today</Text> : null}
       </View>
     </View>
   );

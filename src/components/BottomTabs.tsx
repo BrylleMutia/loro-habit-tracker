@@ -12,7 +12,7 @@ type BottomTabsProps = {
 
 export function BottomTabs({ activeTab, onChangeTab }: BottomTabsProps) {
   return (
-    <View className="absolute bottom-0 left-0 right-0 border-t border-[#E6EDF2] bg-[#FFFDF7] px-4 pb-3 pt-2">
+    <View className="absolute bottom-0 left-0 right-0 border-t border-line bg-surface-card px-4 pb-3 pt-2">
       <View className="flex-row items-center justify-between">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -20,8 +20,8 @@ export function BottomTabs({ activeTab, onChangeTab }: BottomTabsProps) {
           return (
             <TouchableOpacity
               key={tab.id}
-              className={`h-14 min-w-[58px] items-center justify-center rounded-lg ${
-                isActive ? "bg-[#E7F4FF]" : "bg-transparent"
+              className={`h-14 min-w-tab-item items-center justify-center rounded-card ${
+                isActive ? "bg-primary-soft" : "bg-transparent"
               }`}
               activeOpacity={0.82}
               accessibilityLabel={`${tab.label} tab`}
@@ -30,7 +30,7 @@ export function BottomTabs({ activeTab, onChangeTab }: BottomTabsProps) {
               onPress={() => onChangeTab(tab.id)}
             >
               <Ionicons name={tab.icon} size={21} color={isActive ? colors.blueDark : colors.tabInactive} />
-              <Text className={`mt-1 text-[10px] font-black ${isActive ? "text-[#2F80ED]" : "text-[#7E899B]"}`}>
+              <Text className={`mt-1 text-micro font-black ${isActive ? "text-primary-strong" : "text-content-subtle"}`}>
                 {tab.label}
               </Text>
             </TouchableOpacity>

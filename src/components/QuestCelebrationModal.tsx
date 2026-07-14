@@ -66,7 +66,7 @@ export function QuestCelebrationModal({
           flex: 1,
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "rgba(11, 37, 81, 0.42)",
+          backgroundColor: colors.overlay,
           paddingHorizontal: 20,
           paddingVertical: 32
         }}
@@ -92,10 +92,10 @@ function TrailStampCelebration({ onClose }: { onClose: () => void }) {
   return (
     <View style={{ width: "100%", maxWidth: 360 }}>
       <View
-        className="overflow-hidden rounded-lg border border-[#BEE8CA] bg-[#FFFDF7]"
+        className="overflow-hidden rounded-card border border-line-success bg-surface-card"
         style={shadows.card}
       >
-        <View className="relative items-center bg-[#EAF9EF] px-5 pb-5 pt-6">
+        <View className="relative items-center bg-canvas-mint px-5 pb-5 pt-6">
           {pixelConfetti.map((pixel) => (
             <Animated.View
               key={pixel.left}
@@ -115,7 +115,7 @@ function TrailStampCelebration({ onClose }: { onClose: () => void }) {
             <PixelParrot size="md" mirrorX />
           </Animated.View>
           <Animated.View entering={BounceIn.delay(140).duration(320)}>
-            <View className="-mt-2 h-14 w-14 items-center justify-center rounded-full border-4 border-white bg-[#56C878]">
+            <View className="-mt-2 h-14 w-14 items-center justify-center rounded-pill border-4 border-white bg-success">
               <Ionicons name="checkmark" size={30} color="white" />
             </View>
           </Animated.View>
@@ -123,9 +123,9 @@ function TrailStampCelebration({ onClose }: { onClose: () => void }) {
 
         <Animated.View entering={FadeInUp.delay(170).duration(240)}>
           <View className="items-center px-5 py-5">
-            <Text className="text-xs font-extrabold uppercase text-[#4C8060]">Trail stamp earned</Text>
-            <Text className="mt-1 text-center text-2xl font-black text-[#0B2551]">Quest complete!</Text>
-            <Text className="mt-2 text-center text-sm font-semibold leading-5 text-[#6D7890]">
+            <Text className="text-xs font-extrabold uppercase text-content-green">Trail stamp earned</Text>
+            <Text className="mt-1 text-center text-2xl font-black text-content">Quest complete!</Text>
+            <Text className="mt-2 text-center text-sm font-semibold leading-5 text-content-muted">
               Foundation Circuit is now part of your adventure.
             </Text>
             <RewardRow coinReward={20} xpReward={32} />
@@ -158,7 +158,7 @@ function LootDropCelebration({
   return (
     <View style={{ width: "100%", maxWidth: 380, marginTop: "auto" }}>
       <View
-        className="rounded-lg border border-[#FFE2A8] bg-[#FFFDF7] p-5"
+        className="rounded-card border border-line-reward bg-surface-card p-5"
         style={shadows.card}
       >
         <CloseButton onPress={onClose} />
@@ -166,30 +166,30 @@ function LootDropCelebration({
           <Animated.View entering={FadeIn.duration(180)}>
             <View className="flex-row items-center pr-8">
               <Animated.View entering={BounceIn.delay(80).duration(360)}>
-                <View className="h-20 w-20 items-center justify-center rounded-lg border border-[#F7D27D] bg-[#FFF3D6]">
+                <View className="h-20 w-20 items-center justify-center rounded-card border border-line-reward-strong bg-reward-soft">
                   <Ionicons name="gift" size={42} color={colors.gold} />
                 </View>
               </Animated.View>
               <View className="ml-4 flex-1">
-                <Text className="text-xs font-extrabold uppercase text-[#A66E08]">Loot drop</Text>
-                <Text className="mt-1 text-2xl font-black text-[#0B2551]">Rewards secured</Text>
-                <Text className="mt-1 text-sm font-semibold leading-5 text-[#6D7890]">
+                <Text className="text-xs font-extrabold uppercase text-content-gold-strong">Loot drop</Text>
+                <Text className="mt-1 text-2xl font-black text-content">Rewards secured</Text>
+                <Text className="mt-1 text-sm font-semibold leading-5 text-content-muted">
                   Lory packed your quest haul.
                 </Text>
               </View>
             </View>
 
-            <View className="mt-5 border-y border-[#F3E3BC] py-2">
+            <View className="mt-5 border-y border-line-reward-muted py-2">
               {rewards.map((reward, index) => (
                 <Animated.View
                   key={reward.label}
                   entering={FadeInUp.delay(130 + index * 90).duration(240)}
                 >
                   <View className="h-11 flex-row items-center">
-                    <View className="h-8 w-8 items-center justify-center rounded-lg bg-[#FFF7EA]">
+                    <View className="h-8 w-8 items-center justify-center rounded-card bg-canvas-cream">
                       <Ionicons name={reward.icon} size={17} color={reward.color} />
                     </View>
-                    <Text className="ml-3 flex-1 text-sm font-black text-[#0B2551]">
+                    <Text className="ml-3 flex-1 text-sm font-black text-content">
                       {reward.label}
                     </Text>
                     <Ionicons name="checkmark-circle" size={19} color={colors.green} />
@@ -216,28 +216,28 @@ function LootDropCelebration({
           <Animated.View entering={FadeInRight.duration(280)}>
             <View className="items-center px-2 pb-1 pt-4">
               <Animated.View entering={BounceIn.delay(80).duration(380)}>
-                <View className="h-24 w-24 items-center justify-center rounded-full border-4 border-[#FFD6CE] bg-[#FFF0EC]">
+                <View className="h-24 w-24 items-center justify-center rounded-pill border-4 border-line-red bg-surface-red">
                   <Ionicons name="flame" size={54} color={colors.red} />
                 </View>
               </Animated.View>
-              <Text className="mt-4 text-xs font-extrabold uppercase text-[#C95D49]">
+              <Text className="mt-4 text-xs font-extrabold uppercase text-content-red">
                 Quest momentum
               </Text>
-              <Text className="mt-1 text-center text-2xl font-black text-[#0B2551]">
+              <Text className="mt-1 text-center text-2xl font-black text-content">
                 Streak extended!
               </Text>
               <View className="mt-4 flex-row items-end justify-center">
                 <Text
-                  className="text-6xl font-black text-[#0B2551]"
+                  className="text-6xl font-black text-content"
                   style={{ fontVariant: ["tabular-nums"] }}
                 >
                   {details.streak}
                 </Text>
-                <Text className="mb-2 ml-2 text-sm font-extrabold uppercase text-[#6D7890]">
+                <Text className="mb-2 ml-2 text-sm font-extrabold uppercase text-content-muted">
                   {details.streak === 1 ? "day" : "days"}
                 </Text>
               </View>
-              <Text className="mt-2 text-center text-sm font-semibold leading-5 text-[#6D7890]">
+              <Text className="mt-2 text-center text-sm font-semibold leading-5 text-content-muted">
                 Your {details.habitLabel} adventure is ready for tomorrow.
               </Text>
               <CelebrationButton
@@ -258,10 +258,10 @@ function PowerUpCelebration({ onClose }: { onClose: () => void }) {
   return (
     <View style={{ width: "100%", maxWidth: 360 }}>
       <View
-        className="overflow-hidden rounded-lg border border-[#B7DDF9] bg-[#FFFDF7]"
+        className="overflow-hidden rounded-card border border-line-hero bg-surface-card"
         style={shadows.card}
       >
-        <View className="relative h-[210px] items-center justify-center overflow-hidden bg-[#DFF5FF]">
+        <View className="relative h-hero items-center justify-center overflow-hidden bg-canvas-sky">
           <CloseButton onPress={onClose} />
           <View
             style={{
@@ -270,7 +270,7 @@ function PowerUpCelebration({ onClose }: { onClose: () => void }) {
               height: 176,
               borderRadius: 88,
               borderWidth: 12,
-              borderColor: "#B8E4FA"
+              borderColor: colors.lineBlueStrong
             }}
           />
           <View
@@ -280,7 +280,7 @@ function PowerUpCelebration({ onClose }: { onClose: () => void }) {
               height: 128,
               borderRadius: 64,
               borderWidth: 8,
-              borderColor: "#72B9F3"
+              borderColor: colors.lineBlueAccent
             }}
           />
           <Animated.View
@@ -291,7 +291,7 @@ function PowerUpCelebration({ onClose }: { onClose: () => void }) {
               borderRadius: 66,
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: "#DFF5FF"
+              backgroundColor: colors.sky
             }}
           >
             <PixelParrot size="lg" mirrorX />
@@ -305,26 +305,26 @@ function PowerUpCelebration({ onClose }: { onClose: () => void }) {
               alignItems: "center",
               borderRadius: 999,
               borderWidth: 1,
-              borderColor: "#A7D5F5",
+              borderColor: colors.lineBlueMuted,
               backgroundColor: "white",
               paddingHorizontal: 12,
               paddingVertical: 8
             }}
           >
             <Ionicons name="flash" size={16} color={colors.blueDark} />
-            <Text className="ml-1 text-xs font-black text-[#2F80ED]">MOMENTUM +1</Text>
+            <Text className="ml-1 text-xs font-black text-primary-strong">MOMENTUM +1</Text>
           </Animated.View>
         </View>
 
         <View className="items-center px-5 py-5">
-          <Text className="text-xs font-extrabold uppercase text-[#2F80ED]">Power-up unlocked</Text>
-          <Text className="mt-1 text-center text-2xl font-black text-[#0B2551]">Momentum charged!</Text>
-          <Text className="mt-2 text-center text-sm font-semibold leading-5 text-[#6D7890]">
+          <Text className="text-xs font-extrabold uppercase text-primary-strong">Power-up unlocked</Text>
+          <Text className="mt-1 text-center text-2xl font-black text-content">Momentum charged!</Text>
+          <Text className="mt-2 text-center text-sm font-semibold leading-5 text-content-muted">
             Today's win strengthens your next step on the trail.
           </Text>
-          <View className="mt-4 w-full flex-row items-center justify-center rounded-lg border border-[#CCE5F8] bg-[#F4FAFF] px-3 py-3">
+          <View className="mt-4 w-full flex-row items-center justify-center rounded-card border border-line-primary bg-surface-blue px-3 py-3">
             <Ionicons name="flame" size={19} color={colors.red} />
-            <Text className="ml-2 text-sm font-black text-[#0B2551]">Streak protected for today</Text>
+            <Text className="ml-2 text-sm font-black text-content">Streak protected for today</Text>
           </View>
           <CelebrationButton
             icon="flash"
@@ -341,13 +341,13 @@ function PowerUpCelebration({ onClose }: { onClose: () => void }) {
 function RewardRow({ coinReward, xpReward }: { coinReward: number; xpReward: number }) {
   return (
     <View className="mt-4 flex-row items-center justify-center">
-      <View className="flex-row items-center rounded-full bg-[#FFF3D6] px-3 py-2">
+      <View className="flex-row items-center rounded-pill bg-reward-soft px-3 py-2">
         <Ionicons name="ellipse" size={14} color={colors.gold} />
-        <Text className="ml-1 text-xs font-black text-[#8A671E]">+{coinReward}</Text>
+        <Text className="ml-1 text-xs font-black text-content-gold">+{coinReward}</Text>
       </View>
-      <View className="ml-2 flex-row items-center rounded-full bg-[#E9F8EE] px-3 py-2">
+      <View className="ml-2 flex-row items-center rounded-pill bg-success-soft px-3 py-2">
         <Ionicons name="sparkles" size={14} color={colors.green} />
-        <Text className="ml-1 text-xs font-black text-[#4C8060]">+{xpReward} XP</Text>
+        <Text className="ml-1 text-xs font-black text-content-green">+{xpReward} XP</Text>
       </View>
     </View>
   );
@@ -366,7 +366,7 @@ function CelebrationButton({
 }) {
   return (
     <TouchableOpacity
-      className="mt-5 h-12 min-w-[190px] flex-row items-center justify-center rounded-lg px-5"
+      className="mt-5 h-12 min-w-action flex-row items-center justify-center rounded-card px-5"
       style={{ backgroundColor: color }}
       activeOpacity={0.86}
       accessibilityLabel={label}
@@ -382,7 +382,7 @@ function CelebrationButton({
 function CloseButton({ onPress }: { onPress: () => void }) {
   return (
     <TouchableOpacity
-      className="absolute right-3 top-3 z-10 h-9 w-9 items-center justify-center rounded-full bg-white"
+      className="absolute right-3 top-3 z-10 h-9 w-9 items-center justify-center rounded-pill bg-white"
       activeOpacity={0.82}
       accessibilityLabel="Close celebration"
       accessibilityRole="button"
