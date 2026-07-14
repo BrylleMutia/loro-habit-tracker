@@ -1,10 +1,56 @@
-﻿# Project Notes
+﻿# Loro Habit Tracker Engineering Guide
 
-## Overview
-- Expo React Native prototype for `Loro Habit Tracker`.
-- Main UI lives in `App.tsx` as a single-screen NativeWind-based mockup selector.
-- Three visual directions are implemented: `trail`, `arcade`, and `studio`.
-- Reference images live in `mockups/`.
+## Product Overview
+
+- `Loro Habit Tracker` is an Expo React Native app that turns everyday habits into short adventure quests.
+- The initial habits are `Exercise`, `Reading`, `Water`, and `Sleep`.
+- Lory is the app mascot. Use the blue/red/green pixel-art `Trail Captain` version consistently when Lory appears.
+- The experience is light, friendly, compact, and game-inspired. It should encourage consistency without making routine logging tedious.
+- The current implementation is a local prototype. It has no backend, authentication, persistence, push notifications, or production shop inventory yet.
+- Reference designs and prior visual explorations live in `mockups/`.
+
+## Current Game Loop
+
+- Every habit has one Daily Quest per local calendar day.
+- Adventure paths are long, completion-based paths divided into seven-node chapters. Each node represents one day, not one step inside a day.
+- Completing today's quest advances only that habit by one node. Missing a day may reset streak effectiveness, but never removes path progress.
+- Future nodes remain locked until the current node is completed and a new local day begins.
+- Each habit has an independent streak. The app-wide streak advances only on the first completed habit of the day.
+- Node rewards grant coins and XP per habit. Chapter rewards are claimable once after all seven chapter nodes are complete.
+- The Loot Drop completion modal first shows coins and XP, then transitions to the updated streak page.
+
+### Quest Types
+
+- `timed`: Exercise and Reading. The user starts the quest, an in-app timer counts up from `00:00`, and completion is allowed only after the target duration.
+- `one-time`: Water and Sleep. The UI shows one `Complete quest` action for the predetermined target.
+- Energy is consumed when a guided timed quest starts. Water and Sleep must remain usable at zero energy.
+- Keep the interaction model minimal: do not add text inputs, counters, or multi-step checklists to Daily Quests unless the product requirements explicitly change.
+
+## Tech Stack
+
+- Expo SDK 54
+- React 19 and React Native 0.81
+- Strict TypeScript
+- NativeWind 4 with Tailwind CSS 3
+- React Context API with `useReducer` for application state
+- React Native Reanimated for quest celebration motion
+- `react-native-safe-area-context` for safe areas
+- `@expo/vector-icons/Ionicons` for UI icons
+
+Keep Expo-managed package versions compatible with SDK 54. Do not independently upgrade React Native, Reanimated, Worklets, React, or `@types/react` without checking the Expo compatibility set.
+
+## Commands
+
+- `npm run start` starts the Expo development server.
+- `npm run android` starts Expo and opens Android.
+- `npm run ios` starts Expo and opens iOS.
+- `npm run web` starts Expo web.
+- `npm run typecheck` runs `tsc --noEmit` and is required after code changes.
+- `npx expo start --tunnel` starts a tunnel when LAN access is unavailable.
+- `npx expo install --check` checks Expo dependency compatibility.
+- `npx expo-doctor` performs a broader Expo project diagnostic.
+
+Prefer Expo Go first. Only create a custom development build when a dependency requires native code unavailable in Expo Go.
 
 ## Commands
 - `npm run start` starts Expo.
@@ -13,11 +59,7 @@
 - `npm run web` starts Expo web.
 - `npm run typecheck` runs `tsc --noEmit`.
 
-## Conventions
-- Nativewind: [https://www.nativewind.dev/llms.txt]
-- React Native: [https://reactnative.dev/]
-- Expo: [https://docs.expo.dev/]
-- Context API: [https://legacy.reactjs.org/docs/context.html]
+## Best Practices and Conventions
 - TypeScript is strict via `tsconfig.json`.
 - Styling uses NativeWind class names directly in React Native components.
 - Icons come from `@expo/vector-icons/Ionicons`.
@@ -30,12 +72,15 @@
 - Don't overcomplicate logic and processes if it's doable in a simpler manner.
 - Always document the logic and processes by leaving comments and readable naming convention.
 
-## Environment Notes
-- The repository currently has no committed files; `git status --short` reports all project files as untracked.
-- The Windows sandbox helper was unavailable during initialization, so shell inspection required approved escalated read-only commands.
 
+## Application Architecture
 
-## Folder Structure and File Naming Convention
+- Keep `App.tsx` thin. It imports global CSS, installs root providers, and renders `AppNavigator`.
+- `SafeAreaProvider` must remain above the application UI.
+- `AppStateProvider` is the single source of truth for current global prototype state.
+- `AppNavigator` owns the lightweight tab shell visually, but the active tab value lives in Context.
+- Home, Profile, and More are implemented screens. Quests and Shop currently use placeholders.
+- Home can switch locally between the dashboard and `HabitPathScreen`; do not promote transient view state to global state unless another screen needs it.
 
 ```text
 src/
@@ -98,3 +143,90 @@ src/
     `-- index.tsx
 ```
 
+Create new folders only when the feature needs them. Do not add speculative `services`, `hooks`, state libraries, or routing layers before they are used.
+
+## State Management
+
+- Use the existing Context API and reducer in `src/contexts/appContext/` for global state.
+- Global state currently covers navigation, active habit, player profile, habits and paths, quest progress, streaks, coins, energy, daily check-in, inventory, settings, and activity history.
+- New players must start from generated initial state: level 1, zero XP, zero coins, zero streaks, full energy, no completions, and the first node active for every habit.
+- Keep domain mutations atomic in the reducer. Quest completion must update rewards, XP, energy, streaks, path completion, active timer state, and activity log together.
+- Expose intent-based actions such as `startDailyQuest` and `completeDailyQuest`; screens must not reconstruct reducer rules.
+- Store durable facts such as completion records and timestamps. Derive `active`, `done`, `locked`, progress percentages, and effective streaks through pure utility functions.
+- Use local date keys in `YYYY-MM-DD` form for once-per-day behavior. Store event timestamps as ISO strings.
+- Preserve discriminated unions for `timed` and `one-time` nodes so invalid quest fields are rejected by TypeScript.
+- Use functional, immutable reducer updates. Do not mutate nested habit, profile, inventory, or log values.
+- Persistence can be added behind the provider later. Do not couple UI components directly to storage APIs.
+
+## Styling And Design
+
+- Use NativeWind class names for component styling.
+- Keep reusable colors, spacing, radii, and effects in `src/constants/themeTokens.js` and expose them through `tailwind.config.js`.
+- Use `src/constants/colors.ts` only for runtime APIs that cannot consume class names, including icons, gradients, Reanimated values, and native style props.
+- Reuse semantic utilities such as `bg-surface-card`, `text-content`, `bg-primary`, `rounded-card`, and `rounded-pill`. Do not scatter duplicate hex values or arbitrary dimensions through screens.
+- The palette is light pastel: pale sky/mint/cream canvases, warm off-white cards, pastel-blue primary actions, and restrained green/red/gold reward states.
+- Cards use an 8px radius through `rounded-card`; avoid excessive pill-shaped containers and nested cards.
+- Keep mobile layouts compact, scannable, and touch-friendly. Use stable dimensions for timers, path nodes, resource pills, tab items, and avatar areas so content changes do not shift the layout.
+- Screens with vertically growing content should use `ScrollView` and leave room for the persistent bottom tab bar.
+- Use the shared shadow helper for platform-aware card shadows.
+- Provide accessibility roles and concise labels for interactive controls and meaningful images.
+- Use Ionicons instead of handwritten SVG icons when an appropriate icon exists.
+
+## Art And Assets
+
+- Register reusable image assets in `src/constants/images.tsx`; do not repeat `require()` calls across screens.
+- Prefer transparent PNGs for characters, avatars, equipment, and other layered pixel art.
+- Preserve hard, crisp pixel edges and use `resizeMode="contain"` for character artwork unless a full-bleed crop is intentional.
+- Do not replace approved high-fidelity pixel art with styled `View` blocks or generic generated imagery.
+- `parrot-trail-captain.png` is the canonical Lory mascot asset for pages and reusable mascot components.
+- `profile-avatar-reference-v2.png` is the current player avatar artwork on the Profile page.
+- App icon, adaptive icon, web favicon, name, and description are configured in `app.json`.
+- Composite Home artwork should show the whole intended scene; use `contain` or an aspect-ratio-aware frame when cropping would hide Lory or the terrain.
+
+## TypeScript And Naming
+
+- TypeScript remains strict. Avoid `any`; define shared domain contracts in `src/types/app.ts`.
+- Use `import type` for type-only imports.
+- Use PascalCase for React component files and exports, `index.tsx` for screen entrypoints, camelCase for functions and values, and descriptive union IDs for domain entities.
+- Use `.tsx` only when a file contains JSX, `.ts` for TypeScript logic, and `.js` for CommonJS configuration shared with Tailwind or Metro.
+- Keep components focused. Extract shared UI when it is reused or when it contains meaningful independent behavior; do not create wrappers that only rename a `View`.
+- Prefer readable names and small pure helpers over explanatory comments. Add comments only for non-obvious business invariants or platform workarounds.
+- Avoid unrelated refactors when implementing a focused feature.
+
+## Expo Dependency Rules
+
+- `babel-preset-expo` must remain installed at the top level because `babel.config.js` references it directly.
+- Babel must retain the Expo preset with `jsxImportSource: "nativewind"` and the NativeWind Babel transform.
+- Metro must continue wrapping Expo's default config with `withNativeWind` and `global.css` as input.
+- Keep React and `@types/react` on compatible major versions. Expo SDK 54 and React Native 0.81 require React 19-era types.
+- Keep Reanimated and `react-native-worklets` aligned with Expo's recommended versions. A JavaScript/native mismatch can cause `installTurboModule` runtime failures on Android.
+- Prefer `npx expo install <package>` for Expo-facing dependencies. Do not use `--force` or `--legacy-peer-deps` as the default fix for peer conflicts.
+- After dependency changes, clear Metro's cache with `npx expo start --clear` before diagnosing native runtime issues.
+
+## Verification
+
+For every code change:
+
+1. Run `npm run typecheck`.
+2. Exercise the affected screen on a mobile-sized viewport.
+3. Confirm text and controls do not overlap or overflow.
+4. Confirm the bottom safe area and tab bar remain usable.
+5. Check that image assets render fully and transparency is preserved.
+
+For quest or state changes, also verify:
+
+1. A new player sees node one active with zero prior progress.
+2. Timed quests cannot complete before their target duration.
+3. Water and Sleep work with zero energy.
+4. A habit cannot complete more than once per local day.
+5. Completing a second habit on the same day does not increment the app streak twice.
+6. Rewards, XP, activity history, and path progress update together.
+7. Node seven unlocks the chapter reward without losing completed path data.
+
+## External References
+
+- NativeWind: https://www.nativewind.dev/llms.txt
+- React Native: https://reactnative.dev/
+- Expo: https://docs.expo.dev/
+- React Context: https://react.dev/reference/react/useContext
+- Tailwind configuration: https://v3.tailwindcss.com/docs/configuration
