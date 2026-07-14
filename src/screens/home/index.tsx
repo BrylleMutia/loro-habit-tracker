@@ -1,26 +1,49 @@
+import { useState } from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import { AdventurePathPreview } from "../../components/AdventurePathPreview";
+import { DailyQuestCard } from "../../components/DailyQuestCard";
 import { PixelParrot } from "../../components/PixelParrot";
+import {
+  QuestCelebrationModal,
+  type LootDropDetails
+} from "../../components/QuestCelebrationModal";
 import { ResourceBar } from "../../components/ResourceBar";
 import { colors } from "../../constants/colors";
 import { images } from "../../constants/images";
 import { useAppState } from "../../contexts/appContext";
 import { shadows } from "../../styles/shadows";
-import type { PathItem } from "../../types/app";
+import { HabitPathScreen } from "./HabitPathScreen";
 
 export function HomeScreen() {
+  const [isPathVisible, setIsPathVisible] = useState(false);
+  const [lootDropDetails, setLootDropDetails] = useState<LootDropDetails | null>(null);
+
+  if (isPathVisible) {
+    return <HabitPathScreen onBack={() => setIsPathVisible(false)} />;
+  }
+
   return (
-    <ScrollView
-      contentContainerClassName="px-5 pb-28 pt-3"
-      contentInsetAdjustmentBehavior="automatic"
-      showsVerticalScrollIndicator={false}
-    >
-      <ResourceBar />
-      <HeroGreeting />
-      <ActiveHabitCard />
-      <TodayPath />
-    </ScrollView>
+    <>
+      <ScrollView
+        contentContainerClassName="px-5 pb-28 pt-3"
+        contentInsetAdjustmentBehavior="automatic"
+        showsVerticalScrollIndicator={false}
+      >
+        <ResourceBar />
+        <HeroGreeting />
+        <ActiveHabitCard />
+        <DailyQuestCard onQuestCompleted={setLootDropDetails} />
+        <AdventurePathPreview onViewPath={() => setIsPathVisible(true)} />
+      </ScrollView>
+
+      <QuestCelebrationModal
+        variant={lootDropDetails ? "loot-drop" : null}
+        lootDropDetails={lootDropDetails ?? undefined}
+        onClose={() => setLootDropDetails(null)}
+      />
+    </>
   );
 }
 
@@ -63,6 +86,7 @@ function ActiveHabitCard() {
   const {
     activeHabit,
     activeHabitId,
+    activeAdventure,
     activeHabitProgressPercent,
     habitList,
     setActiveHabit
@@ -84,7 +108,9 @@ function ActiveHabitCard() {
         <View className="ml-3 flex-1">
           <Text className="text-3xl font-black text-[#111D35]">{activeHabit.label}</Text>
           <Text className="mt-1 text-xs font-bold text-[#6D7890]">
-            {activeHabit.progress.current} of {activeHabit.progress.target} {activeHabit.progress.unit}
+            {activeAdventure.focusLocation
+              ? `${activeAdventure.focusLocation.section.title} | Day ${activeAdventure.focusLocation.node.day} of ${activeAdventure.focusLocation.section.nodes.length}`
+              : "All available chapters complete"}
           </Text>
         </View>
         <TouchableOpacity className="h-9 w-9 items-center justify-center rounded-lg bg-[#F3F7F8]" activeOpacity={0.82}>
@@ -122,111 +148,6 @@ function ActiveHabitCard() {
             </TouchableOpacity>
           );
         })}
-      </View>
-    </View>
-  );
-}
-
-function TodayPath() {
-  const { activeHabit } = useAppState();
-
-  return (
-    <View className="mt-4 rounded-lg border border-[#E6EDF2] bg-[#FFFDF7] p-4" style={shadows.card}>
-      <View className="flex-row items-center justify-between">
-        <Text className="text-lg font-black text-[#0B2551]">Today's Path</Text>
-        <Text className="text-xs font-extrabold text-[#6D7890]">
-          Level {activeHabit.level} | {activeHabit.streak} day streak
-        </Text>
-      </View>
-
-      <View className="mt-4">
-        {activeHabit.pathItems.map((item, index) => (
-          <PathRow
-            key={item.id}
-            item={item}
-            step={index + 1}
-            isLast={index === activeHabit.pathItems.length - 1}
-          />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function PathRow({ item, step, isLast }: { item: PathItem; step: number; isLast: boolean }) {
-  const isDone = item.status === "done";
-  const isActive = item.status === "active";
-  const isLocked = item.status === "locked";
-  const isBonus = item.status === "bonus";
-
-  return (
-    <View className={`flex-row ${isLast ? "" : "mb-3"}`}>
-      <View className="w-10 items-center">
-        <View
-          className={`z-10 h-8 w-8 items-center justify-center rounded-full border-2 ${
-            isDone
-              ? "border-[#56C878] bg-[#56C878]"
-              : isActive
-                ? "border-[#56A6F7] bg-[#56A6F7]"
-                : isBonus
-                  ? "border-[#F5B739] bg-[#FFF3D6]"
-                  : "border-[#C9D2DC] bg-[#F3F7F8]"
-          }`}
-        >
-          {isDone ? (
-            <Ionicons name="checkmark" size={17} color="white" />
-          ) : isBonus ? (
-            <Ionicons name="star" size={16} color={colors.gold} />
-          ) : (
-            <Text className={`text-sm font-black ${isActive ? "text-white" : "text-[#6D7890]"}`}>{step}</Text>
-          )}
-        </View>
-        {!isLast ? <View className="h-14 w-[2px] bg-[#D8E1E8]" /> : null}
-      </View>
-
-      <View
-        className={`min-h-[62px] flex-1 flex-row items-center rounded-lg border px-3 ${
-          isActive
-            ? "border-[#56A6F7] bg-[#E7F4FF]"
-            : isBonus
-              ? "border-[#FFE2A8] bg-[#FFF7EA]"
-              : "border-[#E6EDF2] bg-[#F8FBF3]"
-        }`}
-      >
-        <View
-          className={`h-10 w-10 items-center justify-center rounded-lg ${
-            isLocked ? "bg-[#ECEFF3]" : isBonus ? "bg-[#FFE2A8]" : "bg-white"
-          }`}
-        >
-          <Ionicons
-            name={isLocked ? "lock-closed" : item.icon}
-            size={21}
-            color={isLocked ? colors.grayIcon : isBonus ? colors.gold : isActive ? colors.blueDark : colors.green}
-          />
-        </View>
-
-        <View className="ml-3 flex-1">
-          <Text className="text-sm font-black text-[#0B2551]">{item.title}</Text>
-          <Text className="mt-1 text-xs font-semibold text-[#6D7890]">{item.duration}</Text>
-        </View>
-
-        {isActive ? (
-          <TouchableOpacity
-            className="h-10 flex-row items-center rounded-lg bg-[#56A6F7] px-4"
-            activeOpacity={0.86}
-            accessibilityLabel={`Start ${item.title}`}
-            accessibilityRole="button"
-          >
-            <Ionicons name="play" size={15} color="white" />
-            <Text className="ml-1 text-sm font-black text-white">Start</Text>
-          </TouchableOpacity>
-        ) : isDone ? (
-          <Ionicons name="checkmark-circle" size={22} color={colors.green} />
-        ) : isBonus ? (
-          <Ionicons name="chevron-forward" size={22} color={colors.gold} />
-        ) : (
-          <Ionicons name="lock-closed" size={18} color={colors.grayIcon} />
-        )}
       </View>
     </View>
   );

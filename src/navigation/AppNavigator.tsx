@@ -9,6 +9,7 @@ import { colors } from "../constants/colors";
 import { tabs } from "../constants/home";
 import { useAppState } from "../contexts/appContext";
 import { HomeScreen } from "../screens/home";
+import { MoreScreen } from "../screens/more";
 
 export function AppNavigator() {
   const { activeTab, setActiveTab } = useAppState();
@@ -21,7 +22,11 @@ export function AppNavigator() {
     <SafeAreaView className="flex-1 bg-[#EAF9EF]">
       <StatusBar style="dark" />
       <LinearGradient colors={[colors.sky, colors.mint, colors.cream]} className="flex-1">
-        {activeTab === "home" ? <HomeScreen /> : <PlaceholderScreen tab={activeTabItem} />}
+        {activeTab === "home" ? <HomeScreen /> : null}
+        {activeTab === "more" ? <MoreScreen /> : null}
+        {activeTab !== "home" && activeTab !== "more" ? (
+          <PlaceholderScreen tab={activeTabItem} />
+        ) : null}
         <BottomTabs activeTab={activeTab} onChangeTab={setActiveTab} />
       </LinearGradient>
     </SafeAreaView>

@@ -7,7 +7,13 @@ import { PixelParrot } from "./PixelParrot";
 import { ResourcePill } from "./ResourcePill";
 
 export function ResourceBar() {
-  const { coins, dailyStreak, energy } = useAppState();
+  const {
+    claimDailyCheckIn,
+    coins,
+    dailyCheckInClaimedToday,
+    dailyStreak,
+    energy
+  } = useAppState();
 
   return (
     <View className="flex-row items-center justify-between">
@@ -17,12 +23,21 @@ export function ResourceBar() {
         <ResourcePill icon="flame" value={dailyStreak.toString()} color={colors.red} />
         <ResourcePill icon="ellipse" value={coins.toLocaleString("en-US")} color={colors.gold} />
         <TouchableOpacity
-          className="ml-2 h-9 w-9 items-center justify-center rounded-lg bg-[#E7F4FF]"
+          className={`ml-2 h-9 w-9 items-center justify-center rounded-lg ${
+            dailyCheckInClaimedToday ? "bg-[#DDF7E5]" : "bg-[#E7F4FF]"
+          }`}
           activeOpacity={0.82}
-          accessibilityLabel="Get more energy"
+          accessibilityLabel={dailyCheckInClaimedToday ? "Daily reward claimed" : "Claim daily reward"}
           accessibilityRole="button"
+          accessibilityState={{ disabled: dailyCheckInClaimedToday }}
+          disabled={dailyCheckInClaimedToday}
+          onPress={claimDailyCheckIn}
         >
-          <Ionicons name="add" size={19} color={colors.blueDark} />
+          <Ionicons
+            name={dailyCheckInClaimedToday ? "checkmark" : "gift-outline"}
+            size={19}
+            color={dailyCheckInClaimedToday ? colors.green : colors.blueDark}
+          />
         </TouchableOpacity>
       </View>
     </View>

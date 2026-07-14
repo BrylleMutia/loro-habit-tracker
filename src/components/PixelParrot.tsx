@@ -24,7 +24,6 @@ export function PixelParrot({ size, mirrorX = false }: PixelParrotProps) {
         height: dimensions.height,
         transform: mirrorX ? [{ scaleX: -1 }] : undefined
       }}
-      className="transform -rotate-180"
     />
   );
 }

@@ -1,226 +1,295 @@
-import type { HabitId, HabitState } from "../types/app";
+import type {
+  AdventureNode,
+  AdventureSection,
+  HabitId,
+  HabitState,
+  IconName
+} from "../types/app";
 
-const defaultHabits: Record<HabitId, HabitState> = {
-  exercise: {
-    id: "exercise",
-    label: "Exercise",
-    icon: "barbell-outline",
-    dailyPrompt: "Let's move, build strength, and earn today's win!",
-    level: 1,
-    xp: 0,
-    streak: 0,
-    progress: { current: 0, target: 3, unit: "quests" },
-    pathItems: [
-      {
-        id: "exercise-warmup",
-        title: "Warm-Up Flow",
-        duration: "5 min",
-        icon: "body-outline",
-        status: "active",
-        rewardCoins: 10,
-        rewardXp: 15,
-        progressAmount: 1
-      },
-      {
-        id: "exercise-workout",
-        title: "Workout Quest",
-        duration: "15 min",
-        icon: "barbell-outline",
-        status: "locked",
-        rewardCoins: 20,
-        rewardXp: 30,
-        progressAmount: 1
-      },
-      {
-        id: "exercise-cooldown",
-        title: "Stretch & Cooldown",
-        duration: "5 min",
-        icon: "walk-outline",
-        status: "locked",
-        rewardCoins: 10,
-        rewardXp: 15,
-        progressAmount: 1
-      },
-      {
-        id: "exercise-bonus",
-        title: "Movement Chest",
-        duration: "Complete all 3 quests",
-        icon: "gift-outline",
-        status: "bonus",
-        rewardCoins: 40,
-        rewardXp: 50,
-        progressAmount: 0
-      }
-    ]
-  },
-  reading: {
-    id: "reading",
-    label: "Reading",
-    icon: "book-outline",
-    dailyPrompt: "Let's turn a few pages and uncover something new!",
-    level: 1,
-    xp: 0,
-    streak: 0,
-    progress: { current: 0, target: 10, unit: "pages" },
-    pathItems: [
-      {
-        id: "reading-book",
-        title: "Choose Your Book",
-        duration: "1 min",
-        icon: "library-outline",
-        status: "active",
-        rewardCoins: 5,
-        rewardXp: 10,
-        progressAmount: 0
-      },
-      {
-        id: "reading-pages",
-        title: "Read 10 Pages",
-        duration: "20 min",
-        icon: "book-outline",
-        status: "locked",
-        rewardCoins: 20,
-        rewardXp: 30,
-        progressAmount: 10
-      },
-      {
-        id: "reading-reflection",
-        title: "One-Line Reflection",
-        duration: "2 min",
-        icon: "chatbox-ellipses-outline",
-        status: "locked",
-        rewardCoins: 10,
-        rewardXp: 20,
-        progressAmount: 0
-      },
-      {
-        id: "reading-bonus",
-        title: "Knowledge Chest",
-        duration: "Complete today's chapter",
-        icon: "gift-outline",
-        status: "bonus",
-        rewardCoins: 40,
-        rewardXp: 50,
-        progressAmount: 0
-      }
-    ]
-  },
-  water: {
-    id: "water",
-    label: "Water",
-    icon: "water-outline",
-    dailyPrompt: "Lory says: time to refill and keep your energy flowing!",
-    level: 1,
-    xp: 0,
-    streak: 0,
-    progress: { current: 0, target: 8, unit: "glasses" },
-    pathItems: [
-      {
-        id: "water-morning",
-        title: "Morning Glass",
-        duration: "1 glass",
-        icon: "sunny-outline",
-        status: "active",
-        rewardCoins: 5,
-        rewardXp: 10,
-        progressAmount: 1
-      },
-      {
-        id: "water-midday",
-        title: "Midday Hydration",
-        duration: "3 glasses",
-        icon: "water-outline",
-        status: "locked",
-        rewardCoins: 15,
-        rewardXp: 20,
-        progressAmount: 3
-      },
-      {
-        id: "water-evening",
-        title: "Evening Refill",
-        duration: "4 glasses",
-        icon: "moon-outline",
-        status: "locked",
-        rewardCoins: 15,
-        rewardXp: 20,
-        progressAmount: 4
-      },
-      {
-        id: "water-bonus",
-        title: "Hydration Chest",
-        duration: "Reach 8 glasses",
-        icon: "gift-outline",
-        status: "bonus",
-        rewardCoins: 35,
-        rewardXp: 45,
-        progressAmount: 0
-      }
-    ]
-  },
-  sleep: {
-    id: "sleep",
-    label: "Sleep",
-    icon: "moon-outline",
-    dailyPrompt: "Let's prepare a calm landing for tomorrow's adventure.",
-    level: 1,
-    xp: 0,
-    streak: 0,
-    progress: { current: 0, target: 3, unit: "steps" },
-    pathItems: [
-      {
-        id: "sleep-wind-down",
-        title: "Start Wind-Down",
-        duration: "10 min",
-        icon: "bed-outline",
-        status: "active",
-        rewardCoins: 15,
-        rewardXp: 20,
-        progressAmount: 1
-      },
-      {
-        id: "sleep-no-screen",
-        title: "Screen-Free Break",
-        duration: "15 min",
-        icon: "phone-portrait-outline",
-        status: "locked",
-        rewardCoins: 15,
-        rewardXp: 20,
-        progressAmount: 1
-      },
-      {
-        id: "sleep-log",
-        title: "Log Bedtime",
-        duration: "1 check-in",
-        icon: "checkmark-circle-outline",
-        status: "locked",
-        rewardCoins: 10,
-        rewardXp: 15,
-        progressAmount: 1
-      },
-      {
-        id: "sleep-bonus",
-        title: "Dream Chest",
-        duration: "Complete all 3 steps",
-        icon: "gift-outline",
-        status: "bonus",
-        rewardCoins: 40,
-        rewardXp: 50,
-        progressAmount: 0
-      }
-    ]
-  }
+type ChapterBlueprint = {
+  id: string;
+  title: string;
+  description: string;
+  primaryTarget: number;
+  nodeTitles: readonly string[];
 };
 
-// Each new session receives its own mutable progress and path item objects.
+const chapterBlueprints: Record<HabitId, readonly ChapterBlueprint[]> = {
+  exercise: [
+    {
+      id: "trailhead-training",
+      title: "Trailhead Training",
+      description: "Build a safe and repeatable movement routine.",
+      primaryTarget: 15,
+      nodeTitles: [
+        "Foundation Circuit",
+        "Mobility Trail",
+        "Core Camp",
+        "Recovery Walk",
+        "Strength Summit",
+        "Cardio Crossing",
+        "Trailhead Challenge"
+      ]
+    },
+    {
+      id: "rising-ridge",
+      title: "Rising Ridge",
+      description: "Add more challenge while protecting consistency.",
+      primaryTarget: 20,
+      nodeTitles: [
+        "Upper-Body Ascent",
+        "Lower-Body Trek",
+        "Balance Bridge",
+        "Active Recovery",
+        "Power Climb",
+        "Endurance Route",
+        "Ridge Challenge"
+      ]
+    }
+  ],
+  reading: [
+    {
+      id: "pagefinder-path",
+      title: "Pagefinder Path",
+      description: "Create a comfortable daily reading rhythm.",
+      primaryTarget: 10,
+      nodeTitles: [
+        "Open the Map",
+        "Quiet Corner",
+        "Ten-Minute Trek",
+        "Character Camp",
+        "Idea Lookout",
+        "Focus Forest",
+        "Chapter Challenge"
+      ]
+    },
+    {
+      id: "deep-reading-grove",
+      title: "Deep Reading Grove",
+      description: "Read longer and capture the ideas worth keeping.",
+      primaryTarget: 15,
+      nodeTitles: [
+        "Longer Trail",
+        "Theme Tracker",
+        "Question Clearing",
+        "Distraction Detour",
+        "Insight Grove",
+        "Memory Marker",
+        "Grove Challenge"
+      ]
+    }
+  ],
+  water: [
+    {
+      id: "hydration-springs",
+      title: "Hydration Springs",
+      description: "Spread hydration checkpoints across the whole day.",
+      primaryTarget: 8,
+      nodeTitles: [
+        "First Refill",
+        "Morning Springs",
+        "Steady Stream",
+        "Midweek Reservoir",
+        "Refill Rhythm",
+        "Clear Current",
+        "Springs Challenge"
+      ]
+    },
+    {
+      id: "river-route",
+      title: "River Route",
+      description: "Protect the habit during busier daily routines.",
+      primaryTarget: 8,
+      nodeTitles: [
+        "Early Current",
+        "Bottle Ready",
+        "Meal-Time Refill",
+        "Afternoon Crossing",
+        "Traveling Stream",
+        "Evening Current",
+        "River Challenge"
+      ]
+    }
+  ],
+  sleep: [
+    {
+      id: "moonlit-camp",
+      title: "Moonlit Camp",
+      description: "Build a calm wind-down sequence before bed.",
+      primaryTarget: 1,
+      nodeTitles: [
+        "Set Up Camp",
+        "Dim the Lanterns",
+        "Quiet Trail",
+        "Midweek Reset",
+        "Gentle Landing",
+        "Dream Prep",
+        "Moonlit Challenge"
+      ]
+    },
+    {
+      id: "dreamer-ridge",
+      title: "Dreamer Ridge",
+      description: "Strengthen timing and reflect on sleep quality.",
+      primaryTarget: 1,
+      nodeTitles: [
+        "Bedtime Marker",
+        "Screen-Free Ridge",
+        "Quiet Mind",
+        "Rest Checkpoint",
+        "Tomorrow Prep",
+        "Dream Journal",
+        "Ridge Challenge"
+      ]
+    }
+  ]
+};
+
+type DailyQuestDetails = {
+  summary: string;
+  icon: IconName;
+  energyCost: number;
+  reward: AdventureNode["reward"];
+} & (
+  | { questType: "timed"; targetDurationSeconds: number }
+  | { questType: "one-time"; targetQuantity: number; targetUnit: string }
+);
+
+function getDailyQuestDetails(
+  habitId: HabitId,
+  title: string,
+  primaryTarget: number,
+  chapterOrder: number
+): DailyQuestDetails {
+  switch (habitId) {
+    case "exercise":
+      return {
+        summary: `Complete a ${primaryTarget}-minute ${title.toLowerCase()} movement session.`,
+        icon: "barbell-outline",
+        energyCost: 1,
+        questType: "timed",
+        targetDurationSeconds: primaryTarget * 60,
+        reward: { coins: 18 + chapterOrder * 2, xp: 28 + chapterOrder * 4 }
+      };
+    case "reading":
+      return {
+        summary: `Read with focus for ${primaryTarget} minutes.`,
+        icon: "book-outline",
+        energyCost: 1,
+        questType: "timed",
+        targetDurationSeconds: primaryTarget * 60,
+        reward: { coins: 16 + chapterOrder * 2, xp: 26 + chapterOrder * 4 }
+      };
+    case "water":
+      return {
+        summary: `Drink ${primaryTarget} glasses of water across your day.`,
+        icon: "water-outline",
+        energyCost: 0,
+        questType: "one-time",
+        targetQuantity: primaryTarget,
+        targetUnit: "glasses",
+        reward: { coins: 12 + chapterOrder * 2, xp: 20 + chapterOrder * 3 }
+      };
+    case "sleep":
+      return {
+        summary: "Complete your wind-down routine and head to bed on time.",
+        icon: "moon-outline",
+        energyCost: 0,
+        questType: "one-time",
+        targetQuantity: primaryTarget,
+        targetUnit: "routine",
+        reward: { coins: 14 + chapterOrder * 2, xp: 24 + chapterOrder * 3 }
+      };
+  }
+}
+
+function createAdventureNode(
+  habitId: HabitId,
+  sectionId: string,
+  day: number,
+  title: string,
+  primaryTarget: number,
+  chapterOrder: number
+): AdventureNode {
+  return {
+    id: `${habitId}-${sectionId}-day-${day}`,
+    day,
+    title,
+    ...getDailyQuestDetails(habitId, title, primaryTarget, chapterOrder)
+  };
+}
+
+function createAdventureSections(habitId: HabitId): AdventureSection[] {
+  return chapterBlueprints[habitId].map((blueprint, sectionIndex) => {
+    const order = sectionIndex + 1;
+
+    return {
+      id: `${habitId}-${blueprint.id}`,
+      title: blueprint.title,
+      description: blueprint.description,
+      order,
+      reward: { coins: 75 + sectionIndex * 25, xp: 100 + sectionIndex * 40 },
+      nodes: blueprint.nodeTitles.map((title, nodeIndex) =>
+        createAdventureNode(
+          habitId,
+          blueprint.id,
+          nodeIndex + 1,
+          title,
+          blueprint.primaryTarget,
+          order
+        )
+      )
+    };
+  });
+}
+
+function createHabit(
+  id: HabitId,
+  label: string,
+  icon: IconName,
+  dailyPrompt: string
+): HabitState {
+  return {
+    id,
+    label,
+    icon,
+    dailyPrompt,
+    level: 1,
+    xp: 0,
+    streak: 0,
+    lastCompletedDateKey: null,
+    sections: createAdventureSections(id),
+    completions: [],
+    activeTimedQuest: null,
+    claimedChapterRewardIds: []
+  };
+}
+
 export function createInitialHabits(): Record<HabitId, HabitState> {
-  return Object.fromEntries(
-    Object.entries(defaultHabits).map(([habitId, habit]) => [
-      habitId,
-      {
-        ...habit,
-        progress: { ...habit.progress },
-        pathItems: habit.pathItems.map((item) => ({ ...item }))
-      }
-    ])
-  ) as Record<HabitId, HabitState>;
+  return {
+    exercise: createHabit(
+      "exercise",
+      "Exercise",
+      "barbell-outline",
+      "Let's move, build strength, and earn today's win!"
+    ),
+    reading: createHabit(
+      "reading",
+      "Reading",
+      "book-outline",
+      "Let's turn a few pages and uncover something new!"
+    ),
+    water: createHabit(
+      "water",
+      "Water",
+      "water-outline",
+      "Lory says: time to refill and keep your energy flowing!"
+    ),
+    sleep: createHabit(
+      "sleep",
+      "Sleep",
+      "moon-outline",
+      "Let's prepare a calm landing for tomorrow's adventure."
+    )
+  };
 }

@@ -2,8 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 
 export type TabId = "home" | "quests" | "shop" | "profile" | "more";
 export type HabitId = "exercise" | "reading" | "water" | "sleep";
-export type PathStatus = "done" | "active" | "locked" | "bonus";
 export type IconName = keyof typeof Ionicons.glyphMap;
+export type DateKey = string;
+export type AdventureNodeStatus = "done" | "active" | "locked";
+export type QuestTrackingType = "timed" | "one-time";
 
 export type TabItem = {
   id: TabId;
@@ -11,21 +13,56 @@ export type TabItem = {
   icon: IconName;
 };
 
-export type PathItem = {
-  id: string;
-  title: string;
-  duration: string;
-  icon: IconName;
-  status: PathStatus;
-  rewardCoins: number;
-  rewardXp: number;
-  progressAmount: number;
+export type AdventureReward = {
+  coins: number;
+  xp: number;
 };
 
-export type HabitProgress = {
-  current: number;
-  target: number;
-  unit: string;
+type AdventureNodeBase = {
+  id: string;
+  day: number;
+  title: string;
+  summary: string;
+  icon: IconName;
+  energyCost: number;
+  reward: AdventureReward;
+};
+
+export type TimedAdventureNode = AdventureNodeBase & {
+  questType: "timed";
+  targetDurationSeconds: number;
+};
+
+export type OneTimeAdventureNode = AdventureNodeBase & {
+  questType: "one-time";
+  targetQuantity: number;
+  targetUnit: string;
+};
+
+export type AdventureNode = TimedAdventureNode | OneTimeAdventureNode;
+
+export type AdventureSection = {
+  id: string;
+  title: string;
+  description: string;
+  order: number;
+  reward: AdventureReward;
+  nodes: AdventureNode[];
+};
+
+export type NodeCompletionRecord = {
+  sectionId: string;
+  nodeId: string;
+  completedOn: DateKey;
+  completedAt: string;
+  reward: AdventureReward;
+};
+
+export type TimedQuestProgress = {
+  sectionId: string;
+  nodeId: string;
+  startedOn: DateKey;
+  startedAt: string;
 };
 
 export type HabitState = {
@@ -36,8 +73,11 @@ export type HabitState = {
   level: number;
   xp: number;
   streak: number;
-  progress: HabitProgress;
-  pathItems: PathItem[];
+  lastCompletedDateKey: DateKey | null;
+  sections: AdventureSection[];
+  completions: NodeCompletionRecord[];
+  activeTimedQuest: TimedQuestProgress | null;
+  claimedChapterRewardIds: string[];
 };
 
 export type PlayerProfile = {
@@ -53,12 +93,11 @@ export type PlayerProfile = {
 export type EnergyState = {
   current: number;
   max: number;
-  lessonCost: number;
   lastRefillAt: string | null;
 };
 
 export type DailyCheckInState = {
-  claimedToday: boolean;
+  lastClaimedDateKey: DateKey | null;
   lastClaimedAt: string | null;
   rewardCoins: number;
   rewardEnergy: number;
@@ -85,9 +124,11 @@ export type AppSettings = {
 
 export type ActivityLogEntry = {
   id: string;
-  habitId: HabitId;
-  pathItemId: string;
-  completedAt: string;
+  type: "daily-quest" | "chapter-reward" | "daily-check-in";
+  habitId: HabitId | null;
+  sectionId: string | null;
+  nodeId: string | null;
+  occurredAt: string;
   coinsEarned: number;
   xpEarned: number;
 };
@@ -99,6 +140,7 @@ export type AppState = {
   habits: Record<HabitId, HabitState>;
   dailyStreak: number;
   longestStreak: number;
+  lastStreakDateKey: DateKey | null;
   coins: number;
   energy: EnergyState;
   dailyCheckIn: DailyCheckInState;
