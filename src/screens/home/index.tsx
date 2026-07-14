@@ -69,7 +69,7 @@ function HeroGreeting() {
           </View>
 
           <View
-            className="mt-8 max-w-speech rounded-card border border-line bg-surface-card p-3"
+            className="mt-4 max-w-speech rounded-card border border-line bg-surface-card p-3"
             style={shadows.card}
           >
             <Text className="text-sm font-semibold leading-5 text-content">
