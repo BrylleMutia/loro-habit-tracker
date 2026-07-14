@@ -10,6 +10,7 @@ import { tabs } from "../constants/home";
 import { useAppState } from "../contexts/appContext";
 import { HomeScreen } from "../screens/home";
 import { MoreScreen } from "../screens/more";
+import { ProfileScreen } from "../screens/profile";
 
 export function AppNavigator() {
   const { activeTab, setActiveTab } = useAppState();
@@ -23,8 +24,9 @@ export function AppNavigator() {
       <StatusBar style="dark" />
       <LinearGradient colors={[colors.sky, colors.mint, colors.cream]} className="flex-1">
         {activeTab === "home" ? <HomeScreen /> : null}
+        {activeTab === "profile" ? <ProfileScreen /> : null}
         {activeTab === "more" ? <MoreScreen /> : null}
-        {activeTab !== "home" && activeTab !== "more" ? (
+        {activeTab !== "home" && activeTab !== "profile" && activeTab !== "more" ? (
           <PlaceholderScreen tab={activeTabItem} />
         ) : null}
         <BottomTabs activeTab={activeTab} onChangeTab={setActiveTab} />
