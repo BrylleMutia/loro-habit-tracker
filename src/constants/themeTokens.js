@@ -80,9 +80,9 @@ const themeSpacing = {
   "tab-item": "3.625rem",
   "quest-node": "3.875rem",
   "path-node": "4.625rem",
-  speech: "10.625rem",
+  speech: "12.625rem",
   action: "11.875rem",
-  hero: "13.125rem"
+  hero: "14.125rem"
 };
 
 const themeEffects = {
