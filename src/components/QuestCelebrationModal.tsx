@@ -11,7 +11,9 @@ import Animated, {
 
 import { colors } from "../constants/colors";
 import { shadows } from "../styles/shadows";
+import type { QuestActionMode } from "./QuestActionButton";
 import { PixelParrot } from "./PixelParrot";
+import { QuestActionButton } from "./QuestActionButton";
 
 export type CelebrationVariant = "trail-stamp" | "loot-drop" | "power-up";
 
@@ -22,10 +24,23 @@ export type LootDropDetails = {
   habitLabel: string;
 };
 
+export type TrailStampDetails = {
+  actionLabel: string;
+  badgeLabel: string;
+  coinReward: number;
+  description: string;
+  energyReward?: number;
+  title: string;
+  xpReward?: number;
+};
+
 type QuestCelebrationModalProps = {
   variant: CelebrationVariant | null;
   onClose: () => void;
   lootDropDetails?: LootDropDetails;
+  onTrailStampAction?: () => void;
+  trailStampActionMode?: QuestActionMode;
+  trailStampDetails?: TrailStampDetails;
 };
 
 const defaultLootDropDetails: LootDropDetails = {
@@ -33,6 +48,15 @@ const defaultLootDropDetails: LootDropDetails = {
   xpReward: 32,
   streak: 1,
   habitLabel: "Daily Quest"
+};
+
+const defaultTrailStampDetails: TrailStampDetails = {
+  actionLabel: "Continue trail",
+  badgeLabel: "Trail stamp earned",
+  coinReward: 20,
+  description: "Foundation Circuit is now part of your adventure.",
+  title: "Quest complete!",
+  xpReward: 32
 };
 
 const pixelConfetti = [
@@ -46,7 +70,10 @@ const pixelConfetti = [
 export function QuestCelebrationModal({
   variant,
   onClose,
-  lootDropDetails = defaultLootDropDetails
+  lootDropDetails = defaultLootDropDetails,
+  onTrailStampAction,
+  trailStampActionMode = "tap",
+  trailStampDetails = defaultTrailStampDetails
 }: QuestCelebrationModalProps) {
   if (!variant) {
     return null;
@@ -78,7 +105,14 @@ export function QuestCelebrationModal({
           accessibilityRole="button"
           onPress={onClose}
         />
-        {variant === "trail-stamp" ? <TrailStampCelebration onClose={onClose} /> : null}
+        {variant === "trail-stamp" ? (
+          <TrailStampCelebration
+            details={trailStampDetails}
+            onAction={onTrailStampAction ?? onClose}
+            actionMode={trailStampActionMode}
+            onClose={onClose}
+          />
+        ) : null}
         {variant === "loot-drop" ? (
           <LootDropCelebration details={lootDropDetails} onClose={onClose} />
         ) : null}
@@ -88,7 +122,17 @@ export function QuestCelebrationModal({
   );
 }
 
-function TrailStampCelebration({ onClose }: { onClose: () => void }) {
+function TrailStampCelebration({
+  actionMode,
+  details,
+  onAction,
+  onClose
+}: {
+  actionMode: QuestActionMode;
+  details: TrailStampDetails;
+  onAction: () => void;
+  onClose: () => void;
+}) {
   return (
     <View style={{ width: "100%", maxWidth: 360 }}>
       <View
@@ -123,17 +167,27 @@ function TrailStampCelebration({ onClose }: { onClose: () => void }) {
 
         <Animated.View entering={FadeInUp.delay(170).duration(240)}>
           <View className="items-center px-5 py-5">
-            <Text className="text-xs font-extrabold uppercase text-content-green">Trail stamp earned</Text>
-            <Text className="mt-1 text-center text-2xl font-black text-content">Quest complete!</Text>
-            <Text className="mt-2 text-center text-sm font-semibold leading-5 text-content-muted">
-              Foundation Circuit is now part of your adventure.
+            <Text className="text-xs font-extrabold uppercase text-content-green">
+              {details.badgeLabel}
             </Text>
-            <RewardRow coinReward={20} xpReward={32} />
-            <CelebrationButton
-              icon="arrow-forward"
-              label="Continue trail"
-              color={colors.green}
-              onPress={onClose}
+            <Text className="mt-1 text-center text-2xl font-black text-content">
+              {details.title}
+            </Text>
+            <Text className="mt-2 text-center text-sm font-semibold leading-5 text-content-muted">
+              {details.description}
+            </Text>
+            <RewardRow
+              coinReward={details.coinReward}
+              energyReward={details.energyReward}
+              xpReward={details.xpReward}
+            />
+            <QuestActionButton
+              className="mt-5 w-full"
+              completedLabel={actionMode === "hold" ? "Reward claimed" : "Continuing"}
+              icon="checkmark-circle"
+              label={details.actionLabel}
+              mode={actionMode}
+              onAction={onAction}
             />
           </View>
         </Animated.View>
@@ -200,11 +254,13 @@ function LootDropCelebration({
 
             <Animated.View entering={FadeIn.delay(360).duration(180)}>
               <View className="mt-1 flex-row items-end justify-between">
-                <CelebrationButton
+                <QuestActionButton
+                  className="mt-5 flex-1"
+                  completedLabel="Rewards collected"
                   icon="bag-check"
                   label="Collect rewards"
-                  color={colors.blue}
-                  onPress={() => setPage("streak")}
+                  mode="tap"
+                  onAction={() => setPage("streak")}
                 />
                 <View className="-mb-2 ml-3">
                   <PixelParrot size="sm" mirrorX />
@@ -240,11 +296,13 @@ function LootDropCelebration({
               <Text className="mt-2 text-center text-sm font-semibold leading-5 text-content-muted">
                 Your {details.habitLabel} adventure is ready for tomorrow.
               </Text>
-              <CelebrationButton
+              <QuestActionButton
+                className="mt-5 w-full"
+                completedLabel="Continuing"
                 icon="arrow-forward"
                 label="Continue adventure"
-                color={colors.blue}
-                onPress={onClose}
+                mode="tap"
+                onAction={onClose}
               />
             </View>
           </Animated.View>
@@ -326,11 +384,13 @@ function PowerUpCelebration({ onClose }: { onClose: () => void }) {
             <Ionicons name="flame" size={19} color={colors.red} />
             <Text className="ml-2 text-sm font-black text-content">Streak protected for today</Text>
           </View>
-          <CelebrationButton
+          <QuestActionButton
+            className="mt-5 w-full"
+            completedLabel="Momentum carried"
             icon="flash"
             label="Carry momentum"
-            color={colors.blueDark}
-            onPress={onClose}
+            mode="tap"
+            onAction={onClose}
           />
         </View>
       </View>
@@ -338,44 +398,36 @@ function PowerUpCelebration({ onClose }: { onClose: () => void }) {
   );
 }
 
-function RewardRow({ coinReward, xpReward }: { coinReward: number; xpReward: number }) {
+function RewardRow({
+  coinReward,
+  energyReward,
+  xpReward
+}: {
+  coinReward: number;
+  energyReward?: number;
+  xpReward?: number;
+}) {
   return (
     <View className="mt-4 flex-row items-center justify-center">
       <View className="flex-row items-center rounded-pill bg-reward-soft px-3 py-2">
         <Ionicons name="ellipse" size={14} color={colors.gold} />
         <Text className="ml-1 text-xs font-black text-content-gold">+{coinReward}</Text>
       </View>
-      <View className="ml-2 flex-row items-center rounded-pill bg-success-soft px-3 py-2">
-        <Ionicons name="sparkles" size={14} color={colors.green} />
-        <Text className="ml-1 text-xs font-black text-content-green">+{xpReward} XP</Text>
-      </View>
+      {typeof xpReward === "number" ? (
+        <View className="ml-2 flex-row items-center rounded-pill bg-success-soft px-3 py-2">
+          <Ionicons name="sparkles" size={14} color={colors.green} />
+          <Text className="ml-1 text-xs font-black text-content-green">+{xpReward} XP</Text>
+        </View>
+      ) : null}
+      {typeof energyReward === "number" ? (
+        <View className="ml-2 flex-row items-center rounded-pill bg-primary-soft px-3 py-2">
+          <Ionicons name="flash" size={14} color={colors.blueDark} />
+          <Text className="ml-1 text-xs font-black text-primary-strong">
+            +{energyReward} energy
+          </Text>
+        </View>
+      ) : null}
     </View>
-  );
-}
-
-function CelebrationButton({
-  color,
-  icon,
-  label,
-  onPress
-}: {
-  color: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      className="mt-5 h-12 min-w-action flex-row items-center justify-center rounded-card px-5"
-      style={{ backgroundColor: color }}
-      activeOpacity={0.86}
-      accessibilityLabel={label}
-      accessibilityRole="button"
-      onPress={onPress}
-    >
-      <Ionicons name={icon} size={18} color="white" />
-      <Text className="ml-2 text-sm font-black text-white">{label}</Text>
-    </TouchableOpacity>
   );
 }
 
