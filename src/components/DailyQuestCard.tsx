@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { colors } from "../constants/colors";
 import { useAppState } from "../contexts/appContext";
 import { shadows } from "../styles/shadows";
-import type { IconName } from "../types/app";
+import { QuestActionButton } from "./QuestActionButton";
 import type { LootDropDetails } from "./QuestCelebrationModal";
 
 const TIMER_REFRESH_INTERVAL_MILLISECONDS = 1000;
@@ -216,60 +216,38 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
           hasReachedTimerTarget ? (
             <QuestActionButton
               accessibilityLabel={`Complete ${node.title} quest`}
+              className="mt-4"
+              completedLabel="Quest confirmed"
               icon="checkmark-circle"
-              label="Complete quest"
-              onPress={completeQuest}
+              label="Hold to complete"
+              mode="hold"
+              onAction={completeQuest}
             />
           ) : null
         ) : (
           <QuestActionButton
             accessibilityLabel={`Start ${node.title} quest`}
+            className="mt-4"
+            completedLabel="Quest started"
             disabled={!canStartOrCompleteQuest}
             icon={canStartOrCompleteQuest ? "play" : "flash-outline"}
             label={canStartOrCompleteQuest ? "Start quest" : "Need more energy"}
-            onPress={() => startDailyQuest(activeHabit.id)}
+            mode="tap"
+            onAction={() => startDailyQuest(activeHabit.id)}
           />
         )
       ) : (
         <QuestActionButton
           accessibilityLabel={`Complete ${node.title} quest`}
+          className="mt-4"
+          completedLabel="Quest complete"
           disabled={!canStartOrCompleteQuest}
           icon={canStartOrCompleteQuest ? "checkmark-circle" : "flash-outline"}
           label={canStartOrCompleteQuest ? "Complete quest" : "Need more energy"}
-          onPress={completeQuest}
+          mode="tap"
+          onAction={completeQuest}
         />
       )}
     </View>
-  );
-}
-
-function QuestActionButton({
-  accessibilityLabel,
-  disabled = false,
-  icon,
-  label,
-  onPress
-}: {
-  accessibilityLabel: string;
-  disabled?: boolean;
-  icon: IconName;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity
-      className={`mt-4 h-12 flex-row items-center justify-center rounded-card ${
-        disabled ? "bg-line-disabled" : "bg-primary"
-      }`}
-      activeOpacity={0.86}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-    >
-      <Ionicons name={icon} size={19} color="white" />
-      <Text className="ml-2 text-sm font-black text-white">{label}</Text>
-    </TouchableOpacity>
   );
 }
