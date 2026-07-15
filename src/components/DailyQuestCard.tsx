@@ -243,8 +243,8 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
           completedLabel="Quest complete"
           disabled={!canStartOrCompleteQuest}
           icon={canStartOrCompleteQuest ? "checkmark-circle" : "flash-outline"}
-          label={canStartOrCompleteQuest ? "Complete quest" : "Need more energy"}
-          mode="tap"
+          label={canStartOrCompleteQuest ? "Hold to complete" : "Need more energy"}
+          mode="hold"
           onAction={completeQuest}
         />
       )}
