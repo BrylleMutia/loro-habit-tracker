@@ -2,6 +2,7 @@ import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { ResourceBar } from "../../components/ResourceBar";
+import { QuestActionButton } from "../../components/QuestActionButton";
 import { colors } from "../../constants/colors";
 import { useAppState } from "../../contexts/appContext";
 import { shadows } from "../../styles/shadows";
@@ -14,9 +15,10 @@ import {
 
 type HabitPathScreenProps = {
   onBack: () => void;
+  onDailyCheckInPress: () => void;
 };
 
-export function HabitPathScreen({ onBack }: HabitPathScreenProps) {
+export function HabitPathScreen({ onBack, onDailyCheckInPress }: HabitPathScreenProps) {
   const { activeHabit, claimChapterReward, todayDateKey } = useAppState();
 
   return (
@@ -25,7 +27,7 @@ export function HabitPathScreen({ onBack }: HabitPathScreenProps) {
       contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}
     >
-      <ResourceBar />
+      <ResourceBar onDailyCheckInPress={onDailyCheckInPress} />
       <View className="mt-5 flex-row items-center">
         <TouchableOpacity
           className="h-10 w-10 items-center justify-center rounded-card bg-surface-card"
@@ -110,42 +112,46 @@ function ChapterSection({
           />
         ))}
 
-        <TouchableOpacity
-          className={`mb-3 mt-1 min-h-quest-node flex-row items-center rounded-card border px-3 ${
+        <View
+          className={`mb-3 mt-1 rounded-card border p-3 ${
             isClaimed
               ? "border-line-success bg-surface-green"
               : isComplete
                 ? "border-line-reward bg-canvas-cream"
                 : "border-line bg-surface-disabled"
           }`}
-          activeOpacity={0.84}
-          accessibilityLabel={`${isClaimed ? "Claimed" : isComplete ? "Claim" : "Locked"} ${section.title} reward`}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !isComplete || isClaimed }}
-          disabled={!isComplete || isClaimed}
-          onPress={onClaim}
         >
-          <View
-            className={`h-10 w-10 items-center justify-center rounded-card ${
-              isComplete ? "bg-line-reward" : "bg-line-locked"
-            }`}
-          >
-            <Ionicons
-              name={isClaimed ? "checkmark" : isComplete ? "gift" : "lock-closed"}
-              size={20}
-              color={isClaimed ? colors.green : isComplete ? colors.gold : colors.grayIcon}
-            />
+          <View className="flex-row items-center">
+            <View
+              className={`h-10 w-10 items-center justify-center rounded-card ${
+                isComplete ? "bg-line-reward" : "bg-line-locked"
+              }`}
+            >
+              <Ionicons
+                name={isClaimed ? "checkmark" : isComplete ? "gift" : "lock-closed"}
+                size={20}
+                color={isClaimed ? colors.green : isComplete ? colors.gold : colors.grayIcon}
+              />
+            </View>
+            <View className="ml-3 flex-1">
+              <Text className="text-sm font-black text-content">Chapter Reward</Text>
+              <Text className="mt-1 text-xs font-semibold text-content-muted">
+                {section.reward.coins} coins | {section.reward.xp} XP
+              </Text>
+            </View>
           </View>
-          <View className="ml-3 flex-1">
-            <Text className="text-sm font-black text-content">Chapter Reward</Text>
-            <Text className="mt-1 text-xs font-semibold text-content-muted">
-              {section.reward.coins} coins | {section.reward.xp} XP
-            </Text>
-          </View>
-          <Text className={`text-xs font-black ${isComplete ? "text-reward-earned" : "text-content-subtle"}`}>
-            {isClaimed ? "Claimed" : isComplete ? "Claim" : "Locked"}
-          </Text>
-        </TouchableOpacity>
+          <QuestActionButton
+            accessibilityLabel={`${isClaimed ? "Claimed" : isComplete ? "Claim" : "Locked"} ${section.title} reward`}
+            className="mt-3"
+            completed={isClaimed}
+            completedLabel="Reward claimed"
+            disabled={!isComplete || isClaimed}
+            icon={isComplete ? "gift" : "lock-closed"}
+            label={isComplete ? "Claim chapter reward" : "Reward locked"}
+            mode="tap"
+            onAction={onClaim}
+          />
+        </View>
       </View>
     </View>
   );

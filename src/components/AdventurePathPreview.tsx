@@ -1,11 +1,12 @@
 import { Fragment } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { colors } from "../constants/colors";
 import { useAppState } from "../contexts/appContext";
 import { shadows } from "../styles/shadows";
 import type { AdventureNodeStatus } from "../types/app";
+import { QuestActionButton } from "./QuestActionButton";
 
 type AdventurePathPreviewProps = {
   onViewPath: () => void;
@@ -26,16 +27,16 @@ export function AdventurePathPreview({ onViewPath }: AdventurePathPreviewProps) 
           <Text className="text-xs font-extrabold uppercase text-content-muted">Adventure Path</Text>
           <Text className="mt-1 text-lg font-black text-content">{section.title}</Text>
         </View>
-        <TouchableOpacity
-          className="h-9 flex-row items-center rounded-card bg-primary-soft px-3"
-          activeOpacity={0.82}
+        <QuestActionButton
           accessibilityLabel="View full adventure path"
-          accessibilityRole="button"
-          onPress={onViewPath}
-        >
-          <Text className="text-xs font-black text-primary-strong">View Path</Text>
-          <Ionicons name="chevron-forward" size={15} color={colors.blueDark} />
-        </TouchableOpacity>
+          className="w-40"
+          completedLabel="Opening path"
+          icon="map-outline"
+          label="View path"
+          mode="tap"
+          onAction={onViewPath}
+          size="compact"
+        />
       </View>
 
       <View className="mt-4 flex-row items-start">

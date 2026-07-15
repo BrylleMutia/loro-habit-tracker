@@ -17,13 +17,22 @@ import { useScreenContentWidth } from "../../hooks/useScreenContentWidth";
 import { shadows } from "../../styles/shadows";
 import { HabitPathScreen } from "./HabitPathScreen";
 
-export function HomeScreen() {
+type HomeScreenProps = {
+  onDailyCheckInPress: () => void;
+};
+
+export function HomeScreen({ onDailyCheckInPress }: HomeScreenProps) {
   const contentWidth = useScreenContentWidth();
   const [isPathVisible, setIsPathVisible] = useState(false);
   const [lootDropDetails, setLootDropDetails] = useState<LootDropDetails | null>(null);
 
   if (isPathVisible) {
-    return <HabitPathScreen onBack={() => setIsPathVisible(false)} />;
+    return (
+      <HabitPathScreen
+        onBack={() => setIsPathVisible(false)}
+        onDailyCheckInPress={onDailyCheckInPress}
+      />
+    );
   }
 
   return (
@@ -35,7 +44,7 @@ export function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="self-center" style={{ width: contentWidth }}>
-          <ResourceBar />
+          <ResourceBar onDailyCheckInPress={onDailyCheckInPress} />
           <HeroGreeting />
           <ActiveHabitCard />
           <DailyQuestCard onQuestCompleted={setLootDropDetails} />
@@ -99,11 +108,8 @@ function ActiveHabitCard() {
 
   return (
     <View className="-mt-2 rounded-card border border-line bg-surface-card p-4" style={shadows.card}>
-      <View className="flex-row items-center justify-between">
+      <View className="flex-row items-center">
         <Text className="text-xs font-extrabold uppercase tracking-wide text-content-muted">Active Habit</Text>
-        <TouchableOpacity activeOpacity={0.82}>
-          <Text className="text-xs font-extrabold text-primary-strong">Manage</Text>
-        </TouchableOpacity>
       </View>
 
       <View className="mt-3 flex-row items-center">
@@ -118,9 +124,6 @@ function ActiveHabitCard() {
               : "All available chapters complete"}
           </Text>
         </View>
-        <TouchableOpacity className="h-9 w-9 items-center justify-center rounded-card bg-surface-muted" activeOpacity={0.82}>
-          <Ionicons name="chevron-down" size={20} color={colors.ink} />
-        </TouchableOpacity>
       </View>
 
       <View className="mt-3 h-2 overflow-hidden rounded-pill bg-line-progress">

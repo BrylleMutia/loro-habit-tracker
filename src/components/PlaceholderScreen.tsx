@@ -8,13 +8,14 @@ import { PixelParrot } from "./PixelParrot";
 import { ResourceBar } from "./ResourceBar";
 
 type PlaceholderScreenProps = {
+  onDailyCheckInPress: () => void;
   tab: TabItem;
 };
 
-export function PlaceholderScreen({ tab }: PlaceholderScreenProps) {
+export function PlaceholderScreen({ onDailyCheckInPress, tab }: PlaceholderScreenProps) {
   return (
     <View className="flex-1 px-5 pb-28 pt-4">
-      <ResourceBar />
+      <ResourceBar onDailyCheckInPress={onDailyCheckInPress} />
       <View
         className="mt-5 flex-1 items-center justify-center rounded-card border border-line bg-surface-card p-6"
         style={shadows.card}

@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import { QuestActionButton } from "../../components/QuestActionButton";
 import { colors } from "../../constants/colors";
 import { images } from "../../constants/images";
 import {
@@ -198,7 +199,8 @@ export function ProfileScreen() {
 
       <ProfileSectionHeader
         title="Equipment"
-        actionLabel="Edit"
+        actionIcon="shirt-outline"
+        actionLabel="Edit gear"
         onAction={() => setActiveTab("shop")}
       />
       <View
@@ -315,10 +317,12 @@ function ProfileStatisticCard({ statistic }: { statistic: ProfileStatistic }) {
 }
 
 function ProfileSectionHeader({
+  actionIcon,
   actionLabel,
   onAction,
   title
 }: {
+  actionIcon?: IconName;
   actionLabel: string;
   onAction?: () => void;
   title: string;
@@ -327,14 +331,16 @@ function ProfileSectionHeader({
     <View className="mb-3 mt-5 flex-row items-center justify-between px-1">
       <Text className="text-sm font-black text-content">{title}</Text>
       {onAction ? (
-        <TouchableOpacity
-          activeOpacity={0.82}
+        <QuestActionButton
           accessibilityLabel={`${actionLabel} ${title.toLowerCase()}`}
-          accessibilityRole="button"
-          onPress={onAction}
-        >
-          <Text className="text-xs font-black text-primary-strong">{actionLabel}</Text>
-        </TouchableOpacity>
+          className="w-40"
+          completedLabel="Opening shop"
+          icon={actionIcon ?? "create-outline"}
+          label={actionLabel}
+          mode="tap"
+          onAction={onAction}
+          size="compact"
+        />
       ) : (
         <Text className="text-xs font-bold text-content-muted">{actionLabel}</Text>
       )}
