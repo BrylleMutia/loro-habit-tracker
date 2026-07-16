@@ -19,7 +19,14 @@ type HabitPathScreenProps = {
 };
 
 export function HabitPathScreen({ onBack, onDailyCheckInPress }: HabitPathScreenProps) {
-  const { activeHabit, claimChapterReward, todayDateKey } = useAppState();
+  const {
+    activeHabit,
+    claimChapterReward,
+    isOnline,
+    mutationInFlight,
+    todayDateKey
+  } = useAppState();
+  const actionsDisabled = !isOnline || mutationInFlight !== null;
 
   return (
     <ScrollView
@@ -58,7 +65,11 @@ export function HabitPathScreen({ onBack, onDailyCheckInPress }: HabitPathScreen
             isComplete={isSectionComplete(activeHabit, section.id)}
             isClaimed={activeHabit.claimedChapterRewardIds.includes(section.id)}
             getStatus={(nodeId) => getNodeStatus(activeHabit, nodeId, todayDateKey)}
-            onClaim={() => claimChapterReward(activeHabit.id, section.id)}
+            actionsDisabled={actionsDisabled}
+            unavailableLabel={!isOnline ? "Reconnect to claim" : "Syncing trail…"}
+            onClaim={() => {
+              void claimChapterReward(activeHabit.id, section.id).catch(() => undefined);
+            }}
           />
         ))}
       </View>
@@ -72,6 +83,8 @@ function ChapterSection({
   completedCount,
   isComplete,
   isClaimed,
+  actionsDisabled,
+  unavailableLabel,
   getStatus,
   onClaim
 }: {
@@ -80,6 +93,8 @@ function ChapterSection({
   completedCount: number;
   isComplete: boolean;
   isClaimed: boolean;
+  actionsDisabled: boolean;
+  unavailableLabel: string;
   getStatus: (nodeId: string) => AdventureNodeStatus;
   onClaim: () => void;
 }) {
@@ -145,9 +160,9 @@ function ChapterSection({
             className="mt-3"
             completed={isClaimed}
             completedLabel="Reward claimed"
-            disabled={!isComplete || isClaimed}
+            disabled={!isComplete || isClaimed || actionsDisabled}
             icon={isComplete ? "gift" : "lock-closed"}
-            label={isComplete ? "Claim chapter reward" : "Reward locked"}
+            label={isComplete ? (actionsDisabled ? unavailableLabel : "Claim chapter reward") : "Reward locked"}
             mode="tap"
             onAction={onClaim}
           />

@@ -39,6 +39,7 @@ type QuestCelebrationModalProps = {
   onClose: () => void;
   lootDropDetails?: LootDropDetails;
   onTrailStampAction?: () => void;
+  trailStampActionDisabled?: boolean;
   trailStampActionMode?: QuestActionMode;
   trailStampDetails?: TrailStampDetails;
 };
@@ -72,6 +73,7 @@ export function QuestCelebrationModal({
   onClose,
   lootDropDetails = defaultLootDropDetails,
   onTrailStampAction,
+  trailStampActionDisabled = false,
   trailStampActionMode = "tap",
   trailStampDetails = defaultTrailStampDetails
 }: QuestCelebrationModalProps) {
@@ -110,6 +112,7 @@ export function QuestCelebrationModal({
             details={trailStampDetails}
             onAction={onTrailStampAction ?? onClose}
             actionMode={trailStampActionMode}
+            actionDisabled={trailStampActionDisabled}
             onClose={onClose}
           />
         ) : null}
@@ -124,11 +127,13 @@ export function QuestCelebrationModal({
 
 function TrailStampCelebration({
   actionMode,
+  actionDisabled,
   details,
   onAction,
   onClose
 }: {
   actionMode: QuestActionMode;
+  actionDisabled: boolean;
   details: TrailStampDetails;
   onAction: () => void;
   onClose: () => void;
@@ -184,6 +189,7 @@ function TrailStampCelebration({
             <QuestActionButton
               className="mt-5 w-full"
               completedLabel={actionMode === "hold" ? "Reward claimed" : "Continuing"}
+              disabled={actionDisabled}
               icon="checkmark-circle"
               label={details.actionLabel}
               mode={actionMode}

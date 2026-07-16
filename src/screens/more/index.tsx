@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import {
@@ -9,6 +9,7 @@ import {
 import { QuestActionButton } from "../../components/QuestActionButton";
 import { ResourceBar } from "../../components/ResourceBar";
 import { colors } from "../../constants/colors";
+import { useAuth } from "../../contexts/authContext";
 import { shadows } from "../../styles/shadows";
 import type { IconName } from "../../types/app";
 import { ActionButtonPrototypes } from "./ActionButtonPrototypes";
@@ -59,6 +60,7 @@ type MoreScreenProps = {
 
 export function MoreScreen({ onDailyCheckInPress }: MoreScreenProps) {
   const [activeSample, setActiveSample] = useState<CelebrationVariant | null>(null);
+  const { isSubmitting: isSigningOut, signOut, user } = useAuth();
 
   return (
     <>
@@ -121,6 +123,28 @@ export function MoreScreen({ onDailyCheckInPress }: MoreScreenProps) {
           <Text className="mt-1 text-3xl font-black text-content">Button Lab</Text>
         </View>
         <ActionButtonPrototypes />
+
+        <View
+          className="mt-6 rounded-card border border-line bg-surface-card p-4"
+          style={shadows.card}
+        >
+          <Text className="text-sm font-black text-content">Account</Text>
+          <Text className="mt-1 text-xs font-semibold text-content-muted" numberOfLines={1}>
+            {user?.email ?? "Signed in to Loro"}
+          </Text>
+          <TouchableOpacity
+            className={`mt-4 h-11 flex-row items-center justify-center rounded-card border border-line-red bg-surface-red ${
+              isSigningOut ? "opacity-50" : ""
+            }`}
+            accessibilityLabel="Sign out of Loro"
+            accessibilityRole="button"
+            disabled={isSigningOut}
+            onPress={() => void signOut().catch(() => undefined)}
+          >
+            <Ionicons name="log-out-outline" size={18} color={colors.red} />
+            <Text className="ml-2 text-sm font-black text-content-red">Sign out</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
       <QuestCelebrationModal variant={activeSample} onClose={() => setActiveSample(null)} />

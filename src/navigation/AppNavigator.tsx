@@ -6,6 +6,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BottomTabs } from "../components/BottomTabs";
 import { PlaceholderScreen } from "../components/PlaceholderScreen";
 import { QuestCelebrationModal } from "../components/QuestCelebrationModal";
+import { SyncStatusBanner } from "../components/SyncStatusBanner";
 import { colors } from "../constants/colors";
 import { tabs } from "../constants/home";
 import { useAppState } from "../contexts/appContext";
@@ -19,6 +20,8 @@ export function AppNavigator() {
     claimDailyCheckIn,
     dailyCheckIn,
     dailyCheckInClaimedToday,
+    isOnline,
+    mutationInFlight,
     setActiveTab,
     todayDateKey
   } = useAppState();
@@ -58,15 +61,20 @@ export function AppNavigator() {
     }
   };
 
-  const claimDailyReward = () => {
-    claimDailyCheckIn();
-    setIsDailyCheckInVisible(false);
+  const claimDailyReward = async () => {
+    try {
+      await claimDailyCheckIn();
+      setIsDailyCheckInVisible(false);
+    } catch {
+      // The modal stays open while the sync banner provides retry guidance.
+    }
   };
 
   return (
     <SafeAreaView className="flex-1 bg-canvas-mint">
       <StatusBar style="dark" />
       <LinearGradient colors={[colors.sky, colors.mint, colors.cream]} className="flex-1">
+        <SyncStatusBanner />
         {activeTab === "home" ? (
           <HomeScreen onDailyCheckInPress={openDailyCheckIn} />
         ) : null}
@@ -86,6 +94,7 @@ export function AppNavigator() {
         variant={isDailyCheckInVisible ? "trail-stamp" : null}
         onClose={() => setIsDailyCheckInVisible(false)}
         onTrailStampAction={claimDailyReward}
+        trailStampActionDisabled={!isOnline || mutationInFlight !== null}
         trailStampActionMode="hold"
         trailStampDetails={trailStampDetails}
       />

@@ -3,6 +3,7 @@
     "name": "Loro - Habit Tracker",
     "slug": "loro-habit-tracker",
     "version": "0.1.0",
+    "scheme": "loro",
     "orientation": "portrait",
     "icon": "./src/assets/images/app-logo-lory.png",
     "userInterfaceStyle": "light",
@@ -28,7 +29,9 @@
     },
     "plugins": [
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      "expo-secure-store",
+      "expo-sqlite"
     ]
   }
 }

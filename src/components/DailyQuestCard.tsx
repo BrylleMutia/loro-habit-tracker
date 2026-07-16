@@ -35,11 +35,17 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
   const {
     activeAdventure,
     activeHabit,
+    clearSyncError,
     completeDailyQuest,
     energy,
+    isOnline,
+    mutationInFlight,
+    serverClockOffsetMs,
     startDailyQuest
   } = useAppState();
-  const [nowMilliseconds, setNowMilliseconds] = useState(() => Date.now());
+  const [nowMilliseconds, setNowMilliseconds] = useState(
+    () => Date.now() + serverClockOffsetMs
+  );
   const activeLocation = activeAdventure.activeLocation;
   const timedQuestProgress = activeAdventure.timedQuestProgress;
 
@@ -48,14 +54,14 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
       return;
     }
 
-    setNowMilliseconds(Date.now());
+    setNowMilliseconds(Date.now() + serverClockOffsetMs);
     const interval = setInterval(
-      () => setNowMilliseconds(Date.now()),
+      () => setNowMilliseconds(Date.now() + serverClockOffsetMs),
       TIMER_REFRESH_INTERVAL_MILLISECONDS
     );
 
     return () => clearInterval(interval);
-  }, [timedQuestProgress]);
+  }, [serverClockOffsetMs, timedQuestProgress]);
 
   if (activeAdventure.completedToday) {
     const completedLocation = activeAdventure.completedTodayLocation;
@@ -112,7 +118,9 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
   }
 
   const { node, section } = activeLocation;
-  const canStartOrCompleteQuest = energy.current >= node.energyCost;
+  const actionUnavailable = !isOnline || mutationInFlight !== null;
+  const hasEnoughEnergy = energy.current >= node.energyCost;
+  const canStartOrCompleteQuest = hasEnoughEnergy && !actionUnavailable;
   const isTimedQuest = node.questType === "timed";
   const elapsedSeconds =
     isTimedQuest && timedQuestProgress
@@ -123,16 +131,27 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
     : 0;
   const hasReachedTimerTarget =
     isTimedQuest && elapsedSeconds >= node.targetDurationSeconds;
-  const completeQuest = () => {
-    const completionDetails: LootDropDetails = {
-      coinReward: node.reward.coins,
-      xpReward: node.reward.xp,
-      streak: activeHabit.streak + 1,
-      habitLabel: activeHabit.label
-    };
+  const unavailableLabel = !isOnline
+    ? "Reconnect to continue"
+    : mutationInFlight
+      ? "Syncing trail…"
+      : "Need more energy";
+  const completeQuest = async () => {
+    clearSyncError();
+    try {
+      const outcome = await completeDailyQuest(activeHabit.id);
+      if (outcome.alreadyCompleted) return;
 
-    completeDailyQuest(activeHabit.id);
-    onQuestCompleted?.(completionDetails);
+      const completionDetails: LootDropDetails = {
+        coinReward: outcome.coinReward,
+        xpReward: outcome.xpReward,
+        streak: outcome.streak,
+        habitLabel: activeHabit.label
+      };
+      onQuestCompleted?.(completionDetails);
+    } catch {
+      // The Context keeps the previous snapshot and exposes the retryable error banner.
+    }
   };
 
   return (
@@ -218,8 +237,9 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
               accessibilityLabel={`Complete ${node.title} quest`}
               className="mt-4"
               completedLabel="Quest confirmed"
+              disabled={actionUnavailable}
               icon="checkmark-circle"
-              label="Hold to complete"
+              label={actionUnavailable ? unavailableLabel : "Hold to complete"}
               mode="hold"
               onAction={completeQuest}
             />
@@ -230,10 +250,13 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
             className="mt-4"
             completedLabel="Quest started"
             disabled={!canStartOrCompleteQuest}
-            icon={canStartOrCompleteQuest ? "play" : "flash-outline"}
-            label={canStartOrCompleteQuest ? "Start quest" : "Need more energy"}
+            icon={canStartOrCompleteQuest ? "play" : isOnline ? "flash-outline" : "cloud-offline-outline"}
+            label={canStartOrCompleteQuest ? "Start quest" : unavailableLabel}
             mode="tap"
-            onAction={() => startDailyQuest(activeHabit.id)}
+            onAction={() => {
+              clearSyncError();
+              void startDailyQuest(activeHabit.id).catch(() => undefined);
+            }}
           />
         )
       ) : (
@@ -242,8 +265,8 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
           className="mt-4"
           completedLabel="Quest complete"
           disabled={!canStartOrCompleteQuest}
-          icon={canStartOrCompleteQuest ? "checkmark-circle" : "flash-outline"}
-          label={canStartOrCompleteQuest ? "Hold to complete" : "Need more energy"}
+          icon={canStartOrCompleteQuest ? "checkmark-circle" : isOnline ? "flash-outline" : "cloud-offline-outline"}
+          label={canStartOrCompleteQuest ? "Hold to complete" : unavailableLabel}
           mode="hold"
           onAction={completeQuest}
         />

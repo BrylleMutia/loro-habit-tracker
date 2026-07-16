@@ -290,6 +290,7 @@ export function ProfileScreen() {
           </View>
         )
       )}
+
       </View>
     </ScrollView>
   );
