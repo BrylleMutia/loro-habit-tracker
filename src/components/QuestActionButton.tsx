@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   cancelAnimation,
@@ -26,9 +26,11 @@ type QuestActionButtonProps = {
   holdDurationMs?: number;
   icon: IconName;
   label: string;
+  loading?: boolean;
   mode: QuestActionMode;
   onAction: () => void;
   size?: "compact" | "default";
+  variant?: "danger" | "primary" | "secondary";
 };
 
 const DEFAULT_HOLD_DURATION_MS = 1400;
@@ -45,9 +47,11 @@ export function QuestActionButton({
   holdDurationMs = DEFAULT_HOLD_DURATION_MS,
   icon,
   label,
+  loading = false,
   mode,
   onAction,
-  size = "default"
+  size = "default",
+  variant = "primary"
 }: QuestActionButtonProps) {
   const [hasCompletedInteraction, setHasCompletedInteraction] = useState(false);
   const [isIncompleteHold, setIsIncompleteHold] = useState(false);
@@ -171,24 +175,48 @@ export function QuestActionButton({
   const fillStyle = useAnimatedStyle(() => ({
     width: `${progress.value * 100}%`
   }));
-  const isInteractionDisabled = disabled || isComplete;
+  const isInteractionDisabled = disabled || isComplete || loading;
   const displayLabel = isComplete
     ? completedLabel ?? label
     : isIncompleteHold
       ? "Keep holding"
       : label;
+  const rootColorClass =
+    variant === "secondary"
+      ? "bg-line-blue-accent"
+      : variant === "danger"
+        ? "bg-danger"
+        : "bg-primary-strong";
+  const faceColorClass =
+    variant === "secondary"
+      ? "border border-line-primary bg-surface-card"
+      : variant === "danger"
+        ? "border border-line-red bg-surface-red"
+        : "bg-primary";
+  const foregroundColor =
+    variant === "secondary"
+      ? colors.blueDark
+      : variant === "danger"
+        ? colors.red
+        : "white";
+  const foregroundClass =
+    variant === "secondary"
+      ? "text-primary-strong"
+      : variant === "danger"
+        ? "text-content-red"
+        : "text-white";
 
   return (
     <View
       className={`${className} rounded-card pb-1 ${
-        disabled && !isComplete ? "bg-line-muted" : "bg-primary-strong"
+        disabled && !isComplete ? "bg-line-muted" : rootColorClass
       }`}
     >
       <Animated.View style={buttonStyle}>
         <Pressable
           className={`relative w-full flex-row items-center justify-center overflow-hidden rounded-card ${
             size === "compact" ? "h-10" : "h-12"
-          } ${disabled && !isComplete ? "bg-line-disabled" : "bg-primary"}`}
+          } ${disabled && !isComplete ? "bg-line-disabled" : faceColorClass}`}
           accessibilityHint={
             disabled
               ? undefined
@@ -206,7 +234,7 @@ export function QuestActionButton({
           onPressIn={startPress}
           onPressOut={releasePress}
         >
-          {mode === "hold" ? (
+          {mode === "hold" && variant === "primary" ? (
             <Animated.View
               className="absolute bottom-0 left-0 top-0 bg-primary-strong"
               style={fillStyle}
@@ -218,16 +246,20 @@ export function QuestActionButton({
             }`}
           >
             <View className={`absolute ${size === "compact" ? "left-3" : "left-4"}`}>
-              <Ionicons
-                name={isComplete ? completedIcon : icon}
-                size={size === "compact" ? 16 : 19}
-                color={disabled && !isComplete ? colors.grayIcon : "white"}
-              />
+              {loading ? (
+                <ActivityIndicator size="small" color={foregroundColor} />
+              ) : (
+                <Ionicons
+                  name={isComplete ? completedIcon : icon}
+                  size={size === "compact" ? 16 : 19}
+                  color={disabled && !isComplete ? colors.grayIcon : foregroundColor}
+                />
+              )}
             </View>
             <Text
               className={`w-full text-center font-black ${
                 size === "compact" ? "text-xs" : "text-sm"
-              } ${disabled && !isComplete ? "text-content-subtle" : "text-white"}`}
+              } ${disabled && !isComplete ? "text-content-subtle" : foregroundClass}`}
               numberOfLines={1}
             >
               {displayLabel}

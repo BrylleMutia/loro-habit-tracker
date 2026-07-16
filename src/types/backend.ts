@@ -5,6 +5,7 @@ export type PersistedGameState = Omit<AppState, "activeHabitId" | "activeTab">;
 export type AuthStatus =
   | "awaitingVerification"
   | "booting"
+  | "guest"
   | "passwordRecovery"
   | "signedIn"
   | "signedOut";

@@ -12,6 +12,10 @@ import {
 
 import { createSessionFromAuthUrl, getAuthRedirectUrl } from "../../services/authLinks";
 import { clearCachedGameState } from "../../services/gameCache";
+import {
+  readGuestSessionEnabled,
+  writeGuestSessionEnabled
+} from "../../services/guestSession";
 import { isSupabaseConfigured, supabase } from "../../services/supabaseClient";
 import type { AuthStatus, AuthView, AwaitingAuthAction } from "../../types/backend";
 
@@ -25,10 +29,13 @@ type AuthContextValue = {
   errorMessage: string | null;
   isSubmitting: boolean;
   isConfigured: boolean;
+  isGuest: boolean;
   setView: (view: AuthView) => void;
   clearError: () => void;
+  continueAsGuest: () => Promise<void>;
   signUp: (displayName: string, email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  verifyEmailCode: (code: string) => Promise<void>;
   resendVerification: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
@@ -47,10 +54,7 @@ function getDeviceTimeZone() {
 }
 
 function getAuthErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
+  if (error instanceof Error && error.message) return error.message;
   return "Lory could not finish that request. Please try again.";
 }
 
@@ -74,9 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setErrorMessage(null);
       const result = await createSessionFromAuthUrl(url);
-      if (result.handled && result.isRecovery) {
-        setStatus("passwordRecovery");
-      }
+      if (result.handled && result.isRecovery) setStatus("passwordRecovery");
     } catch (error) {
       setSession(null);
       setStatus("signedOut");
@@ -85,48 +87,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setStatus("signedOut");
-      return undefined;
-    }
-
     let isMounted = true;
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      if (!isMounted) return;
-
-      setSession(nextSession);
-      if (event === "PASSWORD_RECOVERY") {
-        setStatus("passwordRecovery");
-      } else if (nextSession) {
-        setStatus((current) => (current === "passwordRecovery" ? current : "signedIn"));
-      } else {
-        setStatus((current) =>
-          current === "awaitingVerification" ? current : "signedOut"
-        );
-      }
-    });
+    let removeAuthListener: (() => void) | null = null;
     const linkListener = Linking.addEventListener("url", ({ url }) => {
       void handleAuthUrl(url);
     });
 
-    void Promise.all([supabase.auth.getSession(), Linking.getInitialURL()])
-      .then(([sessionResult, initialUrl]) => {
+    if (isSupabaseConfigured) {
+      const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
+        if (!isMounted) return;
+        setSession(nextSession);
+
+        if (event === "PASSWORD_RECOVERY") {
+          setStatus("passwordRecovery");
+        } else if (nextSession) {
+          void writeGuestSessionEnabled(false);
+          setStatus((current) => (current === "passwordRecovery" ? current : "signedIn"));
+        } else {
+          setStatus((current) =>
+            current === "awaitingVerification" || current === "guest" ? current : "signedOut"
+          );
+        }
+      });
+      removeAuthListener = () => data.subscription.unsubscribe();
+    }
+
+    void (async () => {
+      try {
+        const guestEnabled = await readGuestSessionEnabled();
+        if (!isSupabaseConfigured) {
+          if (isMounted) setStatus(guestEnabled ? "guest" : "signedOut");
+          return;
+        }
+
+        const [sessionResult, initialUrl] = await Promise.all([
+          supabase.auth.getSession(),
+          Linking.getInitialURL()
+        ]);
         if (!isMounted) return;
         if (sessionResult.error) throw sessionResult.error;
 
-        setSession(sessionResult.data.session);
-        setStatus(sessionResult.data.session ? "signedIn" : "signedOut");
+        const nextSession = sessionResult.data.session;
+        setSession(nextSession);
+        if (nextSession) {
+          await writeGuestSessionEnabled(false);
+          setStatus("signedIn");
+        } else {
+          setStatus(guestEnabled ? "guest" : "signedOut");
+        }
         if (initialUrl) void handleAuthUrl(initialUrl);
-      })
-      .catch((error) => {
+      } catch (error) {
         if (!isMounted) return;
         setStatus("signedOut");
         setErrorMessage(getAuthErrorMessage(error));
-      });
+      }
+    })();
 
     return () => {
       isMounted = false;
-      authListener.subscription.unsubscribe();
+      removeAuthListener?.();
       linkListener.remove();
     };
   }, [handleAuthUrl]);
@@ -155,16 +174,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       errorMessage,
       isSubmitting,
       isConfigured: isSupabaseConfigured,
+      isGuest: status === "guest",
       setView,
       clearError: () => setErrorMessage(null),
+      continueAsGuest: () =>
+        runAuthRequest(async () => {
+          await writeGuestSessionEnabled(true);
+          setSession(null);
+          setAwaitingAction(null);
+          setStatus("guest");
+        }),
       signUp: (displayName, email, password) =>
         runAuthRequest(async () => {
           if (!isSupabaseConfigured) throw new Error("Supabase is not configured yet.");
           const normalizedName = displayName.trim();
+          const normalizedEmail = email.trim().toLowerCase();
           if (!normalizedName) throw new Error("Enter the name Lory should call you.");
 
           const { data, error } = await supabase.auth.signUp({
-            email: email.trim().toLowerCase(),
+            email: normalizedEmail,
             password,
             options: {
               emailRedirectTo: getAuthRedirectUrl(),
@@ -174,10 +202,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (error) throw error;
 
           if (data.session) {
+            await writeGuestSessionEnabled(false);
             setSession(data.session);
             setStatus("signedIn");
           } else {
-            setPendingEmail(email.trim().toLowerCase());
+            setPendingEmail(normalizedEmail);
             setAwaitingAction("verification");
             setStatus("awaitingVerification");
           }
@@ -190,7 +219,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             password
           });
           if (error) throw error;
+          await writeGuestSessionEnabled(false);
           setSession(data.session);
+          setStatus("signedIn");
+        }),
+      verifyEmailCode: (code) =>
+        runAuthRequest(async () => {
+          if (!pendingEmail) throw new Error("Return to sign up and enter your email again.");
+          const { data, error } = await supabase.auth.verifyOtp({
+            email: pendingEmail,
+            token: code,
+            type: "signup"
+          });
+          if (error) throw error;
+          if (!data.session) throw new Error("That code could not be verified.");
+          await writeGuestSessionEnabled(false);
+          setSession(data.session);
+          setAwaitingAction(null);
           setStatus("signedIn");
         }),
       resendVerification: () =>
@@ -231,10 +276,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       signOut: () =>
         runAuthRequest(async () => {
-          const userId = session?.user.id;
-          const { error } = await supabase.auth.signOut({ scope: "local" });
-          if (error) throw error;
-          if (userId) await clearCachedGameState(userId);
+          if (status === "guest") {
+            await writeGuestSessionEnabled(false);
+          } else {
+            const userId = session?.user.id;
+            const { error } = await supabase.auth.signOut({ scope: "local" });
+            if (error) throw error;
+            if (userId) await clearCachedGameState(userId);
+          }
           setSession(null);
           setStatus("signedOut");
           setAuthView("signIn");

@@ -25,6 +25,15 @@ import {
   updateSettings as updateSettingsRemote
 } from "../../services/gameRepository";
 import { readCachedGameState, writeCachedGameState } from "../../services/gameCache";
+import {
+  claimLocalChapterReward,
+  claimLocalDailyCheckIn,
+  completeLocalDailyQuest,
+  getLocalGameSnapshot,
+  startLocalDailyQuest,
+  updateLocalProfile,
+  updateLocalSettings
+} from "../../services/localGameRepository";
 import type {
   AppSettings,
   AppState,
@@ -89,6 +98,7 @@ type AppStateProviderProps = {
   children: ReactNode;
   userId: string;
   initialState?: AppState;
+  storageMode?: "local" | "remote";
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -118,7 +128,12 @@ function getDateKeyInTimeZone(timeZone: string) {
   }
 }
 
-export function AppStateProvider({ children, initialState, userId }: AppStateProviderProps) {
+export function AppStateProvider({
+  children,
+  initialState,
+  storageMode = "remote",
+  userId
+}: AppStateProviderProps) {
   const [state, dispatch] = useReducer(
     appReducer,
     initialState,
@@ -141,11 +156,21 @@ export function AppStateProvider({ children, initialState, userId }: AppStatePro
   const isOnlineRef = useRef(true);
   const mutationInFlightRef = useRef<GameMutationId | null>(null);
   const refreshInFlightRef = useRef<Promise<void> | null>(null);
+  const stateRef = useRef(state);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const applyResponse = useCallback(
     async (response: GameResponse, shouldCache = true) => {
       if (!providerActiveRef.current) return;
 
+      stateRef.current = {
+        ...response.snapshot,
+        activeHabitId: stateRef.current.activeHabitId,
+        activeTab: stateRef.current.activeTab
+      };
       dispatch({ type: "HYDRATE_GAME_STATE", snapshot: response.snapshot });
       setTodayDateKey(response.localDateKey);
       setServerClockOffsetMs(Date.parse(response.serverNow) - Date.now());
@@ -166,6 +191,19 @@ export function AppStateProvider({ children, initialState, userId }: AppStatePro
     if (refreshInFlightRef.current) return refreshInFlightRef.current;
 
     const refresh = (async () => {
+      if (storageMode === "local") {
+        setSyncStatus(hasHydratedRef.current ? "refreshing" : "loading");
+        const cached = await readCachedGameState(userId);
+        await applyResponse(
+          cached ??
+            getLocalGameSnapshot(
+              stateRef.current,
+              getDateKeyInTimeZone(stateRef.current.settings.timeZone)
+            )
+        );
+        return;
+      }
+
       if (!isOnlineRef.current) {
         setSyncStatus("offline");
         return;
@@ -187,11 +225,31 @@ export function AppStateProvider({ children, initialState, userId }: AppStatePro
 
     refreshInFlightRef.current = refresh;
     return refresh;
-  }, [applyResponse]);
+  }, [applyResponse, storageMode, userId]);
 
   useEffect(() => {
     providerActiveRef.current = true;
     let isMounted = true;
+
+    if (storageMode === "local") {
+      isOnlineRef.current = true;
+      setIsOnline(true);
+      void readCachedGameState(userId).then((cachedResponse) => {
+        if (!isMounted) return;
+        void applyResponse(
+          cachedResponse ??
+            getLocalGameSnapshot(
+              stateRef.current,
+              getDateKeyInTimeZone(stateRef.current.settings.timeZone)
+            )
+        );
+      });
+
+      return () => {
+        isMounted = false;
+        providerActiveRef.current = false;
+      };
+    }
 
     void readCachedGameState(userId).then((cachedResponse) => {
       if (!isMounted || !cachedResponse || hasHydratedRef.current) return;
@@ -232,26 +290,26 @@ export function AppStateProvider({ children, initialState, userId }: AppStatePro
       networkSubscription.remove();
       appStateSubscription.remove();
     };
-  }, [applyResponse, refreshGameState, userId]);
+  }, [applyResponse, refreshGameState, storageMode, userId]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       const currentDateKey = getDateKeyInTimeZone(state.settings.timeZone);
       if (currentDateKey !== todayDateKey) {
         setTodayDateKey(currentDateKey);
-        if (isOnlineRef.current) void refreshGameState();
+        if (storageMode === "local" || isOnlineRef.current) void refreshGameState();
       }
     }, 60_000);
 
     return () => clearInterval(interval);
-  }, [refreshGameState, state.settings.timeZone, todayDateKey]);
+  }, [refreshGameState, state.settings.timeZone, storageMode, todayDateKey]);
 
   const runMutation = useCallback(
     async <TOutcome,>(
       mutationId: GameMutationId,
       request: () => Promise<GameResponse & { outcome: TOutcome }>
     ) => {
-      if (!isOnlineRef.current) {
+      if (storageMode === "remote" && !isOnlineRef.current) {
         const offlineError = new GameRepositoryError(
           "Reconnect to continue your adventure. Cached progress is still available.",
           "OFFLINE"
@@ -281,7 +339,7 @@ export function AppStateProvider({ children, initialState, userId }: AppStatePro
         if (providerActiveRef.current) setMutationInFlight(null);
       }
     },
-    [applyResponse]
+    [applyResponse, storageMode]
   );
 
   const habits = useMemo(
@@ -330,17 +388,41 @@ export function AppStateProvider({ children, initialState, userId }: AppStatePro
       setActiveTab: (tabId) => dispatch({ type: "SET_ACTIVE_TAB", tabId }),
       setActiveHabit: (habitId) => dispatch({ type: "SET_ACTIVE_HABIT", habitId }),
       startDailyQuest: (habitId) =>
-        runMutation("quest-start", () => startDailyQuestRemote(habitId)),
+        runMutation("quest-start", async () =>
+          storageMode === "local"
+            ? startLocalDailyQuest(stateRef.current, habitId, todayDateKey)
+            : startDailyQuestRemote(habitId)
+        ),
       completeDailyQuest: (habitId) =>
-        runMutation("quest-complete", () => completeDailyQuestRemote(habitId)),
+        runMutation("quest-complete", async () =>
+          storageMode === "local"
+            ? completeLocalDailyQuest(stateRef.current, habitId, todayDateKey)
+            : completeDailyQuestRemote(habitId)
+        ),
       claimChapterReward: (habitId, sectionId) =>
-        runMutation("chapter-reward", () => claimChapterRewardRemote(habitId, sectionId)),
+        runMutation("chapter-reward", async () =>
+          storageMode === "local"
+            ? claimLocalChapterReward(stateRef.current, habitId, sectionId, todayDateKey)
+            : claimChapterRewardRemote(habitId, sectionId)
+        ),
       claimDailyCheckIn: () =>
-        runMutation("daily-check-in", () => claimDailyCheckInRemote()),
+        runMutation("daily-check-in", async () =>
+          storageMode === "local"
+            ? claimLocalDailyCheckIn(stateRef.current, todayDateKey)
+            : claimDailyCheckInRemote()
+        ),
       updateSettings: (settings) =>
-        runMutation("settings", () => updateSettingsRemote(settings)),
+        runMutation("settings", async () =>
+          storageMode === "local"
+            ? updateLocalSettings(stateRef.current, settings, todayDateKey)
+            : updateSettingsRemote(settings)
+        ),
       updateProfile: (fields) =>
-        runMutation("profile", () => updateProfileRemote(fields)),
+        runMutation("profile", async () =>
+          storageMode === "local"
+            ? updateLocalProfile(stateRef.current, fields, todayDateKey)
+            : updateProfileRemote(fields)
+        ),
       refreshGameState,
       clearSyncError: () => setSyncError(null)
     }),
@@ -358,6 +440,7 @@ export function AppStateProvider({ children, initialState, userId }: AppStatePro
       runMutation,
       serverClockOffsetMs,
       state,
+      storageMode,
       syncError,
       syncStatus,
       todayDateKey

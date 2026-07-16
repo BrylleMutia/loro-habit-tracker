@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import {
@@ -60,7 +60,7 @@ type MoreScreenProps = {
 
 export function MoreScreen({ onDailyCheckInPress }: MoreScreenProps) {
   const [activeSample, setActiveSample] = useState<CelebrationVariant | null>(null);
-  const { isSubmitting: isSigningOut, signOut, user } = useAuth();
+  const { isGuest, isSubmitting: isSigningOut, signOut, user } = useAuth();
 
   return (
     <>
@@ -130,20 +130,19 @@ export function MoreScreen({ onDailyCheckInPress }: MoreScreenProps) {
         >
           <Text className="text-sm font-black text-content">Account</Text>
           <Text className="mt-1 text-xs font-semibold text-content-muted" numberOfLines={1}>
-            {user?.email ?? "Signed in to Loro"}
+            {isGuest ? "Guest progress is saved on this device" : user?.email ?? "Signed in to Loro"}
           </Text>
-          <TouchableOpacity
-            className={`mt-4 h-11 flex-row items-center justify-center rounded-card border border-line-red bg-surface-red ${
-              isSigningOut ? "opacity-50" : ""
-            }`}
-            accessibilityLabel="Sign out of Loro"
-            accessibilityRole="button"
-            disabled={isSigningOut}
-            onPress={() => void signOut().catch(() => undefined)}
-          >
-            <Ionicons name="log-out-outline" size={18} color={colors.red} />
-            <Text className="ml-2 text-sm font-black text-content-red">Sign out</Text>
-          </TouchableOpacity>
+          <QuestActionButton
+            accessibilityLabel={isGuest ? "Return to sign in" : "Sign out of Loro"}
+            className="mt-4"
+            icon={isGuest ? "person-add-outline" : "log-out-outline"}
+            label={isGuest ? "Sign in or create account" : "Sign out"}
+            loading={isSigningOut}
+            mode="tap"
+            onAction={() => void signOut().catch(() => undefined)}
+            size="compact"
+            variant={isGuest ? "secondary" : "danger"}
+          />
         </View>
       </ScrollView>
 

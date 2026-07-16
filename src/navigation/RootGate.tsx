@@ -1,9 +1,9 @@
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, Image, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Image, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { QuestActionButton } from "../components/QuestActionButton";
 import { colors } from "../constants/colors";
 import { images } from "../constants/images";
 import { AppStateProvider, useAppState } from "../contexts/appContext";
@@ -30,7 +30,7 @@ function TrailLoadingScreen() {
           accessibilityLabel="Lory preparing the trail"
         />
         <Text className="mt-4 text-xl font-black text-content">
-          {syncStatus === "error" ? "The trail needs another try" : "Preparing your trail…"}
+          {syncStatus === "error" ? "The trail needs another try" : "Preparing your trail..."}
         </Text>
         {syncError ? (
           <Text className="mt-2 text-center text-sm font-semibold leading-5 text-content-muted">
@@ -40,14 +40,13 @@ function TrailLoadingScreen() {
           <ActivityIndicator className="mt-4" color={colors.blueDark} />
         ) : null}
         {syncStatus === "error" || syncStatus === "offline" ? (
-          <TouchableOpacity
-            className="mt-5 h-12 flex-row items-center rounded-card bg-primary px-5"
-            accessibilityRole="button"
-            onPress={() => void refreshGameState()}
-          >
-            <Ionicons name="refresh" size={18} color={colors.card} />
-            <Text className="ml-2 font-black text-white">Try again</Text>
-          </TouchableOpacity>
+          <QuestActionButton
+            className="mt-5 w-44"
+            icon="refresh"
+            label="Try again"
+            mode="tap"
+            onAction={() => void refreshGameState()}
+          />
         ) : null}
       </LinearGradient>
     </SafeAreaView>
@@ -62,6 +61,14 @@ export function RootGate() {
       <View className="flex-1 items-center justify-center bg-canvas-sky">
         <ActivityIndicator color={colors.blueDark} />
       </View>
+    );
+  }
+
+  if (status === "guest") {
+    return (
+      <AppStateProvider key="local-guest" storageMode="local" userId="local-guest">
+        <TrailLoadingScreen />
+      </AppStateProvider>
     );
   }
 
