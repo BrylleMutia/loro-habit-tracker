@@ -124,6 +124,7 @@ export type AppSettings = {
   dailyReminderTime: string;
   soundEnabled: boolean;
   hapticsEnabled: boolean;
+  timeZone: string;
 };
 
 export type ActivityLogEntry = {

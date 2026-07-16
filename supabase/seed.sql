@@ -1,0 +1,2 @@
+-- The quest catalog is production data and is inserted by migrations.
+-- Add local-only fixtures here when a feature needs them.
