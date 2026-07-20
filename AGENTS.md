@@ -39,6 +39,17 @@
 
 Keep Expo-managed package versions compatible with SDK 54. Do not independently upgrade React Native, Reanimated, Worklets, React, or `@types/react` without checking the Expo compatibility set.
 
+## External Library And Plugin Documentation
+
+- Use the `context7-mcp` skill and Context7 MCP server whenever work depends on an external library, framework, SDK, API, CLI, cloud service, or plugin used by this project. This includes implementation, setup, configuration, upgrades, API usage, library-specific debugging, and best-practice decisions.
+- Consult Context7 before changing or recommending behavior for Expo, React, React Native, Supabase, NativeWind, Tailwind CSS, Reanimated, SecureStore, SQLite, Linking, Network, Ionicons, or any newly introduced dependency or plugin.
+- Always call Context7 `resolve-library-id` first with the external library name and the full task, unless the task already supplies an exact Context7 ID in `/org/project` or `/org/project/version` form.
+- Select the closest official source using exact name match, relevance, snippet coverage, source reputation, benchmark score, and the version installed in `package.json` or the Expo SDK compatibility set.
+- Call Context7 `query-docs` with the resolved ID and a focused question. Use separate documentation queries for distinct concepts such as authentication, deep linking, migrations, caching, or deployment.
+- Look up both the required API/configuration syntax and the library's current recommended practices. Apply the fetched guidance in a way that remains compatible with the versions actually installed in this repository.
+- Prefer Context7 over memory or general web search for external-library documentation. If Context7 is unavailable or has no suitable source, say so and fall back to the library's official primary documentation.
+- Context7 is not required for local business logic, visual design decisions, asset work, straightforward refactoring, or code review that does not depend on external API behavior.
+
 ## Commands
 
 - `npm run start` starts the Expo development server.
