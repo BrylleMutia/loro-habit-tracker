@@ -252,6 +252,90 @@ export type Database = {
         }
         Relationships: []
       }
+      equipment_items: {
+        Row: {
+          asset_key: string
+          id: string
+          name: string
+          primary_stat: string
+          secondary_stat: string
+          set_id: string
+          slot_id: string
+        }
+        Insert: {
+          asset_key: string
+          id: string
+          name: string
+          primary_stat: string
+          secondary_stat: string
+          set_id: string
+          slot_id: string
+        }
+        Update: {
+          asset_key?: string
+          id?: string
+          name?: string
+          primary_stat?: string
+          secondary_stat?: string
+          set_id?: string
+          slot_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_items_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_items_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_sets: {
+        Row: {
+          description: string
+          id: string
+          name: string
+        }
+        Insert: {
+          description: string
+          id: string
+          name: string
+        }
+        Update: {
+          description?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      equipment_slots: {
+        Row: {
+          icon: string
+          id: string
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          icon: string
+          id: string
+          label: string
+          sort_order: number
+        }
+        Update: {
+          icon?: string
+          id?: string
+          label?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       habit_definitions: {
         Row: {
           daily_prompt: string
@@ -310,6 +394,61 @@ export type Database = {
             columns: ["habit_id"]
             isOneToOne: false
             referencedRelation: "habit_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_items: {
+        Row: {
+          acquired_at: string
+          equipment_item_id: string
+          equipped_slot: string | null
+          id: string
+          rarity: string
+          source_completion_id: string
+          stats: Json
+          user_id: string
+        }
+        Insert: {
+          acquired_at?: string
+          equipment_item_id: string
+          equipped_slot?: string | null
+          id?: string
+          rarity: string
+          source_completion_id: string
+          stats: Json
+          user_id: string
+        }
+        Update: {
+          acquired_at?: string
+          equipment_item_id?: string
+          equipped_slot?: string | null
+          id?: string
+          rarity?: string
+          source_completion_id?: string
+          stats?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_equipment_item_id_fkey"
+            columns: ["equipment_item_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_equipped_slot_fkey"
+            columns: ["equipped_slot"]
+            isOneToOne: false
+            referencedRelation: "equipment_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_source_completion_id_fkey"
+            columns: ["source_completion_id"]
+            isOneToOne: true
+            referencedRelation: "quest_completions"
             referencedColumns: ["id"]
           },
         ]
@@ -507,7 +646,15 @@ export type Database = {
           owned_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_inventory_equipped_slot_catalog_fkey"
+            columns: ["equipped_slot"]
+            isOneToOne: false
+            referencedRelation: "equipment_slots"
+            referencedColumns: ["sort_order"]
+          },
+        ]
       }
       user_settings: {
         Row: {

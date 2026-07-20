@@ -26,6 +26,7 @@ import {
   getNextStreak,
   isSectionComplete
 } from "../utility/adventurePath";
+import { rollEquipmentLoot } from "../utility/equipmentLoot";
 
 type EditableProfileFields = Partial<
   Pick<PlayerProfile, "avatarClassId" | "avatarVariant" | "name">
@@ -164,6 +165,7 @@ export function completeLocalDailyQuest(
   const habit = requireHabit(state, habitId);
   const existing = habit.completions.find((completion) => completion.completedOn === localDateKey);
   if (existing) {
+    const lootItem = state.inventory.items.find((item) => item.id === existing.lootItemId) ?? null;
     return response<QuestCompletionOutcome>(
       state,
       {
@@ -174,6 +176,7 @@ export function completeLocalDailyQuest(
         coinReward: existing.reward.coins,
         xpReward: existing.reward.xp,
         streak: habit.streak,
+        lootItem,
         alreadyCompleted: true
       },
       localDateKey,
@@ -202,6 +205,12 @@ export function completeLocalDailyQuest(
 
   const habitStreak = getNextStreak(habit.streak, habit.lastCompletedDateKey, localDateKey);
   const dailyStreak = getNextStreak(state.dailyStreak, state.lastStreakDateKey, localDateKey);
+  const lootItem = rollEquipmentLoot({
+    habitId,
+    nodeId: node.id,
+    dateKey: localDateKey,
+    now
+  });
   const completedHabit = addHabitXp(
     {
       ...habit,
@@ -210,7 +219,7 @@ export function completeLocalDailyQuest(
       activeTimedQuest: null,
       completions: [
         ...habit.completions,
-        createNodeCompletion(section.id, node.id, localDateKey, now, node.reward)
+        createNodeCompletion(section.id, node.id, localDateKey, now, node.reward, lootItem.id)
       ]
     },
     node.reward.xp
@@ -225,6 +234,10 @@ export function completeLocalDailyQuest(
     longestStreak: Math.max(state.longestStreak, dailyStreak),
     lastStreakDateKey: localDateKey,
     habits: { ...state.habits, [habitId]: completedHabit },
+    inventory: {
+      ...state.inventory,
+      items: [...state.inventory.items, lootItem]
+    },
     activityLog: [
       {
         id: `daily-quest-${node.id}-${now}`,
@@ -250,6 +263,7 @@ export function completeLocalDailyQuest(
       coinReward: node.reward.coins,
       xpReward: node.reward.xp,
       streak: habitStreak,
+      lootItem,
       alreadyCompleted: false
     },
     localDateKey,

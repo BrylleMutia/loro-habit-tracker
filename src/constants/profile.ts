@@ -1,12 +1,4 @@
-import type { IconName } from "../types/app";
-
-export type EquipmentAttributeId =
-  | "agility"
-  | "defense"
-  | "intelligence"
-  | "luck"
-  | "strength"
-  | "vitality";
+import type { EquipmentAttributeId, EquipmentSlotId, IconName } from "../types/app";
 
 export type EquipmentAttributeDefinition = {
   id: EquipmentAttributeId;
@@ -15,8 +7,10 @@ export type EquipmentAttributeDefinition = {
 };
 
 export type LoadoutSlotDefinition = {
+  id: EquipmentSlotId;
   label: string;
   icon: IconName;
+  sortOrder: number;
   attributeId: EquipmentAttributeId;
   attributeValue: number;
 };
@@ -47,12 +41,68 @@ export const equipmentAttributes: EquipmentAttributeDefinition[] = [
 ];
 
 export const loadoutSlots: LoadoutSlotDefinition[] = [
-  { label: "Hat", icon: "baseball-outline", attributeId: "intelligence", attributeValue: 1 },
-  { label: "Cape", icon: "shirt-outline", attributeId: "defense", attributeValue: 1 },
-  { label: "Tool", icon: "brush-outline", attributeId: "intelligence", attributeValue: 1 },
-  { label: "Back", icon: "bag-outline", attributeId: "vitality", attributeValue: 1 },
-  { label: "Face", icon: "glasses-outline", attributeId: "luck", attributeValue: 1 },
-  { label: "Body", icon: "body-outline", attributeId: "strength", attributeValue: 2 },
-  { label: "Feet", icon: "footsteps-outline", attributeId: "agility", attributeValue: 1 },
-  { label: "Buddy", icon: "paw-outline", attributeId: "luck", attributeValue: 2 }
+  {
+    id: "helmet",
+    label: "Helmet",
+    icon: "shield-half-outline",
+    sortOrder: 0,
+    attributeId: "intelligence",
+    attributeValue: 1
+  },
+  {
+    id: "chest",
+    label: "Chest",
+    icon: "body-outline",
+    sortOrder: 1,
+    attributeId: "defense",
+    attributeValue: 1
+  },
+  {
+    id: "cape",
+    label: "Cape",
+    icon: "layers-outline",
+    sortOrder: 2,
+    attributeId: "intelligence",
+    attributeValue: 1
+  },
+  {
+    id: "gloves",
+    label: "Gloves",
+    icon: "hand-left-outline",
+    sortOrder: 3,
+    attributeId: "vitality",
+    attributeValue: 1
+  },
+  {
+    id: "boots",
+    label: "Boots",
+    icon: "footsteps-outline",
+    sortOrder: 4,
+    attributeId: "luck",
+    attributeValue: 1
+  },
+  {
+    id: "weapon",
+    label: "Weapon",
+    icon: "hammer-outline",
+    sortOrder: 5,
+    attributeId: "strength",
+    attributeValue: 2
+  },
+  {
+    id: "bag",
+    label: "Bag",
+    icon: "bag-outline",
+    sortOrder: 6,
+    attributeId: "agility",
+    attributeValue: 1
+  },
+  {
+    id: "buddy",
+    label: "Buddy",
+    icon: "paw-outline",
+    sortOrder: 7,
+    attributeId: "luck",
+    attributeValue: 2
+  }
 ];

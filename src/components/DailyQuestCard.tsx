@@ -140,13 +140,14 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
     clearSyncError();
     try {
       const outcome = await completeDailyQuest(activeHabit.id);
-      if (outcome.alreadyCompleted) return;
+      if (outcome.alreadyCompleted || !outcome.lootItem) return;
 
       const completionDetails: LootDropDetails = {
         coinReward: outcome.coinReward,
         xpReward: outcome.xpReward,
         streak: outcome.streak,
-        habitLabel: activeHabit.label
+        habitLabel: activeHabit.label,
+        lootItem: outcome.lootItem
       };
       onQuestCompleted?.(completionDetails);
     } catch {

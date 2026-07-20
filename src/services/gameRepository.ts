@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 
-import type { AppSettings, HabitId, PlayerProfile } from "../types/app";
+import type { AppSettings, HabitId, InventoryItem, PlayerProfile } from "../types/app";
 import type {
   CheckInOutcome,
   GameErrorCode,
@@ -19,6 +19,16 @@ import type { Json } from "../types/database.generated";
 import { isSupabaseConfigured, supabase } from "./supabaseClient";
 
 const habitIds: HabitId[] = ["exercise", "reading", "water", "sleep"];
+const equipmentSlotIds = ["helmet", "chest", "cape", "gloves", "boots", "weapon", "bag", "buddy"];
+const equipmentRarities = ["common", "uncommon", "rare", "epic", "legendary"];
+const equipmentAttributeIds = [
+  "agility",
+  "defense",
+  "intelligence",
+  "luck",
+  "strength",
+  "vitality"
+];
 
 const domainErrorMessages: Partial<Record<GameErrorCode, string>> = {
   CHAPTER_INCOMPLETE: "Complete every quest in this chapter before claiming its reward.",
@@ -74,6 +84,35 @@ function isReward(value: unknown) {
     value.coins >= 0 &&
     isFiniteNumber(value.xp) &&
     value.xp >= 0
+  );
+}
+
+function isInventoryItem(value: unknown): value is InventoryItem {
+  if (
+    !isRecord(value) ||
+    !isString(value.id) ||
+    !isString(value.itemDefinitionId) ||
+    !isString(value.name) ||
+    !isString(value.setId) ||
+    !isString(value.setName) ||
+    !isString(value.slotId) ||
+    !equipmentSlotIds.includes(value.slotId) ||
+    !isString(value.rarity) ||
+    !equipmentRarities.includes(value.rarity) ||
+    !isRecord(value.stats) ||
+    !isString(value.acquiredAt) ||
+    !isHabitId(value.sourceHabitId) ||
+    !isString(value.sourceNodeId) ||
+    !isString(value.sourceDateKey)
+  ) {
+    return false;
+  }
+
+  return Object.entries(value.stats).every(
+    ([attributeId, amount]) =>
+      equipmentAttributeIds.includes(attributeId) &&
+      isFiniteNumber(amount) &&
+      amount > 0
   );
 }
 
@@ -135,6 +174,7 @@ function isHabit(value: unknown, expectedId: HabitId) {
       isString(completion.nodeId) &&
       isString(completion.completedOn) &&
       isString(completion.completedAt) &&
+      (completion.lootItemId === undefined || isNullableString(completion.lootItemId)) &&
       isReward(completion.reward)
   );
   const timerIsValid =
@@ -199,8 +239,10 @@ function isPersistedGameState(value: unknown): value is PersistedGameState {
     isFiniteNumber(value.dailyCheckIn.rewardEnergy) &&
     value.dailyCheckIn.rewardEnergy >= 0 &&
     isRecord(value.inventory) &&
-    Array.isArray(value.inventory.ownedItemIds) &&
-    value.inventory.ownedItemIds.every(isString) &&
+    ((Array.isArray(value.inventory.items) && value.inventory.items.every(isInventoryItem)) ||
+      (value.inventory.items === undefined &&
+        Array.isArray(value.inventory.ownedItemIds) &&
+        value.inventory.ownedItemIds.every(isString))) &&
     isFiniteNumber(value.inventory.streakShields) &&
     value.inventory.streakShields >= 0 &&
     Array.isArray(value.inventory.activeBuffs) &&
@@ -275,6 +317,7 @@ function parseOutcome(value: unknown): GameOutcome {
         value.xpReward >= 0 &&
         isFiniteNumber(value.streak) &&
         value.streak >= 0 &&
+        (value.lootItem === undefined || value.lootItem === null || isInventoryItem(value.lootItem)) &&
         isBoolean(value.alreadyCompleted)
       ) {
         return {
@@ -285,6 +328,7 @@ function parseOutcome(value: unknown): GameOutcome {
           coinReward: value.coinReward,
           xpReward: value.xpReward,
           streak: value.streak,
+          lootItem: isInventoryItem(value.lootItem) ? value.lootItem : null,
           alreadyCompleted: value.alreadyCompleted
         };
       }
@@ -340,9 +384,52 @@ export function parseGameResponse(value: unknown): GameResponse {
     throw new GameRepositoryError("The server returned an invalid game snapshot.", "INVALID_RESPONSE");
   }
 
+  const parsedSnapshot = value.snapshot as PersistedGameState;
+  const parsedInventory = parsedSnapshot.inventory as PersistedGameState["inventory"] & {
+    items?: InventoryItem[];
+  };
+  const snapshot: PersistedGameState = {
+    ...parsedSnapshot,
+    inventory: {
+      ...parsedInventory,
+      items: parsedInventory.items ?? []
+    },
+    habits: Object.fromEntries(
+      habitIds.map((habitId) => [
+        habitId,
+        {
+          ...parsedSnapshot.habits[habitId],
+          completions: parsedSnapshot.habits[habitId].completions.map((completion) => ({
+            ...completion,
+            lootItemId:
+              completion.lootItemId ??
+              parsedSnapshot.inventory.items.find(
+                (item) =>
+                  item.sourceHabitId === habitId && item.sourceNodeId === completion.nodeId
+              )?.id ??
+              null
+          }))
+        }
+      ])
+    ) as PersistedGameState["habits"]
+  };
+  const parsedOutcome = parseOutcome(value.outcome);
+  const outcome =
+    parsedOutcome.kind === "quest-completed" && !parsedOutcome.lootItem
+      ? {
+          ...parsedOutcome,
+          lootItem:
+            snapshot.inventory.items.find(
+              (item) =>
+                item.sourceHabitId === parsedOutcome.habitId &&
+                item.sourceNodeId === parsedOutcome.nodeId
+            ) ?? null
+        }
+      : parsedOutcome;
+
   return {
-    snapshot: value.snapshot,
-    outcome: parseOutcome(value.outcome),
+    snapshot,
+    outcome,
     serverNow: value.serverNow,
     localDateKey: value.localDateKey
   };

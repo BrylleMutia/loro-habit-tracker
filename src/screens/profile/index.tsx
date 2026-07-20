@@ -213,11 +213,10 @@ export function ProfileScreen() {
             className={`flex-row ${rowIndex === 1 ? "mt-2 border-t border-line-subtle pt-2" : ""}`}
           >
             {row.map((slot) => {
-              const slotIndex = loadoutSlots.indexOf(slot);
-              const equippedItemId = profile.equippedItemIds[slotIndex];
+              const equippedItemId = profile.equippedItemIds[slot.sortOrder];
 
               return (
-                <View key={slot.label} className="flex-1 items-center px-1 py-1">
+                <View key={slot.id} className="flex-1 items-center px-1 py-1">
                   <View className="h-11 w-11 items-center justify-center rounded-card bg-surface-muted">
                     <Ionicons
                       name={slot.icon}

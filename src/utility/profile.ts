@@ -1,5 +1,5 @@
-import { loadoutSlots, type EquipmentAttributeId } from "../constants/profile";
-import type { HabitState } from "../types/app";
+import { loadoutSlots } from "../constants/profile";
+import type { EquipmentAttributeId, HabitState } from "../types/app";
 
 export type EquipmentAttributeTotals = Record<EquipmentAttributeId, number>;
 
@@ -15,8 +15,8 @@ export function getEquipmentAttributeTotals(
     vitality: 0
   };
 
-  loadoutSlots.forEach((slot, index) => {
-    if (equippedItemIds[index]) {
+  loadoutSlots.forEach((slot) => {
+    if (equippedItemIds[slot.sortOrder]) {
       totals[slot.attributeId] += slot.attributeValue;
     }
   });

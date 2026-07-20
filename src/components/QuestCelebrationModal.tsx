@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Modal, Pressable, Text, TouchableOpacity, View } from "react-native";
+import { Image, Modal, Pressable, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   BounceIn,
@@ -10,7 +10,14 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { colors } from "../constants/colors";
+import {
+  equipmentItems,
+  equipmentItemsById,
+  equipmentRaritiesById
+} from "../constants/equipment";
+import { equipmentAttributes, loadoutSlots } from "../constants/profile";
 import { shadows } from "../styles/shadows";
+import type { EquipmentAttributeId, InventoryItem } from "../types/app";
 import type { QuestActionMode } from "./QuestActionButton";
 import { PixelParrot } from "./PixelParrot";
 import { QuestActionButton } from "./QuestActionButton";
@@ -22,6 +29,7 @@ export type LootDropDetails = {
   xpReward: number;
   streak: number;
   habitLabel: string;
+  lootItem: InventoryItem;
 };
 
 export type TrailStampDetails = {
@@ -48,7 +56,21 @@ const defaultLootDropDetails: LootDropDetails = {
   coinReward: 20,
   xpReward: 32,
   streak: 1,
-  habitLabel: "Daily Quest"
+  habitLabel: "Daily Quest",
+  lootItem: {
+    id: "preview-wayfinder-cap",
+    itemDefinitionId: equipmentItems[0].id,
+    name: equipmentItems[0].name,
+    setId: equipmentItems[0].setId,
+    setName: equipmentItems[0].setName,
+    slotId: equipmentItems[0].slotId,
+    rarity: "rare",
+    stats: { intelligence: 2, luck: 1 },
+    acquiredAt: new Date(0).toISOString(),
+    sourceHabitId: "exercise",
+    sourceNodeId: "preview-node",
+    sourceDateKey: "1970-01-01"
+  }
 };
 
 const defaultTrailStampDetails: TrailStampDetails = {
@@ -214,6 +236,11 @@ function LootDropCelebration({
     { icon: "ellipse" as const, color: colors.gold, label: `+${details.coinReward} coins` },
     { icon: "sparkles" as const, color: colors.green, label: `+${details.xpReward} XP` }
   ];
+  const lootItem = details.lootItem;
+  const itemDefinition = equipmentItemsById[lootItem.itemDefinitionId] ?? equipmentItems[0];
+  const rarity = equipmentRaritiesById[lootItem.rarity];
+  const slotLabel = loadoutSlots.find((slot) => slot.id === lootItem.slotId)?.label ?? "Gear";
+  const stats = Object.entries(lootItem.stats) as [EquipmentAttributeId, number][];
 
   return (
     <View style={{ width: "100%", maxWidth: 380, marginTop: "auto" }}>
@@ -226,26 +253,81 @@ function LootDropCelebration({
           <Animated.View entering={FadeIn.duration(180)}>
             <View className="flex-row items-center pr-8">
               <Animated.View entering={BounceIn.delay(80).duration(360)}>
-                <View className="h-20 w-20 items-center justify-center rounded-card border border-line-reward-strong bg-reward-soft">
-                  <Ionicons name="gift" size={42} color={colors.gold} />
+                <View className="h-14 w-14 items-center justify-center rounded-card border border-line-reward-strong bg-reward-soft">
+                  <Ionicons name="gift" size={30} color={colors.gold} />
                 </View>
               </Animated.View>
               <View className="ml-4 flex-1">
                 <Text className="text-xs font-extrabold uppercase text-content-gold-strong">Loot drop</Text>
-                <Text className="mt-1 text-2xl font-black text-content">Rewards secured</Text>
-                <Text className="mt-1 text-sm font-semibold leading-5 text-content-muted">
-                  Lory packed your quest haul.
-                </Text>
+                <Text className="mt-1 text-xl font-black text-content">New gear discovered!</Text>
               </View>
             </View>
 
-            <View className="mt-5 border-y border-line-reward-muted py-2">
+            <Animated.View entering={FadeInUp.delay(120).duration(260)}>
+              <View className="mt-4 flex-row rounded-card border border-line bg-surface-panel p-3">
+                <View
+                  className="h-28 w-28 items-center justify-center overflow-hidden rounded-card"
+                  style={{
+                    borderColor: colors.rarity[rarity.id],
+                    borderWidth: 4,
+                    backgroundColor: colors.raritySoft[rarity.id]
+                  }}
+                >
+                  <Image
+                    accessibilityLabel={`${rarity.label} ${lootItem.name}`}
+                    resizeMode="contain"
+                    source={itemDefinition.image}
+                    style={{ height: 104, width: 104 }}
+                  />
+                </View>
+
+                <View className="ml-3 flex-1 justify-center">
+                  <Text
+                    className="text-xs font-black uppercase"
+                    style={{ color: colors.rarity[rarity.id] }}
+                  >
+                    {rarity.label} {slotLabel}
+                  </Text>
+                  <Text className="mt-1 text-lg font-black leading-5 text-content">
+                    {lootItem.name}
+                  </Text>
+                  <View className="mt-2 self-start flex-row items-center rounded-pill border border-line-success bg-success-soft px-2 py-1">
+                    <Ionicons name="leaf-outline" size={11} color={colors.green} />
+                    <Text className="ml-1 text-micro font-extrabold text-content-green">
+                      {lootItem.setName}
+                    </Text>
+                  </View>
+                  <View className="mt-2 flex-row flex-wrap">
+                    {stats.map(([attributeId, amount]) => {
+                      const attribute = equipmentAttributes.find(({ id }) => id === attributeId);
+                      return (
+                        <View
+                          key={attributeId}
+                          className="mb-1 mr-1 flex-row items-center rounded-pill bg-white px-2 py-1"
+                        >
+                          <Ionicons
+                            name={attribute?.icon ?? "sparkles-outline"}
+                            size={12}
+                            color={colors.blueDark}
+                          />
+                          <Text className="ml-1 text-micro font-black text-content">
+                            {attribute?.label ?? attributeId} +{amount}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+              </View>
+            </Animated.View>
+
+            <View className="mt-3 border-y border-line-reward-muted py-1">
               {rewards.map((reward, index) => (
                 <Animated.View
                   key={reward.label}
                   entering={FadeInUp.delay(130 + index * 90).duration(240)}
                 >
-                  <View className="h-11 flex-row items-center">
+                  <View className="h-9 flex-row items-center">
                     <View className="h-8 w-8 items-center justify-center rounded-card bg-canvas-cream">
                       <Ionicons name={reward.icon} size={17} color={reward.color} />
                     </View>

@@ -18,6 +18,28 @@ export const images = {
     warrior: require("../assets/images/warrior.png"),
     wizard: require("../assets/images/wizard.png"),
   },
+  equipmentSets: {
+    emberforgeVanguard: {
+      helmet: require("../assets/images/equipment/emberforge-vanguard/emberforge-vanguard-helmet.png"),
+      chest: require("../assets/images/equipment/emberforge-vanguard/emberforge-vanguard-chest.png"),
+      cape: require("../assets/images/equipment/emberforge-vanguard/emberforge-vanguard-cape.png"),
+      gloves: require("../assets/images/equipment/emberforge-vanguard/emberforge-vanguard-gloves.png"),
+      boots: require("../assets/images/equipment/emberforge-vanguard/emberforge-vanguard-boots.png"),
+      weapon: require("../assets/images/equipment/emberforge-vanguard/emberforge-vanguard-weapon.png"),
+      bag: require("../assets/images/equipment/emberforge-vanguard/emberforge-vanguard-bag.png"),
+      buddy: require("../assets/images/equipment/emberforge-vanguard/emberforge-vanguard-buddy.png"),
+    },
+    verdantWayfinder: {
+      helmet: require("../assets/images/equipment/verdant-wayfinder/verdant-wayfinder-helmet.png"),
+      chest: require("../assets/images/equipment/verdant-wayfinder/verdant-wayfinder-chest.png"),
+      cape: require("../assets/images/equipment/verdant-wayfinder/verdant-wayfinder-cape.png"),
+      gloves: require("../assets/images/equipment/verdant-wayfinder/verdant-wayfinder-gloves.png"),
+      boots: require("../assets/images/equipment/verdant-wayfinder/verdant-wayfinder-boots.png"),
+      weapon: require("../assets/images/equipment/verdant-wayfinder/verdant-wayfinder-weapon.png"),
+      bag: require("../assets/images/equipment/verdant-wayfinder/verdant-wayfinder-bag.png"),
+      buddy: require("../assets/images/equipment/verdant-wayfinder/verdant-wayfinder-buddy.png"),
+    },
+  },
   headerBackground: require("../assets/images/header-background-pixel.png"),
   parrotMascot: require("../assets/images/parrot-trail-captain.png"),
 } as const;

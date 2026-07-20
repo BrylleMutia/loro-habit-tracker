@@ -19,6 +19,20 @@ export const colors = {
   red: themeColors.danger.DEFAULT,
   gold: themeColors.reward.DEFAULT,
   goldSoft: themeColors.reward.soft,
+  rarity: {
+    common: themeColors.rarity.common,
+    uncommon: themeColors.rarity.uncommon,
+    rare: themeColors.rarity.rare,
+    epic: themeColors.rarity.epic,
+    legendary: themeColors.rarity.legendary
+  },
+  raritySoft: {
+    common: themeColors.rarity["common-soft"],
+    uncommon: themeColors.rarity["uncommon-soft"],
+    rare: themeColors.rarity["rare-soft"],
+    epic: themeColors.rarity["epic-soft"],
+    legendary: themeColors.rarity["legendary-soft"]
+  },
   line: themeColors.line.DEFAULT,
   lineBlue: themeColors.line.blue,
   graySoft: themeColors.surface.muted,

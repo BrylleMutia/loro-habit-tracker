@@ -1,4 +1,4 @@
-import type { AppState, DateKey, HabitId } from "./app";
+import type { AppState, DateKey, HabitId, InventoryItem } from "./app";
 
 export type PersistedGameState = Omit<AppState, "activeHabitId" | "activeTab">;
 
@@ -39,6 +39,7 @@ export type QuestCompletionOutcome = {
   coinReward: number;
   xpReward: number;
   streak: number;
+  lootItem: InventoryItem | null;
   alreadyCompleted: boolean;
 };
 

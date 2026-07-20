@@ -197,7 +197,8 @@ export function createNodeCompletion(
   nodeId: string,
   completedOn: DateKey,
   completedAt: string,
-  reward: AdventureReward
+  reward: AdventureReward,
+  lootItemId: string | null = null
 ): NodeCompletionRecord {
-  return { sectionId, nodeId, completedOn, completedAt, reward };
+  return { sectionId, nodeId, completedOn, completedAt, lootItemId, reward };
 }

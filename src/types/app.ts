@@ -1,6 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 
 export type TabId = "home" | "quests" | "shop" | "profile" | "more";
+export type EquipmentSlotId =
+  | "helmet"
+  | "chest"
+  | "cape"
+  | "gloves"
+  | "boots"
+  | "weapon"
+  | "bag"
+  | "buddy";
 export type HabitId = "exercise" | "reading" | "water" | "sleep";
 export type IconName = keyof typeof Ionicons.glyphMap;
 export type DateKey = string;
@@ -8,6 +17,15 @@ export type AdventureNodeStatus = "done" | "active" | "locked";
 export type QuestTrackingType = "timed" | "one-time";
 export type AvatarClassId = "druid" | "mercenary" | "ranger" | "warrior" | "wizard";
 export type AvatarVariant = "default" | "alternate";
+export type EquipmentRarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
+export type EquipmentAttributeId =
+  | "agility"
+  | "defense"
+  | "intelligence"
+  | "luck"
+  | "strength"
+  | "vitality";
+export type EquipmentStats = Partial<Record<EquipmentAttributeId, number>>;
 
 export type TabItem = {
   id: TabId;
@@ -57,6 +75,7 @@ export type NodeCompletionRecord = {
   nodeId: string;
   completedOn: DateKey;
   completedAt: string;
+  lootItemId: string | null;
   reward: AdventureReward;
 };
 
@@ -113,8 +132,23 @@ export type ActiveBuff = {
   expiresAt: string;
 };
 
+export type InventoryItem = {
+  id: string;
+  itemDefinitionId: string;
+  name: string;
+  setId: string;
+  setName: string;
+  slotId: EquipmentSlotId;
+  rarity: EquipmentRarity;
+  stats: EquipmentStats;
+  acquiredAt: string;
+  sourceHabitId: HabitId;
+  sourceNodeId: string;
+  sourceDateKey: DateKey;
+};
+
 export type InventoryState = {
-  ownedItemIds: string[];
+  items: InventoryItem[];
   streakShields: number;
   activeBuffs: ActiveBuff[];
 };

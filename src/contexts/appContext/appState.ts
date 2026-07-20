@@ -59,7 +59,7 @@ export function createInitialAppState({
       rewardEnergy: 2
     },
     inventory: {
-      ownedItemIds: [],
+      items: [],
       streakShields: 0,
       activeBuffs: []
     },

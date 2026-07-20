@@ -51,6 +51,18 @@ const themeColors = {
     soft: "#FFF3D6",
     earned: "#C78A12"
   },
+  rarity: {
+    common: "#D7DEE5",
+    "common-soft": "#F8FBFD",
+    uncommon: "#A96F45",
+    "uncommon-soft": "#F7EBDD",
+    rare: "#4D9CEB",
+    "rare-soft": "#E6F3FF",
+    epic: "#9A72DF",
+    "epic-soft": "#F1EAFE",
+    legendary: "#EAB52F",
+    "legendary-soft": "#FFF3C7"
+  },
   line: {
     DEFAULT: "#E6EDF2",
     blue: "#D8EAF4",
