@@ -1,13 +1,35 @@
 begin;
 
-select plan(55);
+select plan(69);
 
 select has_table('public', 'profiles', 'profiles table exists');
+select has_table('public', 'equipment_slots', 'equipment slot catalog exists');
+select has_table('public', 'equipment_sets', 'equipment set catalog exists');
+select has_table('public', 'equipment_items', 'equipment item catalog exists');
+select has_table('public', 'inventory_items', 'inventory item instances exist');
 select has_table('public', 'quest_nodes', 'quest catalog exists');
 select has_function('public', 'get_game_snapshot', array[]::text[], 'snapshot RPC exists');
 select is((select count(*) from public.habit_definitions), 4::bigint, 'four habits are seeded');
 select is((select count(*) from public.chapters), 8::bigint, 'eight chapters are seeded');
 select is((select count(*) from public.quest_nodes), 56::bigint, 'fifty-six quest nodes are seeded');
+select is((select count(*) from public.equipment_slots), 8::bigint, 'eight equipment slots are seeded');
+select is((select count(*) from public.equipment_sets), 2::bigint, 'both equipment sets are seeded');
+select is((select count(*) from public.equipment_items), 16::bigint, 'all equipment set pieces are seeded');
+select is(
+  (select string_agg(label, ',' order by sort_order) from public.equipment_slots),
+  'Helmet,Chest,Cape,Gloves,Boots,Weapon,Bag,Buddy',
+  'equipment slots retain their canonical profile order'
+);
+select ok(
+  exists (
+    select 1
+    from pg_catalog.pg_constraint constraint_record
+    where constraint_record.conname = 'user_inventory_equipped_slot_catalog_fkey'
+      and constraint_record.conrelid = 'public.user_inventory'::regclass
+      and constraint_record.contype = 'f'
+  ),
+  'inventory equipment positions reference the slot catalog'
+);
 
 insert into public.chapters (
   id, habit_id, title, description, sort_order, reward_coins, reward_xp
@@ -222,6 +244,27 @@ select is(
   32,
   'exercise reward XP is granted atomically'
 );
+select is(
+  (select count(*) from public.inventory_items where user_id = '11111111-1111-1111-1111-111111111111'),
+  1::bigint,
+  'quest completion atomically grants one equipment item'
+);
+select ok(
+  exists (
+    select 1
+    from public.inventory_items inventory
+    where inventory.user_id = '11111111-1111-1111-1111-111111111111'
+      and inventory.rarity in ('common', 'uncommon', 'rare', 'epic', 'legendary')
+      and jsonb_typeof(inventory.stats) = 'object'
+      and jsonb_object_length(inventory.stats) between 1 and 2
+  ),
+  'the loot instance stores a supported rarity and one or two stats'
+);
+select is(
+  jsonb_array_length(public.get_game_snapshot() #> '{snapshot,inventory,items}'),
+  1,
+  'the game snapshot exposes the new loot item'
+);
 select lives_ok(
   $$select public.complete_daily_quest('exercise')$$,
   'repeating completion is idempotent'
@@ -230,6 +273,11 @@ select is(
   (select coins from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
   20,
   'repeating completion does not duplicate rewards'
+);
+select is(
+  (select count(*) from public.inventory_items where user_id = '11111111-1111-1111-1111-111111111111'),
+  1::bigint,
+  'repeating completion does not duplicate loot'
 );
 
 reset role;
@@ -247,6 +295,11 @@ select is(
   (select coins from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
   34,
   'Water grants its reward at zero energy'
+);
+select is(
+  (select count(*) from public.inventory_items where user_id = '11111111-1111-1111-1111-111111111111'),
+  2::bigint,
+  'a second completed habit grants its own loot item'
 );
 select is(
   (select energy_current from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
