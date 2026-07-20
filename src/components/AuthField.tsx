@@ -8,7 +8,7 @@ import type { IconName } from "../types/app";
 type AuthFieldProps = {
   autoCapitalize?: "characters" | "none" | "sentences" | "words";
   autoComplete?: ComponentProps<typeof TextInput>["autoComplete"];
-  icon: IconName;
+  icon?: IconName;
   keyboardType?: ComponentProps<typeof TextInput>["keyboardType"];
   label: string;
   onChangeText: (value: string) => void;
@@ -37,9 +37,9 @@ export function AuthField({
     <View className="gap-2">
       <Text className="text-xs font-extrabold text-content-muted">{label}</Text>
       <View className="h-14 flex-row items-center rounded-card border border-line-blue bg-surface-card px-3">
-        <Ionicons name={icon} size={19} color={colors.blueDark} />
+        {icon ? <Ionicons name={icon} size={19} color={colors.blueDark} /> : null}
         <TextInput
-          className="ml-3 flex-1 text-base font-semibold text-content"
+          className={`${icon ? "ml-3" : ""} flex-1 text-base font-semibold text-content`}
           autoCapitalize={autoCapitalize}
           autoComplete={autoComplete}
           autoCorrect={false}

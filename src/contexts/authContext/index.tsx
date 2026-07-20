@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode
 } from "react";
@@ -18,6 +19,7 @@ import {
 } from "../../services/guestSession";
 import { isSupabaseConfigured, supabase } from "../../services/supabaseClient";
 import type { AuthStatus, AuthView, AwaitingAuthAction } from "../../types/backend";
+import type { AvatarClassId, AvatarVariant } from "../../types/app";
 
 type AuthContextValue = {
   status: AuthStatus;
@@ -33,9 +35,15 @@ type AuthContextValue = {
   setView: (view: AuthView) => void;
   clearError: () => void;
   continueAsGuest: () => Promise<void>;
-  signUp: (displayName: string, email: string, password: string) => Promise<void>;
+  signUp: (
+    displayName: string,
+    email: string,
+    password: string,
+    avatarClassId: AvatarClassId,
+    avatarVariant: AvatarVariant
+  ) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
-  verifyEmailCode: (code: string) => Promise<void>;
+  refreshVerification: () => Promise<void>;
   resendVerification: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
@@ -66,6 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [awaitingAction, setAwaitingAction] = useState<AwaitingAuthAction | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // This is intentionally memory-only and is cleared as soon as signup is confirmed or abandoned.
+  const pendingPasswordRef = useRef<string | null>(null);
 
   const setView = useCallback((nextView: AuthView) => {
     setErrorMessage(null);
@@ -78,7 +88,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setErrorMessage(null);
       const result = await createSessionFromAuthUrl(url);
-      if (result.handled && result.isRecovery) setStatus("passwordRecovery");
+      if (result.handled && result.isRecovery) {
+        setStatus("passwordRecovery");
+      } else if (result.handled) {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (!data.session) throw new Error("The verification link did not create a session.");
+        await writeGuestSessionEnabled(false);
+        pendingPasswordRef.current = null;
+        setSession(data.session);
+        setPendingEmail(null);
+        setAwaitingAction(null);
+        setStatus("signedIn");
+      }
     } catch (error) {
       setSession(null);
       setStatus("signedOut");
@@ -101,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === "PASSWORD_RECOVERY") {
           setStatus("passwordRecovery");
         } else if (nextSession) {
+          pendingPasswordRef.current = null;
           void writeGuestSessionEnabled(false);
           setStatus((current) => (current === "passwordRecovery" ? current : "signedIn"));
         } else {
@@ -130,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const nextSession = sessionResult.data.session;
         setSession(nextSession);
         if (nextSession) {
+          pendingPasswordRef.current = null;
           await writeGuestSessionEnabled(false);
           setStatus("signedIn");
         } else {
@@ -179,12 +203,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearError: () => setErrorMessage(null),
       continueAsGuest: () =>
         runAuthRequest(async () => {
+          pendingPasswordRef.current = null;
           await writeGuestSessionEnabled(true);
           setSession(null);
           setAwaitingAction(null);
           setStatus("guest");
         }),
-      signUp: (displayName, email, password) =>
+      signUp: (displayName, email, password, avatarClassId, avatarVariant) =>
         runAuthRequest(async () => {
           if (!isSupabaseConfigured) throw new Error("Supabase is not configured yet.");
           const normalizedName = displayName.trim();
@@ -196,16 +221,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             password,
             options: {
               emailRedirectTo: getAuthRedirectUrl(),
-              data: { display_name: normalizedName, time_zone: getDeviceTimeZone() }
+              data: {
+                avatar_class_id: avatarClassId,
+                avatar_variant: avatarVariant,
+                display_name: normalizedName,
+                time_zone: getDeviceTimeZone()
+              }
             }
           });
           if (error) throw error;
 
           if (data.session) {
+            pendingPasswordRef.current = null;
             await writeGuestSessionEnabled(false);
             setSession(data.session);
             setStatus("signedIn");
           } else {
+            pendingPasswordRef.current = password;
             setPendingEmail(normalizedEmail);
             setAwaitingAction("verification");
             setStatus("awaitingVerification");
@@ -219,22 +251,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             password
           });
           if (error) throw error;
+          pendingPasswordRef.current = null;
           await writeGuestSessionEnabled(false);
           setSession(data.session);
           setStatus("signedIn");
         }),
-      verifyEmailCode: (code) =>
+      refreshVerification: () =>
         runAuthRequest(async () => {
-          if (!pendingEmail) throw new Error("Return to sign up and enter your email again.");
-          const { data, error } = await supabase.auth.verifyOtp({
-            email: pendingEmail,
-            token: code,
-            type: "signup"
-          });
-          if (error) throw error;
-          if (!data.session) throw new Error("That code could not be verified.");
+          const sessionResult = await supabase.auth.getSession();
+          if (sessionResult.error) throw sessionResult.error;
+
+          let nextSession = sessionResult.data.session;
+          if (!nextSession && pendingEmail && pendingPasswordRef.current) {
+            const signInResult = await supabase.auth.signInWithPassword({
+              email: pendingEmail,
+              password: pendingPasswordRef.current
+            });
+            if (signInResult.error) {
+              if (signInResult.error.message.toLowerCase().includes("email not confirmed")) {
+                throw new Error("Your email is not confirmed yet. Open the verification link, then try again.");
+              }
+              throw signInResult.error;
+            }
+            nextSession = signInResult.data.session;
+          }
+
+          if (!nextSession) {
+            throw new Error("Open the verification link on this device, then return and refresh the status.");
+          }
+
           await writeGuestSessionEnabled(false);
-          setSession(data.session);
+          pendingPasswordRef.current = null;
+          setSession(nextSession);
+          setPendingEmail(null);
           setAwaitingAction(null);
           setStatus("signedIn");
         }),
@@ -267,6 +316,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setAwaitingAction(null);
         }),
       returnToSignIn: () => {
+        pendingPasswordRef.current = null;
         setSession(null);
         setPendingEmail(null);
         setAwaitingAction(null);
@@ -285,6 +335,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (userId) await clearCachedGameState(userId);
           }
           setSession(null);
+          pendingPasswordRef.current = null;
           setStatus("signedOut");
           setAuthView("signIn");
         })

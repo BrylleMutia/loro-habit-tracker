@@ -1,4 +1,9 @@
 export const images = {
+  authHeroes: {
+    login: require("../assets/images/auth-login-hero.png"),
+    signup: require("../assets/images/auth-signup-hero.png"),
+    verification: require("../assets/images/auth-verification-hero.png"),
+  },
   classAvatarAlternates: {
     druid: require("../assets/images/druid-male.png"),
     mercenary: require("../assets/images/mercenary-female.png"),
