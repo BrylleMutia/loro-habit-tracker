@@ -1,6 +1,6 @@
 begin;
 
-select plan(51);
+select plan(55);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'quest_nodes', 'quest catalog exists');
@@ -80,7 +80,7 @@ values
     extensions.crypt('trail-ready-password', extensions.gen_salt('bf')),
     now(),
     '{"provider":"email","providers":["email"]}',
-    '{"display_name":"Trail One","time_zone":"Asia/Manila"}',
+    '{"display_name":"Trail One","time_zone":"Asia/Manila","avatar_class_id":"ranger","avatar_variant":"alternate"}',
     now(),
     now(),
     '',
@@ -97,7 +97,7 @@ values
     extensions.crypt('trail-ready-password', extensions.gen_salt('bf')),
     now(),
     '{"provider":"email","providers":["email"]}',
-    '{"display_name":"Trail Two","time_zone":"UTC"}',
+    '{"display_name":"Trail Two","time_zone":"UTC","avatar_class_id":"bard","avatar_variant":"unknown"}',
     now(),
     now(),
     '',
@@ -110,6 +110,25 @@ select is(
   (select display_name from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
   'Trail One',
   'signup trigger provisions profile metadata'
+);
+select is(
+  (select avatar_class_id from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
+  'ranger',
+  'signup trigger stores the selected avatar class'
+);
+select is(
+  (select avatar_variant from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
+  'alternate',
+  'signup trigger stores the selected avatar variant'
+);
+select ok(
+  exists (
+    select 1 from public.profiles
+    where id = '22222222-2222-2222-2222-222222222222'
+      and avatar_class_id = 'warrior'
+      and avatar_variant = 'default'
+  ),
+  'invalid avatar metadata falls back to the guest-safe defaults'
 );
 select is(
   (select count(*) from public.habit_progress where user_id = '11111111-1111-1111-1111-111111111111'),
@@ -141,6 +160,11 @@ select is(
   'RLS hides another player profile'
 );
 select ok(public.get_game_snapshot() is not null, 'authenticated user can load a game snapshot');
+select is(
+  public.get_game_snapshot() #>> '{snapshot,profile,avatarClassId}',
+  'ranger',
+  'the game snapshot exposes the selected signup avatar'
+);
 select is(
   public.get_game_snapshot() #>> '{snapshot,habits,exercise,sections,0,nodes,0,id}',
   'exercise-trailhead-training-day-1',

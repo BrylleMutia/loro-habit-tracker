@@ -23,7 +23,7 @@ export function VerificationCodeInput({ code, onChangeCode }: VerificationCodeIn
         {cells.map((digit, index) => (
           <View
             key={index}
-            className={`h-12 flex-1 items-center justify-center rounded-card border bg-surface-card ${
+            className={`h-14 flex-1 items-center justify-center rounded-card border bg-surface-card ${
               index === code.length
                 ? "border-primary bg-primary-soft"
                 : digit
@@ -31,7 +31,7 @@ export function VerificationCodeInput({ code, onChangeCode }: VerificationCodeIn
                   : "border-line"
             }`}
           >
-            <Text className="text-lg font-black text-content">{digit}</Text>
+            <Text className="text-xl font-black text-content">{digit}</Text>
           </View>
         ))}
       </Pressable>
