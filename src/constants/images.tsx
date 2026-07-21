@@ -1,8 +1,8 @@
 export const images = {
   authHeroes: {
-    login: require("../assets/images/auth-login-hero.png"),
-    signup: require("../assets/images/auth-signup-hero.png"),
-    verification: require("../assets/images/auth-verification-hero.png"),
+    login: require("../assets/images/auth-login-hero.jpg"),
+    signup: require("../assets/images/auth-signup-hero.jpg"),
+    verification: require("../assets/images/auth-verification-hero.jpg"),
   },
   classAvatarAlternates: {
     druid: require("../assets/images/druid-male.png"),
@@ -29,6 +29,16 @@ export const images = {
       bag: require("../assets/images/equipment/emberforge-vanguard/emberforge-vanguard-bag.png"),
       buddy: require("../assets/images/equipment/emberforge-vanguard/emberforge-vanguard-buddy.png"),
     },
+    tidesongArcanist: {
+      helmet: require("../assets/images/equipment/tidesong-arcanist/tidesong-arcanist-helmet.png"),
+      chest: require("../assets/images/equipment/tidesong-arcanist/tidesong-arcanist-chest.png"),
+      cape: require("../assets/images/equipment/tidesong-arcanist/tidesong-arcanist-cape.png"),
+      gloves: require("../assets/images/equipment/tidesong-arcanist/tidesong-arcanist-gloves.png"),
+      boots: require("../assets/images/equipment/tidesong-arcanist/tidesong-arcanist-boots.png"),
+      weapon: require("../assets/images/equipment/tidesong-arcanist/tidesong-arcanist-weapon.png"),
+      bag: require("../assets/images/equipment/tidesong-arcanist/tidesong-arcanist-bag.png"),
+      buddy: require("../assets/images/equipment/tidesong-arcanist/tidesong-arcanist-buddy.png"),
+    },
     verdantWayfinder: {
       helmet: require("../assets/images/equipment/verdant-wayfinder/verdant-wayfinder-helmet.png"),
       chest: require("../assets/images/equipment/verdant-wayfinder/verdant-wayfinder-chest.png"),
@@ -40,6 +50,6 @@ export const images = {
       buddy: require("../assets/images/equipment/verdant-wayfinder/verdant-wayfinder-buddy.png"),
     },
   },
-  headerBackground: require("../assets/images/header-background-pixel.png"),
+  headerBackground: require("../assets/images/header-background-pixel.jpg"),
   parrotMascot: require("../assets/images/parrot-trail-captain.png"),
 } as const;

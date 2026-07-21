@@ -13,8 +13,8 @@ select is((select count(*) from public.habit_definitions), 4::bigint, 'four habi
 select is((select count(*) from public.chapters), 8::bigint, 'eight chapters are seeded');
 select is((select count(*) from public.quest_nodes), 56::bigint, 'fifty-six quest nodes are seeded');
 select is((select count(*) from public.equipment_slots), 8::bigint, 'eight equipment slots are seeded');
-select is((select count(*) from public.equipment_sets), 2::bigint, 'both equipment sets are seeded');
-select is((select count(*) from public.equipment_items), 16::bigint, 'all equipment set pieces are seeded');
+select is((select count(*) from public.equipment_sets), 3::bigint, 'all equipment sets are seeded');
+select is((select count(*) from public.equipment_items), 24::bigint, 'all equipment set pieces are seeded');
 select is(
   (select string_agg(label, ',' order by sort_order) from public.equipment_slots),
   'Helmet,Chest,Cape,Gloves,Boots,Weapon,Bag,Buddy',

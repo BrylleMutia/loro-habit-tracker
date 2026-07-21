@@ -214,9 +214,100 @@ export const emberforgeVanguardItems: readonly EquipmentItemDefinition[] = [
   }
 ] as const;
 
+export const tidesongArcanistSet = {
+  id: "tidesong-arcanist",
+  name: "Tidesong Arcanist Set",
+  description:
+    "A calm magical set inspired by learning, reflection, hydration, and rest."
+} as const;
+
+export const tidesongArcanistItems: readonly EquipmentItemDefinition[] = [
+  {
+    id: "tidesong-arcanist-helmet",
+    name: "Moonlit Scholar Hood",
+    setId: tidesongArcanistSet.id,
+    setName: tidesongArcanistSet.name,
+    slotId: "helmet",
+    image: images.equipmentSets.tidesongArcanist.helmet,
+    primaryStat: "intelligence",
+    secondaryStat: "luck"
+  },
+  {
+    id: "tidesong-arcanist-chest",
+    name: "Tidesong Arcanist Robe",
+    setId: tidesongArcanistSet.id,
+    setName: tidesongArcanistSet.name,
+    slotId: "chest",
+    image: images.equipmentSets.tidesongArcanist.chest,
+    primaryStat: "intelligence",
+    secondaryStat: "vitality"
+  },
+  {
+    id: "tidesong-arcanist-cape",
+    name: "Moonwave Cape",
+    setId: tidesongArcanistSet.id,
+    setName: tidesongArcanistSet.name,
+    slotId: "cape",
+    image: images.equipmentSets.tidesongArcanist.cape,
+    primaryStat: "agility",
+    secondaryStat: "intelligence"
+  },
+  {
+    id: "tidesong-arcanist-gloves",
+    name: "Tidesong Rune Gloves",
+    setId: tidesongArcanistSet.id,
+    setName: tidesongArcanistSet.name,
+    slotId: "gloves",
+    image: images.equipmentSets.tidesongArcanist.gloves,
+    primaryStat: "intelligence",
+    secondaryStat: "agility"
+  },
+  {
+    id: "tidesong-arcanist-boots",
+    name: "Moonstep Boots",
+    setId: tidesongArcanistSet.id,
+    setName: tidesongArcanistSet.name,
+    slotId: "boots",
+    image: images.equipmentSets.tidesongArcanist.boots,
+    primaryStat: "agility",
+    secondaryStat: "vitality"
+  },
+  {
+    id: "tidesong-arcanist-weapon",
+    name: "Crescent Tide Staff",
+    setId: tidesongArcanistSet.id,
+    setName: tidesongArcanistSet.name,
+    slotId: "weapon",
+    image: images.equipmentSets.tidesongArcanist.weapon,
+    primaryStat: "intelligence",
+    secondaryStat: "luck"
+  },
+  {
+    id: "tidesong-arcanist-bag",
+    name: "Scholar Tide Satchel",
+    setId: tidesongArcanistSet.id,
+    setName: tidesongArcanistSet.name,
+    slotId: "bag",
+    image: images.equipmentSets.tidesongArcanist.bag,
+    primaryStat: "vitality",
+    secondaryStat: "intelligence"
+  },
+  {
+    id: "tidesong-arcanist-buddy",
+    name: "Pearlfin Droplet",
+    setId: tidesongArcanistSet.id,
+    setName: tidesongArcanistSet.name,
+    slotId: "buddy",
+    image: images.equipmentSets.tidesongArcanist.buddy,
+    primaryStat: "luck",
+    secondaryStat: "vitality"
+  }
+] as const;
+
 export const equipmentItems: readonly EquipmentItemDefinition[] = [
   ...verdantWayfinderItems,
-  ...emberforgeVanguardItems
+  ...emberforgeVanguardItems,
+  ...tidesongArcanistItems
 ] as const;
 
 export const equipmentItemsById = Object.fromEntries(
