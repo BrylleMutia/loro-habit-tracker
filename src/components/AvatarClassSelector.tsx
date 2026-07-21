@@ -38,7 +38,7 @@ export function AvatarClassSelector({
     <View className="flex-row items-start gap-3 mt-10">
       <View className="w-32 gap-2">
         <Text className="text-xs font-black text-content-muted">Avatar preview</Text>
-        <View className="h-32 items-center justify-center rounded-card border border-line-reward bg-primary-soft p-2">
+        <View className="h-32 items-center justify-center rounded-card border border-line-blue bg-primary-soft p-2">
           <Image
             key={`${selectedClassId}-${gender}`}
             source={getAvatarImage(selectedClassId, gender)}
