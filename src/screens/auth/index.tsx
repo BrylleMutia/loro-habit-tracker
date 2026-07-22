@@ -412,7 +412,7 @@ export function AuthScreen() {
           </Text>
         </Pressable>
         {messages}
-        <QuestActionButton disabled={!displayName || !email || !password || !confirmPassword || !acceptedTerms || !isConfigured} icon="person-add" label="Create account" loading={isSubmitting} mode="tap" onAction={submitSignUp} />
+        <QuestActionButton disabled={!displayName || !email || !password || !confirmPassword || !acceptedTerms || !isConfigured} icon="person-add" label="Continue to signup" loading={isSubmitting} mode="tap" onAction={submitSignUp} />
         <Divider />
         <QuestActionButton icon="compass-outline" label="Continue as guest" loading={isSubmitting} mode="tap" onAction={() => run(continueAsGuest)} variant="secondary" />
         <TextAction label="Already have an account? Log in" onPress={() => setView("signIn")} />

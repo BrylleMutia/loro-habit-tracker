@@ -234,3 +234,7 @@ For quest or state changes, also verify:
 - Expo: https://docs.expo.dev/
 - React Context: https://react.dev/reference/react/useContext
 - Tailwind configuration: https://v3.tailwindcss.com/docs/configuration
+
+
+Confidence on changes and confirmation:
+Do not make any changes until you have 95% confidence in what needs to be built. Ask me follow-up questions until you reach that clarify and confidence on the implementation.
