@@ -1,5 +1,6 @@
 import { createInitialHabits } from "../../constants/habits";
 import { equipmentSets } from "../../constants/equipment";
+import { defaultTabId } from "../../constants/home";
 import type { AppState, HabitId, TabId } from "../../types/app";
 import type { PersistedGameState } from "../../types/backend";
 
@@ -30,7 +31,7 @@ export function createInitialAppState({
   timeZone = getDeviceTimeZone()
 }: InitialAppStateOptions = {}): AppState {
   return {
-    activeTab: "home",
+    activeTab: defaultTabId,
     activeHabitId: "exercise",
     profile: {
       id: playerId,
