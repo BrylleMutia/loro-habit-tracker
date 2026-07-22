@@ -30,9 +30,11 @@ export function HabitPathScreen({ onBack, onDailyCheckInPress }: HabitPathScreen
 
   return (
     <ScrollView
+      className="flex-1"
       contentContainerClassName="px-5 pb-28 pt-3"
       contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}
+      style={{ minHeight: 0 }}
     >
       <ResourceBar onDailyCheckInPress={onDailyCheckInPress} />
       <View className="mt-5 flex-row items-center">

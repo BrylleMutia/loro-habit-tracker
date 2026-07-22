@@ -24,7 +24,7 @@ import {
 import { useAppState } from "../../contexts/appContext";
 import { useScreenContentWidth } from "../../hooks/useScreenContentWidth";
 import { shadows } from "../../styles/shadows";
-import type { IconName } from "../../types/app";
+import type { IconName, TabId } from "../../types/app";
 import {
   getEquipmentSetProgressList,
   getFullyEquippedSetId,
@@ -55,7 +55,11 @@ function formatClassName(classId: string) {
   return classId.charAt(0).toUpperCase() + classId.slice(1);
 }
 
-export function ProfileScreen() {
+type ProfileScreenProps = {
+  onNavigateToTab: (tab: TabId) => void;
+};
+
+export function ProfileScreen({ onNavigateToTab }: ProfileScreenProps) {
   const {
     dailyStreak,
     habitList,
@@ -63,7 +67,6 @@ export function ProfileScreen() {
     longestStreak,
     mutationInFlight,
     profile,
-    setActiveTab,
     updateProfile
   } = useAppState();
   const [isSetCollectionExpanded, setIsSetCollectionExpanded] = useState(true);
@@ -121,10 +124,12 @@ export function ProfileScreen() {
 
   return (
     <ScrollView
+      className="flex-1"
       contentContainerClassName="pb-28 pt-3"
       contentContainerStyle={{ width: "100%" }}
       contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}
+      style={{ minHeight: 0 }}
     >
       <View className="self-center" style={{ width: contentWidth }}>
       <View className="flex-row items-center justify-between">
@@ -135,7 +140,7 @@ export function ProfileScreen() {
           activeOpacity={0.82}
           accessibilityLabel="Open settings"
           accessibilityRole="button"
-          onPress={() => setActiveTab("more")}
+          onPress={() => onNavigateToTab("more")}
         >
           <Ionicons name="settings-outline" size={21} color={colors.ink} />
         </TouchableOpacity>
@@ -196,7 +201,7 @@ export function ProfileScreen() {
             activeOpacity={0.82}
             accessibilityLabel="Edit avatar"
             accessibilityRole="button"
-            onPress={() => setActiveTab("shop")}
+            onPress={() => onNavigateToTab("shop")}
           >
             <Ionicons name="pencil" size={16} color={colors.blueDark} />
           </TouchableOpacity>
@@ -228,7 +233,7 @@ export function ProfileScreen() {
         title="Equipment"
         actionIcon="shirt-outline"
         actionLabel="Edit gear"
-        onAction={() => setActiveTab("shop")}
+        onAction={() => onNavigateToTab("shop")}
       />
       <EquipmentLoadoutGrid
         equippedItemIds={profile.equippedItemIds}

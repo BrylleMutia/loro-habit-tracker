@@ -101,9 +101,12 @@ export function ShopScreen({ onDailyCheckInPress }: ShopScreenProps) {
 
   return (
     <ScrollView
+      className="flex-1"
       contentContainerClassName="pb-28 pt-3"
       contentContainerStyle={{ width: "100%" }}
+      contentInsetAdjustmentBehavior="automatic"
       showsVerticalScrollIndicator={false}
+      style={{ minHeight: 0 }}
     >
       <View className="self-center" style={{ width: contentWidth }}>
         <View className="flex-row items-center justify-between">
