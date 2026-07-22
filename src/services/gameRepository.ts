@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type { AppSettings, HabitId, InventoryItem, PlayerProfile } from "../types/app";
 import type {
   CheckInOutcome,
+  EquipmentUpdatedOutcome,
   GameErrorCode,
   GameOutcome,
   GameResponse,
@@ -16,6 +17,7 @@ import type {
 } from "../types/backend";
 import { GameRepositoryError } from "../types/backend";
 import type { Json } from "../types/database.generated";
+import { normalizeEquipmentSetOrder } from "../utility/equipmentCollections";
 import { isSupabaseConfigured, supabase } from "./supabaseClient";
 
 const habitIds: HabitId[] = ["exercise", "reading", "water", "sleep"];
@@ -32,13 +34,16 @@ const equipmentAttributeIds = [
 
 const domainErrorMessages: Partial<Record<GameErrorCode, string>> = {
   CHAPTER_INCOMPLETE: "Complete every quest in this chapter before claiming its reward.",
+  INVALID_EQUIPMENT_SLOT: "That equipment slot is not available.",
   INSUFFICIENT_ENERGY: "You need more energy for that quest.",
   INVALID_AVATAR_CLASS: "That adventurer class is not available.",
   INVALID_AVATAR_VARIANT: "That avatar style is not available.",
   INVALID_CHAPTER: "That chapter is no longer available.",
   INVALID_DISPLAY_NAME: "Choose a display name between 1 and 40 characters.",
   INVALID_HABIT: "That habit is no longer available.",
+  INVALID_SET_ORDER: "That set order is no longer available.",
   INVALID_TIME_ZONE: "Your current time zone is not supported.",
+  ITEM_NOT_OWNED: "That item is not in your inventory.",
   PATH_COMPLETE: "This adventure path is already complete.",
   PROFILE_NOT_FOUND: "Your player profile could not be loaded.",
   QUEST_ALREADY_COMPLETED: "Today’s quest is already complete.",
@@ -216,6 +221,8 @@ function isPersistedGameState(value: unknown): value is PersistedGameState {
     profile.xpToNextLevel > 0 &&
     Array.isArray(profile.equippedItemIds) &&
     profile.equippedItemIds.every(isString) &&
+    (profile.setCollectionOrder === undefined ||
+      (Array.isArray(profile.setCollectionOrder) && profile.setCollectionOrder.every(isString))) &&
     habitIds.every((habitId) => isHabit(habits[habitId], habitId)) &&
     isFiniteNumber(value.dailyStreak) &&
     value.dailyStreak >= 0 &&
@@ -243,6 +250,9 @@ function isPersistedGameState(value: unknown): value is PersistedGameState {
       (value.inventory.items === undefined &&
         Array.isArray(value.inventory.ownedItemIds) &&
         value.inventory.ownedItemIds.every(isString))) &&
+    (value.inventory.discoveredItemDefinitionIds === undefined ||
+      (Array.isArray(value.inventory.discoveredItemDefinitionIds) &&
+        value.inventory.discoveredItemDefinitionIds.every(isString))) &&
     isFiniteNumber(value.inventory.streakShields) &&
     value.inventory.streakShields >= 0 &&
     Array.isArray(value.inventory.activeBuffs) &&
@@ -290,6 +300,19 @@ function parseOutcome(value: unknown): GameOutcome {
     case "settings-updated":
     case "profile-updated":
       return { kind: value.kind };
+    case "equipment-updated":
+      if (
+        (value.itemId === null || isString(value.itemId)) &&
+        isString(value.slotId) &&
+        equipmentSlotIds.includes(value.slotId)
+      ) {
+        return {
+          kind: value.kind,
+          itemId: value.itemId,
+          slotId: value.slotId as InventoryItem["slotId"]
+        };
+      }
+      break;
     case "quest-started":
       if (
         isHabitId(value.habitId) &&
@@ -385,14 +408,30 @@ export function parseGameResponse(value: unknown): GameResponse {
   }
 
   const parsedSnapshot = value.snapshot as PersistedGameState;
+  const parsedProfile = parsedSnapshot.profile as PersistedGameState["profile"] & {
+    setCollectionOrder?: string[];
+  };
   const parsedInventory = parsedSnapshot.inventory as PersistedGameState["inventory"] & {
     items?: InventoryItem[];
+    discoveredItemDefinitionIds?: string[];
   };
+  const parsedItems = parsedInventory.items ?? [];
+  const discoveredItemDefinitionIds = Array.from(
+    new Set(
+      parsedInventory.discoveredItemDefinitionIds ??
+        parsedItems.map((item) => item.itemDefinitionId)
+    )
+  );
   const snapshot: PersistedGameState = {
     ...parsedSnapshot,
+    profile: {
+      ...parsedProfile,
+      setCollectionOrder: normalizeEquipmentSetOrder(parsedProfile.setCollectionOrder)
+    },
     inventory: {
       ...parsedInventory,
-      items: parsedInventory.items ?? []
+      items: parsedItems,
+      discoveredItemDefinitionIds
     },
     habits: Object.fromEntries(
       habitIds.map((habitId) => [
@@ -403,7 +442,7 @@ export function parseGameResponse(value: unknown): GameResponse {
             ...completion,
             lootItemId:
               completion.lootItemId ??
-              parsedSnapshot.inventory.items.find(
+              parsedItems.find(
                 (item) =>
                   item.sourceHabitId === habitId && item.sourceNodeId === completion.nodeId
               )?.id ??
@@ -540,10 +579,19 @@ export function updateSettings(settings: Partial<AppSettings>) {
 }
 
 export function updateProfile(
-  profileFields: Partial<Pick<PlayerProfile, "avatarClassId" | "avatarVariant" | "name">>
+  profileFields: Partial<
+    Pick<PlayerProfile, "avatarClassId" | "avatarVariant" | "name" | "setCollectionOrder">
+  >
 ) {
   return unwrapRpcResult<ProfileUpdatedOutcome>(
     supabase.rpc("update_profile", { p_profile_fields: profileFields as unknown as Json }),
     "profile-updated"
+  );
+}
+
+export function equipItem(itemId: string) {
+  return unwrapRpcResult<EquipmentUpdatedOutcome>(
+    supabase.rpc("equip_inventory_item", { p_item_id: itemId }),
+    "equipment-updated"
   );
 }

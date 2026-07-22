@@ -19,6 +19,7 @@ import {
   claimChapterReward as claimChapterRewardRemote,
   claimDailyCheckIn as claimDailyCheckInRemote,
   completeDailyQuest as completeDailyQuestRemote,
+  equipItem as equipItemRemote,
   getGameSnapshot,
   startDailyQuest as startDailyQuestRemote,
   updateProfile as updateProfileRemote,
@@ -29,6 +30,7 @@ import {
   claimLocalChapterReward,
   claimLocalDailyCheckIn,
   completeLocalDailyQuest,
+  equipLocalItem,
   getLocalGameSnapshot,
   startLocalDailyQuest,
   updateLocalProfile,
@@ -44,6 +46,7 @@ import type {
 } from "../../types/app";
 import type {
   CheckInOutcome,
+  EquipmentUpdatedOutcome,
   GameMutationId,
   GameResponse,
   ProfileUpdatedOutcome,
@@ -65,7 +68,7 @@ export { createInitialAppState } from "./appState";
 export type { InitialAppStateOptions } from "./appState";
 
 type EditableProfileFields = Partial<
-  Pick<PlayerProfile, "avatarClassId" | "avatarVariant" | "name">
+  Pick<PlayerProfile, "avatarClassId" | "avatarVariant" | "name" | "setCollectionOrder">
 >;
 
 type AppContextValue = AppState & {
@@ -88,6 +91,7 @@ type AppContextValue = AppState & {
   completeDailyQuest: (habitId: HabitId) => Promise<QuestCompletionOutcome>;
   claimChapterReward: (habitId: HabitId, sectionId: string) => Promise<RewardClaimOutcome>;
   claimDailyCheckIn: () => Promise<CheckInOutcome>;
+  equipItem: (itemId: string) => Promise<EquipmentUpdatedOutcome>;
   updateSettings: (settings: Partial<AppSettings>) => Promise<SettingsUpdatedOutcome>;
   updateProfile: (fields: EditableProfileFields) => Promise<ProfileUpdatedOutcome>;
   refreshGameState: () => Promise<void>;
@@ -410,6 +414,12 @@ export function AppStateProvider({
           storageMode === "local"
             ? claimLocalDailyCheckIn(stateRef.current, todayDateKey)
             : claimDailyCheckInRemote()
+        ),
+      equipItem: (itemId) =>
+        runMutation("equipment", async () =>
+          storageMode === "local"
+            ? equipLocalItem(stateRef.current, itemId, todayDateKey)
+            : equipItemRemote(itemId)
         ),
       updateSettings: (settings) =>
         runMutation("settings", async () =>

@@ -1,10 +1,11 @@
 import { loadoutSlots } from "../constants/profile";
-import type { EquipmentAttributeId, HabitState } from "../types/app";
+import type { EquipmentAttributeId, HabitState, InventoryItem } from "../types/app";
 
 export type EquipmentAttributeTotals = Record<EquipmentAttributeId, number>;
 
 export function getEquipmentAttributeTotals(
-  equippedItemIds: readonly string[]
+  equippedItemIds: readonly string[],
+  inventoryItems: readonly InventoryItem[] = []
 ): EquipmentAttributeTotals {
   const totals: EquipmentAttributeTotals = {
     agility: 0,
@@ -15,8 +16,18 @@ export function getEquipmentAttributeTotals(
     vitality: 0
   };
 
+  const inventoryById = new Map(inventoryItems.map((item) => [item.id, item]));
+
   loadoutSlots.forEach((slot) => {
-    if (equippedItemIds[slot.sortOrder]) {
+    const equippedItemId = equippedItemIds[slot.sortOrder];
+    const equippedItem = equippedItemId ? inventoryById.get(equippedItemId) : undefined;
+
+    if (equippedItem) {
+      Object.entries(equippedItem.stats).forEach(([attributeId, amount]) => {
+        totals[attributeId as EquipmentAttributeId] += amount;
+      });
+    } else if (equippedItemId) {
+      // Keep older snapshots readable while they migrate from catalog IDs to item-instance IDs.
       totals[slot.attributeId] += slot.attributeValue;
     }
   });

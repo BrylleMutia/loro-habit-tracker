@@ -1,4 +1,10 @@
-import type { AppState, DateKey, HabitId, InventoryItem } from "./app";
+import type {
+  AppState,
+  DateKey,
+  EquipmentSlotId,
+  HabitId,
+  InventoryItem
+} from "./app";
 
 export type PersistedGameState = Omit<AppState, "activeHabitId" | "activeTab">;
 
@@ -18,6 +24,7 @@ export type SyncStatus = "error" | "loading" | "offline" | "ready" | "refreshing
 export type GameMutationId =
   | "chapter-reward"
   | "daily-check-in"
+  | "equipment"
   | "profile"
   | "quest-complete"
   | "quest-start"
@@ -62,9 +69,15 @@ export type CheckInOutcome = {
 export type SnapshotOutcome = { kind: "snapshot" };
 export type SettingsUpdatedOutcome = { kind: "settings-updated" };
 export type ProfileUpdatedOutcome = { kind: "profile-updated" };
+export type EquipmentUpdatedOutcome = {
+  kind: "equipment-updated";
+  itemId: string | null;
+  slotId: EquipmentSlotId;
+};
 
 export type GameOutcome =
   | CheckInOutcome
+  | EquipmentUpdatedOutcome
   | ProfileUpdatedOutcome
   | QuestCompletionOutcome
   | QuestStartOutcome
@@ -83,13 +96,16 @@ export type GameErrorCode =
   | "CHAPTER_INCOMPLETE"
   | "CONFIGURATION_ERROR"
   | "INSUFFICIENT_ENERGY"
+  | "INVALID_EQUIPMENT_SLOT"
   | "INVALID_CHAPTER"
   | "INVALID_AVATAR_CLASS"
   | "INVALID_AVATAR_VARIANT"
   | "INVALID_DISPLAY_NAME"
   | "INVALID_HABIT"
   | "INVALID_RESPONSE"
+  | "INVALID_SET_ORDER"
   | "INVALID_TIME_ZONE"
+  | "ITEM_NOT_OWNED"
   | "NETWORK_ERROR"
   | "OFFLINE"
   | "PATH_COMPLETE"

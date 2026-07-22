@@ -1,4 +1,5 @@
 import { createInitialHabits } from "../../constants/habits";
+import { equipmentSets } from "../../constants/equipment";
 import type { AppState, HabitId, TabId } from "../../types/app";
 import type { PersistedGameState } from "../../types/backend";
 
@@ -40,7 +41,8 @@ export function createInitialAppState({
       level: 1,
       xp: 0,
       xpToNextLevel: 100,
-      equippedItemIds: []
+      equippedItemIds: [],
+      setCollectionOrder: equipmentSets.map((set) => set.id)
     },
     habits: createInitialHabits(),
     dailyStreak: 0,
@@ -60,6 +62,7 @@ export function createInitialAppState({
     },
     inventory: {
       items: [],
+      discoveredItemDefinitionIds: [],
       streakShields: 0,
       activeBuffs: []
     },

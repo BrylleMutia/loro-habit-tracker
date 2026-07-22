@@ -33,6 +33,7 @@ export const colors = {
     epic: themeColors.rarity["epic-soft"],
     legendary: themeColors.rarity["legendary-soft"]
   },
+  equipmentSets: themeColors.equipmentSets,
   line: themeColors.line.DEFAULT,
   lineBlue: themeColors.line.blue,
   graySoft: themeColors.surface.muted,

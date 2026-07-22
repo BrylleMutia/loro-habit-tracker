@@ -52,16 +52,39 @@ const themeColors = {
     earned: "#C78A12"
   },
   rarity: {
-    common: "#D7DEE5",
-    "common-soft": "#F8FBFD",
-    uncommon: "#A96F45",
-    "uncommon-soft": "#F7EBDD",
+    common: "#A96F45",
+    "common-soft": "#F7EBDD",
+    uncommon: "#4C8060",
+    "uncommon-soft": "#E7F4E6",
     rare: "#4D9CEB",
     "rare-soft": "#E6F3FF",
     epic: "#9A72DF",
     "epic-soft": "#F1EAFE",
     legendary: "#EAB52F",
     "legendary-soft": "#FFF3C7"
+  },
+  equipmentSets: {
+    verdantWayfinder: {
+      accent: "#4C8060",
+      accentStrong: "#2F5D42",
+      accentSoft: "#E7F4E6",
+      border: "#A9D3A7",
+      surface: "#F5FFF1"
+    },
+    emberforgeVanguard: {
+      accent: "#C95D49",
+      accentStrong: "#8B302B",
+      accentSoft: "#FFF0EC",
+      border: "#F0B1A4",
+      surface: "#FFF9F4"
+    },
+    tidesongArcanist: {
+      accent: "#4D83C7",
+      accentStrong: "#315486",
+      accentSoft: "#EEF3FF",
+      border: "#B8C9F0",
+      surface: "#F8FBFF"
+    }
   },
   line: {
     DEFAULT: "#E6EDF2",

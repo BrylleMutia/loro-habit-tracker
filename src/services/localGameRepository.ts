@@ -8,6 +8,7 @@ import type {
 } from "../types/app";
 import type {
   CheckInOutcome,
+  EquipmentUpdatedOutcome,
   GameOutcome,
   GameResponse,
   PersistedGameState,
@@ -19,6 +20,8 @@ import type {
   SnapshotOutcome
 } from "../types/backend";
 import { GameRepositoryError } from "../types/backend";
+import { loadoutSlots } from "../constants/profile";
+import { normalizeEquipmentSetOrder } from "../utility/equipmentCollections";
 import {
   createNodeCompletion,
   getActiveNodeLocation,
@@ -29,7 +32,7 @@ import {
 import { rollEquipmentLoot } from "../utility/equipmentLoot";
 
 type EditableProfileFields = Partial<
-  Pick<PlayerProfile, "avatarClassId" | "avatarVariant" | "name">
+  Pick<PlayerProfile, "avatarClassId" | "avatarVariant" | "name" | "setCollectionOrder">
 >;
 
 function toSnapshot(state: AppState): PersistedGameState {
@@ -236,7 +239,13 @@ export function completeLocalDailyQuest(
     habits: { ...state.habits, [habitId]: completedHabit },
     inventory: {
       ...state.inventory,
-      items: [...state.inventory.items, lootItem]
+      items: [...state.inventory.items, lootItem],
+      discoveredItemDefinitionIds: Array.from(
+        new Set([
+          ...(state.inventory.discoveredItemDefinitionIds ?? []),
+          lootItem.itemDefinitionId
+        ])
+      )
     },
     activityLog: [
       {
@@ -409,6 +418,40 @@ export function updateLocalSettings(
   );
 }
 
+export function equipLocalItem(
+  state: AppState,
+  itemId: string,
+  localDateKey: DateKey,
+  now = new Date().toISOString()
+) {
+  const item = state.inventory.items.find((candidate) => candidate.id === itemId);
+  if (!item) {
+    throw new GameRepositoryError("That item is not in your inventory.", "ITEM_NOT_OWNED");
+  }
+
+  const slot = loadoutSlots.find((candidate) => candidate.id === item.slotId);
+  if (!slot) {
+    throw new GameRepositoryError("That equipment slot is not available.", "INVALID_EQUIPMENT_SLOT");
+  }
+
+  const equippedItemIds = Array.from({ length: loadoutSlots.length }, (_, index) =>
+    state.profile.equippedItemIds[index] ?? ""
+  );
+  const nextItemId = equippedItemIds[slot.sortOrder] === item.id ? null : item.id;
+  equippedItemIds[slot.sortOrder] = nextItemId ?? "";
+  const nextState = {
+    ...state,
+    profile: { ...state.profile, equippedItemIds }
+  };
+
+  return response<EquipmentUpdatedOutcome>(
+    nextState,
+    { kind: "equipment-updated", itemId: nextItemId, slotId: item.slotId },
+    localDateKey,
+    now
+  );
+}
+
 export function updateLocalProfile(
   state: AppState,
   fields: EditableProfileFields,
@@ -421,7 +464,14 @@ export function updateLocalProfile(
   }
   const nextState = {
     ...state,
-    profile: { ...state.profile, ...fields, ...(name ? { name: name.slice(0, 40) } : {}) }
+    profile: {
+      ...state.profile,
+      ...fields,
+      ...(fields.setCollectionOrder
+        ? { setCollectionOrder: normalizeEquipmentSetOrder(fields.setCollectionOrder) }
+        : {}),
+      ...(name ? { name: name.slice(0, 40) } : {})
+    }
   };
   return response<ProfileUpdatedOutcome>(
     nextState,

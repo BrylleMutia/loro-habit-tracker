@@ -111,6 +111,7 @@ export type PlayerProfile = {
   xp: number;
   xpToNextLevel: number;
   equippedItemIds: string[];
+  setCollectionOrder: string[];
 };
 
 export type EnergyState = {
@@ -147,8 +148,21 @@ export type InventoryItem = {
   sourceDateKey: DateKey;
 };
 
+export type InventoryStack = {
+  key: string;
+  items: InventoryItem[];
+  representative: InventoryItem;
+  quantity: number;
+  firstAcquiredAt: string;
+  itemValue: number;
+  totalValue: number;
+  isEquipped: boolean;
+  equippedItemId: string | null;
+};
+
 export type InventoryState = {
   items: InventoryItem[];
+  discoveredItemDefinitionIds: string[];
   streakShields: number;
   activeBuffs: ActiveBuff[];
 };

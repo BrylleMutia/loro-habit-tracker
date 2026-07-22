@@ -297,6 +297,32 @@ export type Database = {
           },
         ]
       }
+      equipment_discoveries: {
+        Row: {
+          equipment_item_id: string
+          first_discovered_at: string
+          user_id: string
+        }
+        Insert: {
+          equipment_item_id: string
+          first_discovered_at?: string
+          user_id: string
+        }
+        Update: {
+          equipment_item_id?: string
+          first_discovered_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_discoveries_equipment_item_id_fkey"
+            columns: ["equipment_item_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_sets: {
         Row: {
           description: string
@@ -468,6 +494,7 @@ export type Database = {
           last_streak_on: string | null
           level: number
           longest_streak: number
+          set_collection_order: string[]
           streak_shields: number
           updated_at: string
           xp: number
@@ -487,6 +514,7 @@ export type Database = {
           last_streak_on?: string | null
           level?: number
           longest_streak?: number
+          set_collection_order?: string[]
           streak_shields?: number
           updated_at?: string
           xp?: number
@@ -506,6 +534,7 @@ export type Database = {
           last_streak_on?: string | null
           level?: number
           longest_streak?: number
+          set_collection_order?: string[]
           streak_shields?: number
           updated_at?: string
           xp?: number
@@ -697,6 +726,7 @@ export type Database = {
       }
       claim_daily_check_in: { Args: never; Returns: Json }
       complete_daily_quest: { Args: { p_habit_id: string }; Returns: Json }
+      equip_inventory_item: { Args: { p_item_id: string }; Returns: Json }
       get_game_snapshot: { Args: never; Returns: Json }
       start_daily_quest: { Args: { p_habit_id: string }; Returns: Json }
       update_profile: { Args: { p_profile_fields: Json }; Returns: Json }

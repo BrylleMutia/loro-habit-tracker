@@ -221,6 +221,12 @@ export const tidesongArcanistSet = {
     "A calm magical set inspired by learning, reflection, hydration, and rest."
 } as const;
 
+export const equipmentSets = [
+  verdantWayfinderSet,
+  emberforgeVanguardSet,
+  tidesongArcanistSet
+] as const;
+
 export const tidesongArcanistItems: readonly EquipmentItemDefinition[] = [
   {
     id: "tidesong-arcanist-helmet",
