@@ -13,6 +13,7 @@ import { useAppState } from "../contexts/appContext";
 import { HomeScreen } from "../screens/home";
 import { MoreScreen } from "../screens/more";
 import { ProfileScreen } from "../screens/profile";
+import { ShopScreen } from "../screens/shop";
 
 export function AppNavigator() {
   const {
@@ -79,10 +80,14 @@ export function AppNavigator() {
           <HomeScreen onDailyCheckInPress={openDailyCheckIn} />
         ) : null}
         {activeTab === "profile" ? <ProfileScreen /> : null}
+        {activeTab === "shop" ? <ShopScreen onDailyCheckInPress={openDailyCheckIn} /> : null}
         {activeTab === "more" ? (
           <MoreScreen onDailyCheckInPress={openDailyCheckIn} />
         ) : null}
-        {activeTab !== "home" && activeTab !== "profile" && activeTab !== "more" ? (
+        {activeTab !== "home" &&
+        activeTab !== "profile" &&
+        activeTab !== "shop" &&
+        activeTab !== "more" ? (
           <PlaceholderScreen
             onDailyCheckInPress={openDailyCheckIn}
             tab={activeTabItem}
