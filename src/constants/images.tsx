@@ -18,6 +18,17 @@ export const images = {
     warrior: require("../assets/images/warrior.png"),
     wizard: require("../assets/images/wizard.png"),
   },
+  profileFrames: {
+    emberforgeVanguard: require(
+      "../assets/images/profile-frames/emberforge-vanguard-profile-frame.png"
+    ),
+    tidesongArcanist: require(
+      "../assets/images/profile-frames/tidesong-arcanist-profile-frame.png"
+    ),
+    verdantWayfinder: require(
+      "../assets/images/profile-frames/verdant-wayfinder-profile-frame.png"
+    ),
+  },
   equipmentSets: {
     emberforgeVanguard: {
       helmet: require("../assets/images/equipment/emberforge-vanguard/emberforge-vanguard-helmet.png"),
