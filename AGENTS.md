@@ -241,3 +241,10 @@ Do not make any changes until you have 95% confidence in what needs to be built.
 
 ## Output and changes explanation
 When doing changes to the codebase based on the needed feature or implementation, explain the changes and process throughly as though you are a senior developer teaching a junior developer.
+You should explain or answer the following questions, if possible:
+- What files or components were changed
+- What behavior was added or fixed
+- Why the implementation was chosen
+- How the code works
+- What verification or tests were run
+- Any limitations or follow-up considerations
