@@ -1,8 +1,10 @@
 import { Image, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { memo, useMemo } from "react";
 
 import { colors } from "../constants/colors";
 import { equipmentItemsById } from "../constants/equipment";
+import { images } from "../constants/images";
 import { loadoutSlots } from "../constants/profile";
 import { shadows } from "../styles/shadows";
 import type { EquipmentSlotId, InventoryItem } from "../types/app";
@@ -16,16 +18,6 @@ type EquipmentLoadoutGridProps = {
   onSlotPress?: (slotId: EquipmentSlotId) => void;
 };
 
-function getEquippedItem(
-  equippedItemIds: readonly string[],
-  inventoryItems: readonly InventoryItem[],
-  slotId: EquipmentSlotId
-) {
-  const slot = loadoutSlots.find((candidate) => candidate.id === slotId);
-  const itemId = slot ? equippedItemIds[slot.sortOrder] : undefined;
-  return inventoryItems.find((item) => item.id === itemId) ?? null;
-}
-
 function getItemLabel(item: InventoryItem | null) {
   return item?.name ?? "Empty";
 }
@@ -37,20 +29,17 @@ function getItemColors(item: InventoryItem | null) {
   };
 }
 
-function EquipmentSlotTile({
-  equippedItemIds,
-  inventoryItems,
+const EquipmentSlotTile = memo(function EquipmentSlotTile({
+  item,
   selected,
   slot,
   onPress
 }: {
-  equippedItemIds: readonly string[];
-  inventoryItems: readonly InventoryItem[];
+  item: InventoryItem | null;
   selected: boolean;
   slot: (typeof loadoutSlots)[number];
   onPress?: () => void;
 }) {
-  const item = getEquippedItem(equippedItemIds, inventoryItems, slot.id);
   const definition = item ? equipmentItemsById[item.itemDefinitionId] : null;
   const itemColors = getItemColors(item);
   const TileContainer = Pressable;
@@ -82,7 +71,12 @@ function EquipmentSlotTile({
             accessibilityLabel={item?.name ?? slot.label}
           />
         ) : (
-          <Ionicons name={slot.icon} size={31} color={colors.grayIcon} />
+          <Image
+            source={images.equipmentSlotPlaceholders[slot.id]}
+            resizeMode="contain"
+            className="h-[61px] w-[61px]"
+            accessible={false}
+          />
         )}
       </View>
       <Text className="mt-1 text-center text-micro font-black uppercase text-content" numberOfLines={1}>
@@ -93,9 +87,9 @@ function EquipmentSlotTile({
       </Text>
     </TileContainer>
   );
-}
+});
 
-export function EquipmentLoadoutGrid({
+export const EquipmentLoadoutGrid = memo(function EquipmentLoadoutGrid({
   countLabel,
   equippedItemIds,
   inventoryItems,
@@ -103,6 +97,10 @@ export function EquipmentLoadoutGrid({
   selectedSlotId,
   title
 }: EquipmentLoadoutGridProps) {
+  const inventoryById = useMemo(
+    () => new Map(inventoryItems.map((item) => [item.id, item])),
+    [inventoryItems]
+  );
   const rows = [loadoutSlots.slice(0, 4), loadoutSlots.slice(4)];
 
   return (
@@ -124,8 +122,7 @@ export function EquipmentLoadoutGrid({
             {row.map((slot) => (
               <EquipmentSlotTile
                 key={slot.id}
-                equippedItemIds={equippedItemIds}
-                inventoryItems={inventoryItems}
+                item={inventoryById.get(equippedItemIds[slot.sortOrder]) ?? null}
                 onPress={onSlotPress ? () => onSlotPress(slot.id) : undefined}
                 selected={selectedSlotId === slot.id}
                 slot={slot}
@@ -136,4 +133,4 @@ export function EquipmentLoadoutGrid({
       </View>
     </View>
   );
-}
+});

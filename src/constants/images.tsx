@@ -61,6 +61,32 @@ export const images = {
       buddy: require("../assets/images/equipment/verdant-wayfinder/verdant-wayfinder-buddy.png"),
     },
   },
+  equipmentSlotPlaceholders: {
+    helmet: require(
+      "../assets/images/equipment-placeholders/equipment-slot-helmet.png"
+    ),
+    chest: require(
+      "../assets/images/equipment-placeholders/equipment-slot-chest.png"
+    ),
+    cape: require(
+      "../assets/images/equipment-placeholders/equipment-slot-cape.png"
+    ),
+    gloves: require(
+      "../assets/images/equipment-placeholders/equipment-slot-gloves.png"
+    ),
+    boots: require(
+      "../assets/images/equipment-placeholders/equipment-slot-boots.png"
+    ),
+    weapon: require(
+      "../assets/images/equipment-placeholders/equipment-slot-weapon.png"
+    ),
+    bag: require(
+      "../assets/images/equipment-placeholders/equipment-slot-bag.png"
+    ),
+    buddy: require(
+      "../assets/images/equipment-placeholders/equipment-slot-buddy.png"
+    ),
+  },
   headerBackground: require("../assets/images/header-background-pixel.jpg"),
   parrotMascot: require("../assets/images/parrot-trail-captain.png"),
 } as const;
