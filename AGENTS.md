@@ -236,5 +236,8 @@ For quest or state changes, also verify:
 - Tailwind configuration: https://v3.tailwindcss.com/docs/configuration
 
 
-Confidence on changes and confirmation:
+## Confidence on changes and confirmation:
 Do not make any changes until you have 95% confidence in what needs to be built. Ask me follow-up questions until you reach that clarify and confidence on the implementation.
+
+## Output and changes explanation
+When doing changes to the codebase based on the needed feature or implementation, explain the changes and process throughly as though you are a senior developer teaching a junior developer.
