@@ -139,6 +139,10 @@ function getCandidateLimit(kind: GuildQuestKind) {
   return kind === "side" ? 4 : 2;
 }
 
+function getAcceptanceLimit(kind: GuildQuestKind) {
+  return kind === "side" ? 2 : 1;
+}
+
 function getCandidates(kind: GuildQuestKind, periodKey: DateKey) {
   const catalog = kind === "side" ? guildSideQuestCatalog : guildMainQuestCatalog;
   return [...catalog]
@@ -153,7 +157,9 @@ function normalizeCandidateIds(
   periodKey: DateKey
 ) {
   const generatedIds = getCandidates(kind, periodKey);
-  return Array.from(new Set([...periodState.lockedIds, ...generatedIds])).slice(0, getCandidateLimit(kind));
+  return Array.from(
+    new Set([...periodState.lockedIds, ...periodState.candidateIds, ...generatedIds])
+  ).slice(0, getCandidateLimit(kind));
 }
 
 export function getGuildQuestPeriod(kind: GuildQuestKind, dateKey: DateKey): GuildQuestPeriod {
@@ -398,10 +404,13 @@ export function getGuildQuestViews(
   const board = refreshGuildQuestBoard(state.guildQuestBoard, dateKey);
   const periodState = board[kind];
   const lockedIds = new Set(periodState.lockedIds);
-  const orderedIds = [
-    ...periodState.lockedIds,
-    ...periodState.candidateIds.filter((questId) => !lockedIds.has(questId))
-  ];
+  const orderedIds =
+    periodState.lockedIds.length >= getAcceptanceLimit(kind)
+      ? periodState.lockedIds
+      : [
+          ...periodState.lockedIds,
+          ...periodState.candidateIds.filter((questId) => !lockedIds.has(questId))
+        ];
 
   return orderedIds
     .map((questId) => getGuildQuestDefinition(questId))
