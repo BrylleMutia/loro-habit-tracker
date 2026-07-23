@@ -22,7 +22,7 @@ import type { QuestActionMode } from "./QuestActionButton";
 import { PixelParrot } from "./PixelParrot";
 import { QuestActionButton } from "./QuestActionButton";
 
-export type CelebrationVariant = "trail-stamp" | "loot-drop" | "power-up";
+export type CelebrationVariant = "trail-stamp" | "loot-drop";
 
 export type LootDropDetails = {
   coinReward: number;
@@ -146,7 +146,6 @@ export function QuestCelebrationModal({
         {variant === "loot-drop" ? (
           <LootDropCelebration details={lootDropDetails} onClose={onClose} />
         ) : null}
-        {variant === "power-up" ? <PowerUpCelebration onClose={onClose} /> : null}
       </Animated.View>
     </Modal>
   );
@@ -416,92 +415,6 @@ function LootDropCelebration({
             </View>
           </Animated.View>
         )}
-      </View>
-    </View>
-  );
-}
-
-function PowerUpCelebration({ onClose }: { onClose: () => void }) {
-  return (
-    <View style={{ width: "100%", maxWidth: 360 }}>
-      <View
-        className="overflow-hidden rounded-card border border-line-hero bg-surface-card"
-        style={shadows.card}
-      >
-        <View className="relative h-hero items-center justify-center overflow-hidden bg-canvas-sky">
-          <CloseButton onPress={onClose} />
-          <View
-            style={{
-              position: "absolute",
-              width: 176,
-              height: 176,
-              borderRadius: 88,
-              borderWidth: 12,
-              borderColor: colors.lineBlueStrong
-            }}
-          />
-          <View
-            style={{
-              position: "absolute",
-              width: 128,
-              height: 128,
-              borderRadius: 64,
-              borderWidth: 8,
-              borderColor: colors.lineBlueAccent
-            }}
-          />
-          <Animated.View
-            entering={BounceIn.delay(60).duration(300)}
-            style={{
-              width: 132,
-              height: 132,
-              borderRadius: 66,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: colors.sky
-            }}
-          >
-            <PixelParrot size="lg" mirrorX />
-          </Animated.View>
-          <Animated.View
-            entering={FadeInUp.delay(180).duration(220)}
-            style={{
-              position: "absolute",
-              bottom: 12,
-              flexDirection: "row",
-              alignItems: "center",
-              borderRadius: 999,
-              borderWidth: 1,
-              borderColor: colors.lineBlueMuted,
-              backgroundColor: "white",
-              paddingHorizontal: 12,
-              paddingVertical: 8
-            }}
-          >
-            <Ionicons name="flash" size={16} color={colors.blueDark} />
-            <Text className="ml-1 text-xs font-black text-primary-strong">MOMENTUM +1</Text>
-          </Animated.View>
-        </View>
-
-        <View className="items-center px-5 py-5">
-          <Text className="text-xs font-extrabold uppercase text-primary-strong">Power-up unlocked</Text>
-          <Text className="mt-1 text-center text-2xl font-black text-content">Momentum charged!</Text>
-          <Text className="mt-2 text-center text-sm font-semibold leading-5 text-content-muted">
-            Today's win strengthens your next step on the trail.
-          </Text>
-          <View className="mt-4 w-full flex-row items-center justify-center rounded-card border border-line-primary bg-surface-blue px-3 py-3">
-            <Ionicons name="flame" size={19} color={colors.red} />
-            <Text className="ml-2 text-sm font-black text-content">Streak protected for today</Text>
-          </View>
-          <QuestActionButton
-            className="mt-5 w-full"
-            completedLabel="Momentum carried"
-            icon="flash"
-            label="Carry momentum"
-            mode="tap"
-            onAction={onClose}
-          />
-        </View>
       </View>
     </View>
   );

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -8,11 +9,12 @@ import { PixelParrot } from "./PixelParrot";
 import { ResourceBar } from "./ResourceBar";
 
 type PlaceholderScreenProps = {
+  children?: ReactNode;
   onDailyCheckInPress: () => void;
   tab: TabItem;
 };
 
-export function PlaceholderScreen({ onDailyCheckInPress, tab }: PlaceholderScreenProps) {
+export function PlaceholderScreen({ children, onDailyCheckInPress, tab }: PlaceholderScreenProps) {
   return (
     <View className="flex-1 px-5 pb-28 pt-4">
       <ResourceBar onDailyCheckInPress={onDailyCheckInPress} />
@@ -29,6 +31,7 @@ export function PlaceholderScreen({ onDailyCheckInPress, tab }: PlaceholderScree
           This page is coming soon. Home is ready for the first habit adventure.
         </Text>
       </View>
+      {children ? <View className="mt-4">{children}</View> : null}
     </View>
   );
 }

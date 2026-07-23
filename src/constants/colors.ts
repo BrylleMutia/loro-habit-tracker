@@ -41,8 +41,5 @@ export const colors = {
   grayIcon: themeColors.content.icon,
   tabInactive: themeColors.content.subtle,
   overlay: themeColors.overlay,
-  shadow: themeColors.shadow,
-  lineBlueStrong: themeColors.line["blue-strong"],
-  lineBlueAccent: themeColors.line["blue-accent"],
-  lineBlueMuted: themeColors.line["blue-muted"]
+  shadow: themeColors.shadow
 } as const;
