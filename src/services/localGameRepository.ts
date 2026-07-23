@@ -2,6 +2,8 @@ import type {
   AppSettings,
   AppState,
   DateKey,
+  GuildQuestKind,
+  GuildQuestRewardPreview,
   HabitId,
   HabitState,
   PlayerProfile
@@ -11,6 +13,8 @@ import type {
   EquipmentUpdatedOutcome,
   GameOutcome,
   GameResponse,
+  GuildQuestAcceptanceOutcome,
+  GuildQuestRewardOutcome,
   PersistedGameState,
   ProfileUpdatedOutcome,
   QuestCompletionOutcome,
@@ -29,15 +33,34 @@ import {
   getNextStreak,
   isSectionComplete
 } from "../utility/adventurePath";
-import { rollEquipmentLoot } from "../utility/equipmentLoot";
+import {
+  createEquipmentLootItem,
+  createEquipmentLootPreview,
+  rollEquipmentLoot
+} from "../utility/equipmentLoot";
+import {
+  createGuildQuestBoard,
+  getGuildQuestDefinition,
+  getGuildQuestPeriod,
+  getGuildQuestProgress,
+  refreshGuildQuestBoard
+} from "../utility/guildQuests";
 
 type EditableProfileFields = Partial<
   Pick<PlayerProfile, "avatarClassId" | "avatarVariant" | "name" | "setCollectionOrder">
 >;
 
 function toSnapshot(state: AppState): PersistedGameState {
-  const { activeHabitId: _activeHabitId, activeTab: _activeTab, ...snapshot } = state;
+  const { activeHabitId: _activeHabitId, ...snapshot } = state;
   return snapshot;
+}
+
+function withCurrentGuildQuestBoard(state: AppState, localDateKey: DateKey) {
+  const currentBoard = state.guildQuestBoard ?? createGuildQuestBoard(localDateKey);
+  const refreshedBoard = refreshGuildQuestBoard(currentBoard, localDateKey);
+  return refreshedBoard === currentBoard
+    ? state
+    : { ...state, guildQuestBoard: refreshedBoard };
 }
 
 function response<TOutcome extends GameOutcome>(
@@ -88,7 +111,12 @@ export function getLocalGameSnapshot(
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
-  return response<SnapshotOutcome>(state, { kind: "snapshot" }, localDateKey, now);
+  return response<SnapshotOutcome>(
+    withCurrentGuildQuestBoard(state, localDateKey),
+    { kind: "snapshot" },
+    localDateKey,
+    now
+  );
 }
 
 export function startLocalDailyQuest(
@@ -97,6 +125,7 @@ export function startLocalDailyQuest(
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
+  state = withCurrentGuildQuestBoard(state, localDateKey);
   const habit = requireHabit(state, habitId);
   if (habit.lastCompletedDateKey === localDateKey) {
     throw new GameRepositoryError("Today's quest is already complete.", "QUEST_ALREADY_COMPLETED");
@@ -165,6 +194,7 @@ export function completeLocalDailyQuest(
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
+  state = withCurrentGuildQuestBoard(state, localDateKey);
   const habit = requireHabit(state, habitId);
   const existing = habit.completions.find((completion) => completion.completedOn === localDateKey);
   if (existing) {
@@ -287,6 +317,7 @@ export function claimLocalChapterReward(
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
+  state = withCurrentGuildQuestBoard(state, localDateKey);
   const habit = requireHabit(state, habitId);
   const section = habit.sections.find((candidate) => candidate.id === sectionId);
   if (!section) throw new GameRepositoryError("That chapter is not available.", "INVALID_CHAPTER");
@@ -357,6 +388,7 @@ export function claimLocalDailyCheckIn(
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
+  state = withCurrentGuildQuestBoard(state, localDateKey);
   const { rewardCoins, rewardEnergy } = state.dailyCheckIn;
   if (state.dailyCheckIn.lastClaimedDateKey === localDateKey) {
     return response<CheckInOutcome>(
@@ -409,6 +441,7 @@ export function updateLocalSettings(
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
+  state = withCurrentGuildQuestBoard(state, localDateKey);
   const nextState = { ...state, settings: { ...state.settings, ...settings } };
   return response<SettingsUpdatedOutcome>(
     nextState,
@@ -424,6 +457,7 @@ export function equipLocalItem(
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
+  state = withCurrentGuildQuestBoard(state, localDateKey);
   const item = state.inventory.items.find((candidate) => candidate.id === itemId);
   if (!item) {
     throw new GameRepositoryError("That item is not in your inventory.", "ITEM_NOT_OWNED");
@@ -476,6 +510,160 @@ export function updateLocalProfile(
   return response<ProfileUpdatedOutcome>(
     nextState,
     { kind: "profile-updated" },
+    localDateKey,
+    now
+  );
+}
+
+export function acceptLocalGuildQuest(
+  state: AppState,
+  questKind: GuildQuestKind,
+  questId: string,
+  localDateKey: DateKey,
+  rewardPreview?: GuildQuestRewardPreview,
+  now = new Date().toISOString()
+) {
+  state = withCurrentGuildQuestBoard(state, localDateKey);
+  const periodState = state.guildQuestBoard[questKind];
+  const acceptanceLimit = questKind === "side" ? 3 : 1;
+  if (periodState.lockedIds.length >= acceptanceLimit) {
+    throw new GameRepositoryError(
+      questKind === "side"
+        ? "You have already accepted the maximum number of Side Quests."
+        : "You have already accepted the Main Quest for this period.",
+      "GUILD_QUEST_INVALID_SELECTION"
+    );
+  }
+  if (!periodState.candidateIds.includes(questId) || periodState.lockedIds.includes(questId)) {
+    throw new GameRepositoryError(
+      "That Guild Quest is no longer available to accept.",
+      "GUILD_QUEST_INVALID_SELECTION"
+    );
+  }
+
+  const period = getGuildQuestPeriod(questKind, localDateKey);
+  const definition = getGuildQuestDefinition(questId);
+  const preview = createEquipmentLootPreview(
+    `${period.key}:${questId}`,
+    definition?.reward.itemRarityFloor ?? "rare",
+    rewardPreview
+  );
+  const savedPreview: GuildQuestRewardPreview = {
+    itemDefinitionId: preview.definition.id,
+    rarity: preview.rarity
+  };
+
+  const nextState: AppState = {
+    ...state,
+    guildQuestBoard: {
+      ...state.guildQuestBoard,
+      [questKind]: {
+        ...periodState,
+        lockedIds: [...periodState.lockedIds, questId],
+        rewardPreviews: {
+          ...(periodState.rewardPreviews ?? {}),
+          [questId]: savedPreview
+        }
+      }
+    }
+  };
+
+  return response<GuildQuestAcceptanceOutcome>(
+    nextState,
+    { kind: "guild-quest-accepted", questKind, questId },
+    localDateKey,
+    now
+  );
+}
+
+export function claimLocalGuildQuestReward(
+  state: AppState,
+  questKind: GuildQuestKind,
+  questId: string,
+  localDateKey: DateKey,
+  now = new Date().toISOString()
+) {
+  state = withCurrentGuildQuestBoard(state, localDateKey);
+  const definition = getGuildQuestDefinition(questId);
+  const periodState = state.guildQuestBoard[questKind];
+  if (!definition || definition.kind !== questKind || !periodState.lockedIds.includes(questId)) {
+    throw new GameRepositoryError("That Guild Quest is not active.", "GUILD_QUEST_NOT_READY");
+  }
+
+  const period = getGuildQuestPeriod(questKind, localDateKey);
+  const existingItem = state.inventory.items.find(
+    (item) => item.sourceGuildQuestId === questId && item.sourceGuildPeriodKey === period.key
+  );
+  if (periodState.claimedIds.includes(questId)) {
+    return response<GuildQuestRewardOutcome>(
+      state,
+      {
+        kind: "guild-quest-reward-claimed",
+        questKind,
+        questId,
+        coinReward: definition.reward.coins,
+        xpReward: definition.reward.xp,
+        lootItem: existingItem ?? null,
+        alreadyClaimed: true
+      },
+      localDateKey,
+      now
+    );
+  }
+
+  const progress = getGuildQuestProgress(definition, state, period);
+  if (!progress.completed) {
+    throw new GameRepositoryError("Complete this Guild Quest before claiming its reward.", "GUILD_QUEST_NOT_READY");
+  }
+
+  const rewardPreview = createEquipmentLootPreview(
+    `${period.key}:${questId}`,
+    definition.reward.itemRarityFloor,
+    periodState.rewardPreviews?.[questId]
+  );
+  const lootItem = createEquipmentLootItem(
+    {
+      dateKey: period.startDateKey,
+      now,
+      guildQuestId: questId,
+      guildPeriodKey: period.key
+    },
+    rewardPreview
+  );
+  const nextState: AppState = {
+    ...state,
+    coins: state.coins + definition.reward.coins,
+    profile: addProfileXp(state.profile, definition.reward.xp),
+    inventory: {
+      ...state.inventory,
+      items: [...state.inventory.items, lootItem],
+      discoveredItemDefinitionIds: Array.from(
+        new Set([
+          ...(state.inventory.discoveredItemDefinitionIds ?? []),
+          lootItem.itemDefinitionId
+        ])
+      )
+    },
+    guildQuestBoard: {
+      ...state.guildQuestBoard,
+      [questKind]: {
+        ...periodState,
+        claimedIds: [...periodState.claimedIds, questId]
+      }
+    }
+  };
+
+  return response<GuildQuestRewardOutcome>(
+    nextState,
+    {
+      kind: "guild-quest-reward-claimed",
+      questKind,
+      questId,
+      coinReward: definition.reward.coins,
+      xpReward: definition.reward.xp,
+      lootItem,
+      alreadyClaimed: false
+    },
     localDateKey,
     now
   );

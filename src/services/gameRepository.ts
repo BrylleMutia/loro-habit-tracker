@@ -1,12 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
 
-import type { AppSettings, HabitId, InventoryItem, PlayerProfile } from "../types/app";
+import type {
+  AppSettings,
+  GuildQuestKind,
+  GuildQuestRewardPreview,
+  HabitId,
+  InventoryItem,
+  PlayerProfile
+} from "../types/app";
 import type {
   CheckInOutcome,
   EquipmentUpdatedOutcome,
   GameErrorCode,
   GameOutcome,
   GameResponse,
+  GuildQuestAcceptanceOutcome,
+  GuildQuestRewardOutcome,
   PersistedGameState,
   ProfileUpdatedOutcome,
   QuestCompletionOutcome,
@@ -18,6 +27,7 @@ import type {
 import { GameRepositoryError } from "../types/backend";
 import type { Json } from "../types/database.generated";
 import { normalizeEquipmentSetOrder } from "../utility/equipmentCollections";
+import { createGuildQuestBoard } from "../utility/guildQuests";
 import { isSupabaseConfigured, supabase } from "./supabaseClient";
 
 const habitIds: HabitId[] = ["exercise", "reading", "water", "sleep"];
@@ -42,6 +52,9 @@ const domainErrorMessages: Partial<Record<GameErrorCode, string>> = {
   INVALID_DISPLAY_NAME: "Choose a display name between 1 and 40 characters.",
   INVALID_HABIT: "That habit is no longer available.",
   INVALID_SET_ORDER: "That set order is no longer available.",
+  GUILD_QUEST_ALREADY_CLAIMED: "That Guild Quest reward has already been claimed.",
+  GUILD_QUEST_INVALID_SELECTION: "That Guild Quest cannot be accepted right now.",
+  GUILD_QUEST_NOT_READY: "Complete this Guild Quest before claiming its reward.",
   INVALID_TIME_ZONE: "Your current time zone is not supported.",
   ITEM_NOT_OWNED: "That item is not in your inventory.",
   PATH_COMPLETE: "This adventure path is already complete.",
@@ -106,8 +119,8 @@ function isInventoryItem(value: unknown): value is InventoryItem {
     !equipmentRarities.includes(value.rarity) ||
     !isRecord(value.stats) ||
     !isString(value.acquiredAt) ||
-    !isHabitId(value.sourceHabitId) ||
-    !isString(value.sourceNodeId) ||
+    !(value.sourceHabitId === null || isHabitId(value.sourceHabitId)) ||
+    !(value.sourceNodeId === null || isString(value.sourceNodeId)) ||
     !isString(value.sourceDateKey)
   ) {
     return false;
@@ -118,6 +131,30 @@ function isInventoryItem(value: unknown): value is InventoryItem {
       equipmentAttributeIds.includes(attributeId) &&
       isFiniteNumber(amount) &&
       amount > 0
+  );
+}
+
+function isGuildQuestBoard(value: unknown) {
+  if (!isRecord(value) || !isRecord(value.side) || !isRecord(value.main)) return false;
+  return [value.side, value.main].every(
+    (period) =>
+      isRecord(period) &&
+      isString(period.periodKey) &&
+      Array.isArray(period.candidateIds) &&
+      period.candidateIds.every(isString) &&
+      Array.isArray(period.lockedIds) &&
+      period.lockedIds.every(isString) &&
+      Array.isArray(period.claimedIds) &&
+      period.claimedIds.every(isString) &&
+      (period.rewardPreviews === undefined ||
+        (isRecord(period.rewardPreviews) &&
+          Object.values(period.rewardPreviews).every(
+            (preview) =>
+              isRecord(preview) &&
+              isString(preview.itemDefinitionId) &&
+              isString(preview.rarity) &&
+              equipmentRarities.includes(preview.rarity)
+          )))
   );
 }
 
@@ -285,7 +322,8 @@ function isPersistedGameState(value: unknown): value is PersistedGameState {
         activity.coinsEarned >= 0 &&
         isFiniteNumber(activity.xpEarned) &&
         activity.xpEarned >= 0
-    );
+    ) &&
+    (value.guildQuestBoard === undefined || isGuildQuestBoard(value.guildQuestBoard));
 
   return baseStateIsValid;
 }
@@ -392,6 +430,40 @@ function parseOutcome(value: unknown): GameOutcome {
         };
       }
       break;
+    case "guild-quest-accepted":
+      if (
+        (value.questKind === "side" || value.questKind === "main") &&
+        isString(value.questId)
+      ) {
+        return {
+          kind: value.kind,
+          questKind: value.questKind,
+          questId: value.questId
+        } as GuildQuestAcceptanceOutcome;
+      }
+      break;
+    case "guild-quest-reward-claimed":
+      if (
+        (value.questKind === "side" || value.questKind === "main") &&
+        isString(value.questId) &&
+        isFiniteNumber(value.coinReward) &&
+        value.coinReward >= 0 &&
+        isFiniteNumber(value.xpReward) &&
+        value.xpReward >= 0 &&
+        (value.lootItem === undefined || value.lootItem === null || isInventoryItem(value.lootItem)) &&
+        isBoolean(value.alreadyClaimed)
+      ) {
+        return {
+          kind: value.kind,
+          questKind: value.questKind,
+          questId: value.questId,
+          coinReward: value.coinReward,
+          xpReward: value.xpReward,
+          lootItem: isInventoryItem(value.lootItem) ? value.lootItem : null,
+          alreadyClaimed: value.alreadyClaimed
+        } as GuildQuestRewardOutcome;
+      }
+      break;
   }
 
   throw new GameRepositoryError("The server returned an invalid action result.", "INVALID_RESPONSE");
@@ -450,7 +522,10 @@ export function parseGameResponse(value: unknown): GameResponse {
           }))
         }
       ])
-    ) as PersistedGameState["habits"]
+    ) as PersistedGameState["habits"],
+    guildQuestBoard: isGuildQuestBoard(parsedSnapshot.guildQuestBoard)
+      ? parsedSnapshot.guildQuestBoard
+      : createGuildQuestBoard(value.localDateKey)
   };
   const parsedOutcome = parseOutcome(value.outcome);
   const outcome =
@@ -464,7 +539,18 @@ export function parseGameResponse(value: unknown): GameResponse {
                 item.sourceNodeId === parsedOutcome.nodeId
             ) ?? null
         }
-      : parsedOutcome;
+      : parsedOutcome.kind === "guild-quest-reward-claimed" && !parsedOutcome.lootItem
+        ? {
+            ...parsedOutcome,
+            lootItem:
+              snapshot.inventory.items.find(
+                (item) =>
+                  item.sourceGuildQuestId === parsedOutcome.questId &&
+                  item.sourceGuildPeriodKey ===
+                    snapshot.guildQuestBoard[parsedOutcome.questKind].periodKey
+              ) ?? null
+          }
+        : parsedOutcome;
 
   return {
     snapshot,
@@ -568,6 +654,31 @@ export function claimDailyCheckIn() {
   return unwrapRpcResult<CheckInOutcome>(
     supabase.rpc("claim_daily_check_in"),
     "daily-check-in-claimed"
+  );
+}
+
+export function acceptGuildQuest(
+  questKind: GuildQuestKind,
+  questId: string,
+  rewardPreview: GuildQuestRewardPreview
+) {
+  return unwrapRpcResult<GuildQuestAcceptanceOutcome>(
+    supabase.rpc("accept_guild_quest", {
+      p_quest_kind: questKind,
+      p_quest_id: questId,
+      p_reward_preview: rewardPreview as unknown as Json
+    }),
+    "guild-quest-accepted"
+  );
+}
+
+export function claimGuildQuestReward(questKind: GuildQuestKind, questId: string) {
+  return unwrapRpcResult<GuildQuestRewardOutcome>(
+    supabase.rpc("claim_guild_quest_reward", {
+      p_quest_kind: questKind,
+      p_quest_id: questId
+    }),
+    "guild-quest-reward-claimed"
   );
 }
 

@@ -431,7 +431,9 @@ export type Database = {
           equipped_slot: string | null
           id: string
           rarity: string
-          source_completion_id: string
+          source_completion_id: string | null
+          source_guild_period_key: string | null
+          source_guild_quest_id: string | null
           stats: Json
           user_id: string
         }
@@ -441,7 +443,9 @@ export type Database = {
           equipped_slot?: string | null
           id?: string
           rarity: string
-          source_completion_id: string
+          source_completion_id?: string | null
+          source_guild_period_key?: string | null
+          source_guild_quest_id?: string | null
           stats: Json
           user_id: string
         }
@@ -451,7 +455,9 @@ export type Database = {
           equipped_slot?: string | null
           id?: string
           rarity?: string
-          source_completion_id?: string
+          source_completion_id?: string | null
+          source_guild_period_key?: string | null
+          source_guild_quest_id?: string | null
           stats?: Json
           user_id?: string
         }
@@ -728,6 +734,18 @@ export type Database = {
       complete_daily_quest: { Args: { p_habit_id: string }; Returns: Json }
       equip_inventory_item: { Args: { p_item_id: string }; Returns: Json }
       get_game_snapshot: { Args: never; Returns: Json }
+      claim_guild_quest_reward: {
+        Args: { p_quest_id: string; p_quest_kind: string }
+        Returns: Json
+      }
+      accept_guild_quest: {
+        Args: {
+          p_quest_id: string;
+          p_quest_kind: string;
+          p_reward_preview: Json;
+        }
+        Returns: Json
+      }
       start_daily_quest: { Args: { p_habit_id: string }; Returns: Json }
       update_profile: { Args: { p_profile_fields: Json }; Returns: Json }
       update_settings: { Args: { p_settings: Json }; Returns: Json }
