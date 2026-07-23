@@ -30,6 +30,11 @@ export type LootDropDetails = {
   streak: number;
   habitLabel: string;
   lootItem: InventoryItem;
+  finalEyebrow?: string;
+  finalTitle?: string;
+  finalDescription?: string;
+  finalActionLabel?: string;
+  showStreak?: boolean;
 };
 
 export type TrailStampDetails = {
@@ -364,31 +369,47 @@ function LootDropCelebration({
                   <Ionicons name="flame" size={54} color={colors.red} />
                 </View>
               </Animated.View>
-              <Text className="mt-4 text-xs font-extrabold uppercase text-content-red">
-                Quest momentum
-              </Text>
-              <Text className="mt-1 text-center text-2xl font-black text-content">
-                Streak extended!
-              </Text>
-              <View className="mt-4 flex-row items-end justify-center">
-                <Text
-                  className="text-6xl font-black text-content"
-                  style={{ fontVariant: ["tabular-nums"] }}
-                >
-                  {details.streak}
-                </Text>
-                <Text className="mb-2 ml-2 text-sm font-extrabold uppercase text-content-muted">
-                  {details.streak === 1 ? "day" : "days"}
-                </Text>
-              </View>
-              <Text className="mt-2 text-center text-sm font-semibold leading-5 text-content-muted">
-                Your {details.habitLabel} adventure is ready for tomorrow.
-              </Text>
+              {details.showStreak === false ? (
+                <>
+                  <Text className="mt-4 text-xs font-extrabold uppercase text-content-red">
+                    {details.finalEyebrow ?? "Guild board"}
+                  </Text>
+                  <Text className="mt-1 text-center text-2xl font-black text-content">
+                    {details.finalTitle ?? "Reward secured!"}
+                  </Text>
+                  <Text className="mt-4 text-center text-sm font-semibold leading-5 text-content-muted">
+                    {details.finalDescription ?? `${details.habitLabel} is now part of your collection.`}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text className="mt-4 text-xs font-extrabold uppercase text-content-red">
+                    {details.finalEyebrow ?? "Quest momentum"}
+                  </Text>
+                  <Text className="mt-1 text-center text-2xl font-black text-content">
+                    {details.finalTitle ?? "Streak extended!"}
+                  </Text>
+                  <View className="mt-4 flex-row items-end justify-center">
+                    <Text
+                      className="text-6xl font-black text-content"
+                      style={{ fontVariant: ["tabular-nums"] }}
+                    >
+                      {details.streak}
+                    </Text>
+                    <Text className="mb-2 ml-2 text-sm font-extrabold uppercase text-content-muted">
+                      {details.streak === 1 ? "day" : "days"}
+                    </Text>
+                  </View>
+                  <Text className="mt-2 text-center text-sm font-semibold leading-5 text-content-muted">
+                    {details.finalDescription ?? `Your ${details.habitLabel} adventure is ready for tomorrow.`}
+                  </Text>
+                </>
+              )}
               <QuestActionButton
                 className="mt-5 w-full"
-                completedLabel="Continuing"
-                icon="arrow-forward"
-                label="Continue adventure"
+                completedLabel={details.finalActionLabel ?? "Continuing"}
+                icon={details.showStreak === false ? "shield-checkmark" : "arrow-forward"}
+                label={details.showStreak === false ? "Continue guild trail" : "Continue adventure"}
                 mode="tap"
                 onAction={onClose}
               />
