@@ -14,6 +14,15 @@ type ChapterBlueprint = {
   nodeTitles: readonly string[];
 };
 
+export const habitOrder: readonly HabitId[] = [
+  "exercise",
+  "reading",
+  "journaling",
+  "water",
+  "sleep",
+  "outdoors"
+];
+
 const chapterBlueprints: Record<HabitId, readonly ChapterBlueprint[]> = {
   exercise: [
     {
@@ -76,6 +85,38 @@ const chapterBlueprints: Record<HabitId, readonly ChapterBlueprint[]> = {
         "Insight Grove",
         "Memory Marker",
         "Grove Challenge"
+      ]
+    }
+  ],
+  journaling: [
+    {
+      id: "quiet-pages",
+      title: "Quiet Pages",
+      description: "Build a small daily reflection practice.",
+      primaryTarget: 5,
+      nodeTitles: [
+        "First Entry",
+        "Thought Trail",
+        "Gratitude Grove",
+        "Prompt Path",
+        "Clarity Camp",
+        "Pattern Pass",
+        "Quiet Pages Challenge"
+      ]
+    },
+    {
+      id: "storykeeper-ridge",
+      title: "Storykeeper Ridge",
+      description: "Turn reflection into a steady self-awareness ritual.",
+      primaryTarget: 5,
+      nodeTitles: [
+        "Morning Pages",
+        "Mood Marker",
+        "Lesson Lookout",
+        "Release Route",
+        "Intentions Camp",
+        "Reflection Ridge",
+        "Storykeeper Challenge"
       ]
     }
   ],
@@ -142,6 +183,38 @@ const chapterBlueprints: Record<HabitId, readonly ChapterBlueprint[]> = {
         "Ridge Challenge"
       ]
     }
+  ],
+  outdoors: [
+    {
+      id: "sunlit-trail",
+      title: "Sunlit Trail",
+      description: "Create a simple daily ritual for time outside.",
+      primaryTarget: 1,
+      nodeTitles: [
+        "Step Outside",
+        "Fresh-Air Crossing",
+        "Greenway Pause",
+        "Sky Checkpoint",
+        "Garden Gate",
+        "Open-Air Lookout",
+        "Sunlit Trail Challenge"
+      ]
+    },
+    {
+      id: "wildway-pass",
+      title: "Wildway Pass",
+      description: "Keep your outdoor rhythm alive through changing days.",
+      primaryTarget: 1,
+      nodeTitles: [
+        "Morning Meadow",
+        "Weather Watch",
+        "Parkway Trek",
+        "Horizon Pause",
+        "Trailside Reset",
+        "Wildway Lookout",
+        "Pass Challenge"
+      ]
+    }
   ]
 };
 
@@ -180,6 +253,15 @@ function getDailyQuestDetails(
         targetDurationSeconds: primaryTarget * 60,
         reward: { coins: 16 + chapterOrder * 2, xp: 26 + chapterOrder * 4 }
       };
+    case "journaling":
+      return {
+        summary: `Journal with focus for ${primaryTarget} minutes.`,
+        icon: "create-outline",
+        energyCost: 1,
+        questType: "timed",
+        targetDurationSeconds: primaryTarget * 60,
+        reward: { coins: 15 + chapterOrder * 2, xp: 25 + chapterOrder * 4 }
+      };
     case "water":
       return {
         summary: `Drink ${primaryTarget} glasses of water across your day.`,
@@ -199,6 +281,16 @@ function getDailyQuestDetails(
         targetQuantity: primaryTarget,
         targetUnit: "routine",
         reward: { coins: 14 + chapterOrder * 2, xp: 24 + chapterOrder * 3 }
+      };
+    case "outdoors":
+      return {
+        summary: "Spend time outdoors today.",
+        icon: "leaf-outline",
+        energyCost: 0,
+        questType: "one-time",
+        targetQuantity: primaryTarget,
+        targetUnit: "outdoor visit",
+        reward: { coins: 13 + chapterOrder * 2, xp: 22 + chapterOrder * 3 }
       };
   }
 }
@@ -279,6 +371,12 @@ export function createInitialHabits(): Record<HabitId, HabitState> {
       "book-outline",
       "Let's turn a few pages and uncover something new!"
     ),
+    journaling: createHabit(
+      "journaling",
+      "Journaling",
+      "create-outline",
+      "Take a quiet moment to capture a thought from today's trail."
+    ),
     water: createHabit(
       "water",
       "Water",
@@ -290,6 +388,12 @@ export function createInitialHabits(): Record<HabitId, HabitState> {
       "Sleep",
       "moon-outline",
       "Let's prepare a calm landing for tomorrow's adventure."
+    ),
+    outdoors: createHabit(
+      "outdoors",
+      "Outdoors",
+      "leaf-outline",
+      "Step outside, breathe deeply, and discover a little more of your world!"
     )
   };
 }

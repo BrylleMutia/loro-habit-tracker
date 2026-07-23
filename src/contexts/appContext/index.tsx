@@ -40,6 +40,7 @@ import {
   updateLocalProfile,
   updateLocalSettings
 } from "../../services/localGameRepository";
+import { habitOrder } from "../../constants/habits";
 import type {
   AppSettings,
   AppState,
@@ -406,7 +407,10 @@ export function AppStateProvider({
       ) as Record<HabitId, HabitState>,
     [state.habits, todayDateKey]
   );
-  const habitList = useMemo(() => Object.values(habits), [habits]);
+  const habitList = useMemo(
+    () => habitOrder.map((habitId) => habits[habitId]).filter(Boolean),
+    [habits]
+  );
   const activeHabit = habits[state.activeHabitId];
   const activeAdventure = useMemo(
     () => getAdventureSnapshot(activeHabit, todayDateKey),

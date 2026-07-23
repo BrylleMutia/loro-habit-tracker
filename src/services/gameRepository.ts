@@ -30,7 +30,14 @@ import { normalizeEquipmentSetOrder } from "../utility/equipmentCollections";
 import { createGuildQuestBoard } from "../utility/guildQuests";
 import { isSupabaseConfigured, supabase } from "./supabaseClient";
 
-const habitIds: HabitId[] = ["exercise", "reading", "water", "sleep"];
+const habitIds: HabitId[] = [
+  "exercise",
+  "reading",
+  "journaling",
+  "water",
+  "sleep",
+  "outdoors"
+];
 const equipmentSlotIds = ["helmet", "chest", "cape", "gloves", "boots", "weapon", "bag", "buddy"];
 const equipmentRarities = ["common", "uncommon", "rare", "epic", "legendary"];
 const equipmentAttributeIds = [

@@ -9,9 +9,9 @@ select has_table('public', 'equipment_items', 'equipment item catalog exists');
 select has_table('public', 'inventory_items', 'inventory item instances exist');
 select has_table('public', 'quest_nodes', 'quest catalog exists');
 select has_function('public', 'get_game_snapshot', array[]::text[], 'snapshot RPC exists');
-select is((select count(*) from public.habit_definitions), 4::bigint, 'four habits are seeded');
-select is((select count(*) from public.chapters), 8::bigint, 'eight chapters are seeded');
-select is((select count(*) from public.quest_nodes), 56::bigint, 'fifty-six quest nodes are seeded');
+select is((select count(*) from public.habit_definitions), 6::bigint, 'six habits are seeded');
+select is((select count(*) from public.chapters), 12::bigint, 'twelve chapters are seeded');
+select is((select count(*) from public.quest_nodes), 84::bigint, 'eighty-four quest nodes are seeded');
 select is((select count(*) from public.equipment_slots), 8::bigint, 'eight equipment slots are seeded');
 select is((select count(*) from public.equipment_sets), 3::bigint, 'all equipment sets are seeded');
 select is((select count(*) from public.equipment_items), 24::bigint, 'all equipment set pieces are seeded');
@@ -154,7 +154,7 @@ select ok(
 );
 select is(
   (select count(*) from public.habit_progress where user_id = '11111111-1111-1111-1111-111111111111'),
-  4::bigint,
+  6::bigint,
   'signup trigger provisions all habit progress rows'
 );
 select ok(

@@ -10,7 +10,13 @@ export type EquipmentSlotId =
   | "weapon"
   | "bag"
   | "buddy";
-export type HabitId = "exercise" | "reading" | "water" | "sleep";
+export type HabitId =
+  | "exercise"
+  | "reading"
+  | "journaling"
+  | "water"
+  | "sleep"
+  | "outdoors";
 export type IconName = keyof typeof Ionicons.glyphMap;
 export type DateKey = string;
 export type AdventureNodeStatus = "done" | "active" | "locked";
