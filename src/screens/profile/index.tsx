@@ -164,7 +164,7 @@ export function ProfileScreen({ onNavigateToTab }: ProfileScreenProps) {
                 {profile.name}
               </Text>
               <Text className="mt-1 text-xs font-extrabold uppercase text-content-blue-muted">
-                {formatClassName(profile.avatarClassId)} Adventurer
+                {formatClassName(profile.avatarClassId)}
               </Text>
             </View>
             <View className="h-12 w-12 items-center justify-center rounded-card border-2 border-primary bg-surface-card">
