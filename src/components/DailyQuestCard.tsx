@@ -78,12 +78,17 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
           </View>
           <View className="ml-3 flex-1">
             <Text className="text-xs font-extrabold uppercase text-content-green">
-              Today's Quest
+              Daily Quest
             </Text>
             <Text className="mt-1 text-lg font-black text-content">Quest complete</Text>
           </View>
           {completion ? (
             <View className="items-end">
+              <View className="rounded-pill border border-line-success bg-success-soft px-2 py-1">
+                <Text className="text-micro font-black uppercase text-content-green">
+                  Cleared
+                </Text>
+              </View>
               <Text className="text-xs font-black text-reward-earned">
                 +{completion.reward.coins} coins
               </Text>
@@ -94,7 +99,7 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
           ) : null}
         </View>
         <Text className="mt-3 text-sm font-semibold leading-5 text-content-green-deep">
-          Your next quest unlocks tomorrow. You can still complete today's quest for another habit.
+          Your next quest unlocks tomorrow. Pick another trail to keep your adventure moving.
         </Text>
       </View>
     );
@@ -161,7 +166,7 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
       <View className="flex-row items-start justify-between">
         <View className="flex-1 pr-3">
           <Text className="text-xs font-extrabold uppercase text-content-muted">
-            Today's Quest
+            Daily Quest
           </Text>
           <Text className="mt-1 text-xl font-black text-content">{node.title}</Text>
           <Text className="mt-1 text-xs font-bold text-content-muted">

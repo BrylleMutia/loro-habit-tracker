@@ -24,7 +24,7 @@ export function AdventurePathPreview({ onViewPath }: AdventurePathPreviewProps) 
     <View className="mt-4 rounded-card border border-line bg-surface-card p-4" style={shadows.card}>
       <View className="flex-row items-center justify-between">
         <View className="flex-1 pr-3">
-          <Text className="text-xs font-extrabold uppercase text-content-muted">Adventure Path</Text>
+          <Text className="text-xs font-extrabold uppercase text-content-muted">Adventure Map</Text>
           <Text className="mt-1 text-lg font-black text-content">{section.title}</Text>
         </View>
         <QuestActionButton
@@ -32,30 +32,32 @@ export function AdventurePathPreview({ onViewPath }: AdventurePathPreviewProps) 
           className="w-40"
           completedLabel="Opening path"
           icon="map-outline"
-          label="View path"
+          label="Open map"
           mode="tap"
           onAction={onViewPath}
           size="compact"
         />
       </View>
 
-      <View className="mt-4 flex-row items-start">
-        {activeAdventure.previewNodes.map((preview, index) => (
-          <Fragment key={preview.node.id}>
-            <PreviewNode
-              day={preview.node.day}
-              title={preview.node.title}
-              status={preview.status}
-            />
-            {index < activeAdventure.previewNodes.length - 1 ? (
-              <View
-                className={`mt-5 h-path-line flex-1 ${
-                  preview.status === "done" ? "bg-success" : "bg-line-disabled"
-                }`}
+      <View className="mt-4 rounded-card border border-line-primary bg-surface-blue p-3">
+        <View className="flex-row items-start">
+          {activeAdventure.previewNodes.map((preview, index) => (
+            <Fragment key={preview.node.id}>
+              <PreviewNode
+                day={preview.node.day}
+                title={preview.node.title}
+                status={preview.status}
               />
-            ) : null}
-          </Fragment>
-        ))}
+              {index < activeAdventure.previewNodes.length - 1 ? (
+                <View
+                  className={`mt-5 h-path-line flex-1 ${
+                    preview.status === "done" ? "bg-success" : "bg-line-disabled"
+                  }`}
+                />
+              ) : null}
+            </Fragment>
+          ))}
+        </View>
       </View>
     </View>
   );
