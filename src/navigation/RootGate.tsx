@@ -6,13 +6,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { QuestActionButton } from "../components/QuestActionButton";
 import { colors } from "../constants/colors";
 import { images } from "../constants/images";
-import { AppStateProvider, useAppState } from "../contexts/appContext";
+import { AppStateProvider, useGameActions, useGameSync } from "../contexts/appContext";
 import { useAuth } from "../contexts/authContext";
 import { AuthScreen } from "../screens/auth";
 import { AppNavigator } from "./AppNavigator";
 
 function TrailLoadingScreen() {
-  const { hasHydrated, refreshGameState, syncError, syncStatus } = useAppState();
+  const { hasHydrated, syncError, syncStatus } = useGameSync();
+  const { refreshGameState } = useGameActions();
 
   if (hasHydrated) return <AppNavigator />;
 

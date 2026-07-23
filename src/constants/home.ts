@@ -2,9 +2,9 @@ import type { TabItem } from "../types/app";
 
 export const tabs: TabItem[] = [
   { id: "profile", label: "Profile", icon: "person-outline" },
-  { id: "shop", label: "Shop", icon: "bag-handle-outline" },
+  { id: "stash", label: "Stash", icon: "bag-handle-outline" },
   { id: "home", label: "Home", icon: "home-outline" },
-  { id: "quests", label: "Quests", icon: "trophy-outline" },
+  { id: "guild", label: "Guild", icon: "shield-outline" },
   { id: "more", label: "More", icon: "menu-outline" }
 ];
 

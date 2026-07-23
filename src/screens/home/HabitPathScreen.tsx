@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ResourceBar } from "../../components/ResourceBar";
 import { QuestActionButton } from "../../components/QuestActionButton";
 import { colors } from "../../constants/colors";
-import { useAppState } from "../../contexts/appContext";
+import { useGameActions, useGameHabits, useGameSync } from "../../contexts/appContext";
 import { shadows } from "../../styles/shadows";
 import type { AdventureNode, AdventureNodeStatus, AdventureSection } from "../../types/app";
 import {
@@ -19,13 +19,9 @@ type HabitPathScreenProps = {
 };
 
 export function HabitPathScreen({ onBack, onDailyCheckInPress }: HabitPathScreenProps) {
-  const {
-    activeHabit,
-    claimChapterReward,
-    isOnline,
-    mutationInFlight,
-    todayDateKey
-  } = useAppState();
+  const { activeHabit } = useGameHabits();
+  const { isOnline, mutationInFlight, todayDateKey } = useGameSync();
+  const { claimChapterReward } = useGameActions();
   const actionsDisabled = !isOnline || mutationInFlight !== null;
 
   return (

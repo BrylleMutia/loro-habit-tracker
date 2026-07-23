@@ -6,7 +6,7 @@ import type {
   InventoryItem
 } from "./app";
 
-export type PersistedGameState = Omit<AppState, "activeHabitId" | "activeTab">;
+export type PersistedGameState = Omit<AppState, "activeHabitId">;
 
 export type AuthStatus =
   | "awaitingVerification"
@@ -25,6 +25,8 @@ export type GameMutationId =
   | "chapter-reward"
   | "daily-check-in"
   | "equipment"
+  | "guild-quest-accept"
+  | "guild-quest-claim"
   | "profile"
   | "quest-complete"
   | "quest-start"
@@ -59,6 +61,22 @@ export type RewardClaimOutcome = {
   alreadyClaimed: boolean;
 };
 
+export type GuildQuestAcceptanceOutcome = {
+  kind: "guild-quest-accepted";
+  questKind: "side" | "main";
+  questId: string;
+};
+
+export type GuildQuestRewardOutcome = {
+  kind: "guild-quest-reward-claimed";
+  questKind: "side" | "main";
+  questId: string;
+  coinReward: number;
+  xpReward: number;
+  lootItem: InventoryItem | null;
+  alreadyClaimed: boolean;
+};
+
 export type CheckInOutcome = {
   kind: "daily-check-in-claimed";
   coinReward: number;
@@ -78,6 +96,8 @@ export type EquipmentUpdatedOutcome = {
 export type GameOutcome =
   | CheckInOutcome
   | EquipmentUpdatedOutcome
+  | GuildQuestAcceptanceOutcome
+  | GuildQuestRewardOutcome
   | ProfileUpdatedOutcome
   | QuestCompletionOutcome
   | QuestStartOutcome
@@ -104,6 +124,9 @@ export type GameErrorCode =
   | "INVALID_HABIT"
   | "INVALID_RESPONSE"
   | "INVALID_SET_ORDER"
+  | "GUILD_QUEST_ALREADY_CLAIMED"
+  | "GUILD_QUEST_INVALID_SELECTION"
+  | "GUILD_QUEST_NOT_READY"
   | "INVALID_TIME_ZONE"
   | "ITEM_NOT_OWNED"
   | "NETWORK_ERROR"

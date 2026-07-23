@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import {
@@ -10,6 +10,7 @@ import { QuestActionButton } from "../../components/QuestActionButton";
 import { ResourceBar } from "../../components/ResourceBar";
 import { colors } from "../../constants/colors";
 import { useAuth } from "../../contexts/authContext";
+import { useDeferredMount } from "../../hooks/useDeferredMount";
 import { shadows } from "../../styles/shadows";
 import type { IconName } from "../../types/app";
 import { ActionButtonPrototypes } from "./ActionButtonPrototypes";
@@ -60,6 +61,9 @@ type MoreScreenProps = {
 
 export function MoreScreen({ onDailyCheckInPress }: MoreScreenProps) {
   const [activeSample, setActiveSample] = useState<CelebrationVariant | null>(null);
+  const [isCelebrationLabExpanded, setIsCelebrationLabExpanded] = useState(false);
+  const [isButtonLabExpanded, setIsButtonLabExpanded] = useState(false);
+  const isGalleryReady = useDeferredMount();
   const { isGuest, isSubmitting: isSigningOut, signOut, user } = useAuth();
 
   return (
@@ -67,68 +71,110 @@ export function MoreScreen({ onDailyCheckInPress }: MoreScreenProps) {
       <ScrollView
         className="flex-1"
         contentContainerClassName="px-5 pb-28 pt-3"
+        contentContainerStyle={{ flexGrow: 1 }}
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
         style={{ minHeight: 0 }}
       >
         <ResourceBar onDailyCheckInPress={onDailyCheckInPress} />
-        <View className="mt-5">
-          <Text className="text-xs font-extrabold uppercase text-primary-strong">Prototype gallery</Text>
-          <Text className="mt-1 text-3xl font-black text-content">Celebration Lab</Text>
-          <Text className="mt-2 text-sm font-semibold leading-5 text-content-muted">
-            Three moods for the moment a Daily Quest is completed.
-          </Text>
+        <View className="mt-5 border-t border-line pt-5">
+          <TouchableOpacity
+            accessibilityLabel={`${isCelebrationLabExpanded ? "Collapse" : "Expand"} Celebration Lab`}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: isCelebrationLabExpanded }}
+            className="flex-row items-center justify-between"
+            onPress={() => setIsCelebrationLabExpanded((expanded) => !expanded)}
+          >
+            <View>
+              <Text className="text-xs font-extrabold uppercase text-primary-strong">Prototype gallery</Text>
+              <Text className="mt-1 text-3xl font-black text-content">Celebration Lab</Text>
+              <Text className="mt-2 text-sm font-semibold leading-5 text-content-muted">
+                Three moods for the moment a Daily Quest is completed.
+              </Text>
+            </View>
+            <Ionicons
+              name={isCelebrationLabExpanded ? "chevron-up" : "chevron-down"}
+              size={22}
+              color={colors.blueDark}
+            />
+          </TouchableOpacity>
         </View>
 
-        <View className="mt-5">
-          {celebrationSamples.map((sample) => (
-            <View
-              key={sample.id}
-              className="mb-3 rounded-card border border-line bg-surface-card p-4"
-              style={shadows.card}
-            >
-              <View className="flex-row items-center">
+        {isCelebrationLabExpanded ? (
+          isGalleryReady ? (
+            <View className="mt-5">
+              {celebrationSamples.map((sample) => (
                 <View
-                  className="h-12 w-12 items-center justify-center rounded-card"
-                  style={{ backgroundColor: sample.iconBackground }}
+                  key={sample.id}
+                  className="mb-3 rounded-card border border-line bg-surface-card p-4"
+                  style={shadows.card}
                 >
-                  <Ionicons name={sample.icon} size={24} color={sample.iconColor} />
+                  <View className="flex-row items-center">
+                    <View
+                      className="h-12 w-12 items-center justify-center rounded-card"
+                      style={{ backgroundColor: sample.iconBackground }}
+                    >
+                      <Ionicons name={sample.icon} size={24} color={sample.iconColor} />
+                    </View>
+                    <View className="ml-3 flex-1">
+                      <Text className="text-micro font-extrabold text-content-icon">
+                        OPTION {sample.number}
+                      </Text>
+                      <Text className="mt-1 text-lg font-black text-content">{sample.title}</Text>
+                      <Text className="mt-1 text-xs font-semibold leading-4 text-content-muted">
+                        {sample.tone}
+                      </Text>
+                    </View>
+                  </View>
+                  <QuestActionButton
+                    accessibilityLabel={`Preview ${sample.title}`}
+                    className="mt-3"
+                    completedLabel="Opening preview"
+                    icon="play"
+                    label={`Preview ${sample.title}`}
+                    mode="tap"
+                    onAction={() => setActiveSample(sample.id)}
+                    size="compact"
+                  />
                 </View>
-                <View className="ml-3 flex-1">
-                  <Text className="text-micro font-extrabold text-content-icon">
-                    OPTION {sample.number}
-                  </Text>
-                  <Text className="mt-1 text-lg font-black text-content">{sample.title}</Text>
-                  <Text className="mt-1 text-xs font-semibold leading-4 text-content-muted">
-                    {sample.tone}
-                  </Text>
-                </View>
-              </View>
-              <QuestActionButton
-                accessibilityLabel={`Preview ${sample.title}`}
-                className="mt-3"
-                completedLabel="Opening preview"
-                icon="play"
-                label={`Preview ${sample.title}`}
-                mode="tap"
-                onAction={() => setActiveSample(sample.id)}
-                size="compact"
-              />
+              ))}
             </View>
-          ))}
-        </View>
+          ) : (
+            <View className="mt-5 rounded-card border border-line bg-surface-card p-4" style={shadows.card}>
+              <Text className="text-sm font-black text-content">Loading celebration previews…</Text>
+              <Text className="mt-1 text-xs font-semibold text-content-muted">
+                Prototype cards appear after the tab transition.
+              </Text>
+            </View>
+          )
+        ) : null}
 
         <View className="mt-6 border-t border-line pt-6">
-          <Text className="text-xs font-extrabold uppercase text-primary-strong">
-            Interaction controls
-          </Text>
-          <Text className="mt-1 text-3xl font-black text-content">Button Lab</Text>
+          <TouchableOpacity
+            accessibilityLabel={`${isButtonLabExpanded ? "Collapse" : "Expand"} Button Lab`}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: isButtonLabExpanded }}
+            className="flex-row items-center justify-between"
+            onPress={() => setIsButtonLabExpanded((expanded) => !expanded)}
+          >
+            <View>
+              <Text className="text-xs font-extrabold uppercase text-primary-strong">
+                Interaction controls
+              </Text>
+              <Text className="mt-1 text-3xl font-black text-content">Button Lab</Text>
+            </View>
+            <Ionicons
+              name={isButtonLabExpanded ? "chevron-up" : "chevron-down"}
+              size={22}
+              color={colors.blueDark}
+            />
+          </TouchableOpacity>
         </View>
-        <ActionButtonPrototypes />
+        {isButtonLabExpanded ? <ActionButtonPrototypes /> : null}
 
         <View
-          className="mt-6 rounded-card border border-line bg-surface-card p-4"
-          style={shadows.card}
+          className="rounded-card border border-line bg-surface-card p-4"
+          style={[{ marginTop: "auto" }, shadows.card]}
         >
           <Text className="text-sm font-black text-content">Account</Text>
           <Text className="mt-1 text-xs font-semibold text-content-muted" numberOfLines={1}>

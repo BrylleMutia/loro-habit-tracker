@@ -3,7 +3,12 @@ import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { colors } from "../constants/colors";
-import { useAppState } from "../contexts/appContext";
+import {
+  useGameActions,
+  useGameHabits,
+  useGameResources,
+  useGameSync
+} from "../contexts/appContext";
 import { shadows } from "../styles/shadows";
 import { QuestActionButton } from "./QuestActionButton";
 import type { LootDropDetails } from "./QuestCelebrationModal";
@@ -32,17 +37,10 @@ type DailyQuestCardProps = {
 };
 
 export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
-  const {
-    activeAdventure,
-    activeHabit,
-    clearSyncError,
-    completeDailyQuest,
-    energy,
-    isOnline,
-    mutationInFlight,
-    serverClockOffsetMs,
-    startDailyQuest
-  } = useAppState();
+  const { activeAdventure, activeHabit } = useGameHabits();
+  const { energy } = useGameResources();
+  const { isOnline, mutationInFlight, serverClockOffsetMs } = useGameSync();
+  const { clearSyncError, completeDailyQuest, startDailyQuest } = useGameActions();
   const [nowMilliseconds, setNowMilliseconds] = useState(
     () => Date.now() + serverClockOffsetMs
   );

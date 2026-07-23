@@ -3,7 +3,7 @@ import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { colors } from "../constants/colors";
-import { useAppState } from "../contexts/appContext";
+import { useGameHabits } from "../contexts/appContext";
 import { shadows } from "../styles/shadows";
 import type { AdventureNodeStatus } from "../types/app";
 import { QuestActionButton } from "./QuestActionButton";
@@ -13,7 +13,7 @@ type AdventurePathPreviewProps = {
 };
 
 export function AdventurePathPreview({ onViewPath }: AdventurePathPreviewProps) {
-  const { activeAdventure } = useAppState();
+  const { activeAdventure } = useGameHabits();
   const section = activeAdventure.focusLocation?.section;
 
   if (!section) {

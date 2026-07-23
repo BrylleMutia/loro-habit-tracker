@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 
 import { QuestActionButton } from "../../components/QuestActionButton";
 import { EquipmentLoadoutGrid } from "../../components/EquipmentLoadoutGrid";
@@ -21,8 +21,15 @@ import {
   profileBadges,
   type ProfileBadgeId
 } from "../../constants/profile";
-import { useAppState } from "../../contexts/appContext";
+import {
+  useGameActions,
+  useGameHabits,
+  useGameInventory,
+  useGameProfile,
+  useGameSync
+} from "../../contexts/appContext";
 import { useScreenContentWidth } from "../../hooks/useScreenContentWidth";
+import { useDeferredMount } from "../../hooks/useDeferredMount";
 import { shadows } from "../../styles/shadows";
 import type { IconName, TabId } from "../../types/app";
 import {
@@ -60,15 +67,12 @@ type ProfileScreenProps = {
 };
 
 export function ProfileScreen({ onNavigateToTab }: ProfileScreenProps) {
-  const {
-    dailyStreak,
-    habitList,
-    inventory,
-    longestStreak,
-    mutationInFlight,
-    profile,
-    updateProfile
-  } = useAppState();
+  const { habitList } = useGameHabits();
+  const { dailyStreak, longestStreak, profile } = useGameProfile();
+  const { inventory } = useGameInventory();
+  const { mutationInFlight } = useGameSync();
+  const { updateProfile } = useGameActions();
+  const isDetailsReady = useDeferredMount();
   const [isSetCollectionExpanded, setIsSetCollectionExpanded] = useState(true);
   const [isSetOrderModalVisible, setIsSetOrderModalVisible] = useState(false);
   const contentWidth = useScreenContentWidth();
@@ -201,7 +205,7 @@ export function ProfileScreen({ onNavigateToTab }: ProfileScreenProps) {
             activeOpacity={0.82}
             accessibilityLabel="Edit avatar"
             accessibilityRole="button"
-            onPress={() => onNavigateToTab("shop")}
+            onPress={() => onNavigateToTab("stash")}
           >
             <Ionicons name="pencil" size={16} color={colors.blueDark} />
           </TouchableOpacity>
@@ -229,113 +233,126 @@ export function ProfileScreen({ onNavigateToTab }: ProfileScreenProps) {
         </View>
       </View>
 
-      <ProfileSectionHeader
-        title="Equipment"
-        actionIcon="shirt-outline"
-        actionLabel="Edit gear"
-        onAction={() => onNavigateToTab("shop")}
-      />
-      <EquipmentLoadoutGrid
-        equippedItemIds={profile.equippedItemIds}
-        inventoryItems={inventory.items}
-      />
-
-      <View className="mb-3 mt-5 flex-row items-center justify-between px-1">
-        <Text className="text-sm font-black text-content">Set collection</Text>
-        <View className="flex-row items-center">
-          <Text className="mr-2 text-xs font-bold text-content-muted">
-            {completedSetCount}/{equipmentSetProgress.length} mastered
-          </Text>
-          <TouchableOpacity
-            className="h-8 w-8 items-center justify-center rounded-pill bg-surface-card"
-            activeOpacity={0.82}
-            accessibilityLabel={`${isSetCollectionExpanded ? "Collapse" : "Expand"} set collection`}
-            accessibilityRole="button"
-            onPress={() => setIsSetCollectionExpanded((expanded) => !expanded)}
-          >
-            <Ionicons
-              name={isSetCollectionExpanded ? "chevron-up" : "chevron-down"}
-              size={18}
-              color={colors.blueDark}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-      {isSetCollectionExpanded ? (
+      {isDetailsReady ? (
         <>
-          {featuredSetProgress ? <SetCollectionCard progress={featuredSetProgress} /> : null}
-          <TouchableOpacity
-            className="mt-2 flex-row items-center justify-center rounded-card border border-primary bg-primary-soft px-3 py-3"
-            activeOpacity={0.82}
-            accessibilityLabel="Arrange set collection order"
-            accessibilityRole="button"
-            onPress={() => setIsSetOrderModalVisible(true)}
-          >
-            <Ionicons name="swap-vertical-outline" size={17} color={colors.blueDark} />
-            <Text className="ml-2 text-xs font-black uppercase text-primary-strong">
-              Arrange sets
-            </Text>
-          </TouchableOpacity>
-        </>
-      ) : null}
+          <ProfileSectionHeader
+            title="Equipment"
+            actionIcon="shirt-outline"
+            actionLabel="Edit gear"
+            onAction={() => onNavigateToTab("stash")}
+          />
+          <EquipmentLoadoutGrid
+            equippedItemIds={profile.equippedItemIds}
+            inventoryItems={inventory.items}
+          />
 
-      <SetCollectionOrderModal
-        visible={isSetOrderModalVisible}
-        order={profile.setCollectionOrder}
-        progress={equipmentSetProgress}
-        saving={mutationInFlight === "profile"}
-        onClose={() => setIsSetOrderModalVisible(false)}
-        onSave={(setCollectionOrder) => updateProfile({ setCollectionOrder })}
-      />
-
-      <ProfileSectionHeader
-        title="Badges"
-        actionLabel={`${unlockedBadgeIds.size}/${profileBadges.length} earned`}
-      />
-      <View
-        className="rounded-card border border-line bg-surface-card p-3"
-        style={shadows.card}
-      >
-        <View className="flex-row">
-          {profileBadges.map((badge) => {
-            const isUnlocked = unlockedBadgeIds.has(badge.id);
-            const tone = badgeToneStyles[badge.tone];
-
-            return (
-              <View
-                key={badge.id}
-                className={`flex-1 items-center px-1 py-1 ${isUnlocked ? "" : "opacity-40"}`}
+          <View className="mb-3 mt-5 flex-row items-center justify-between px-1">
+            <Text className="text-sm font-black text-content">Set collection</Text>
+            <View className="flex-row items-center">
+              <Text className="mr-2 text-xs font-bold text-content-muted">
+                {completedSetCount}/{equipmentSetProgress.length} mastered
+              </Text>
+              <TouchableOpacity
+                className="h-8 w-8 items-center justify-center rounded-pill bg-surface-card"
+                activeOpacity={0.82}
+                accessibilityLabel={`${isSetCollectionExpanded ? "Collapse" : "Expand"} set collection`}
+                accessibilityRole="button"
+                onPress={() => setIsSetCollectionExpanded((expanded) => !expanded)}
               >
-                <View
-                  className={`h-12 w-12 items-center justify-center rounded-pill border-2 ${tone.background} ${tone.border}`}
-                >
-                  <Ionicons
-                    name={isUnlocked ? badge.icon : "lock-closed"}
-                    size={21}
-                    color={isUnlocked ? tone.color : colors.grayIcon}
-                  />
-                </View>
-                <Text
-                  className="mt-2 text-center text-micro font-bold text-content"
-                  numberOfLines={2}
-                >
-                  {badge.label}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
-      </View>
-
-      <ProfileSectionHeader title="Statistics" actionLabel="Lifetime" />
-      {[statistics.slice(0, 2), statistics.slice(2, 4), statistics.slice(4, 6)].map(
-        (row, rowIndex) => (
-          <View key={`statistics-row-${rowIndex}`} className={`flex-row gap-3 ${rowIndex > 0 ? "mt-3" : ""}`}>
-            {row.map((statistic) => (
-              <ProfileStatisticCard key={statistic.label} statistic={statistic} />
-            ))}
+                <Ionicons
+                  name={isSetCollectionExpanded ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color={colors.blueDark}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
-        )
+          {isSetCollectionExpanded ? (
+            <>
+              {featuredSetProgress ? <SetCollectionCard progress={featuredSetProgress} /> : null}
+              <TouchableOpacity
+                className="mt-2 flex-row items-center justify-center rounded-card border border-primary bg-primary-soft px-3 py-3"
+                activeOpacity={0.82}
+                accessibilityLabel="Arrange set collection order"
+                accessibilityRole="button"
+                onPress={() => setIsSetOrderModalVisible(true)}
+              >
+                <Ionicons name="swap-vertical-outline" size={17} color={colors.blueDark} />
+                <Text className="ml-2 text-xs font-black uppercase text-primary-strong">
+                  Arrange sets
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
+
+          {isSetOrderModalVisible ? (
+            <SetCollectionOrderModal
+              visible
+              order={profile.setCollectionOrder}
+              progress={equipmentSetProgress}
+              saving={mutationInFlight === "profile"}
+              onClose={() => setIsSetOrderModalVisible(false)}
+              onSave={(setCollectionOrder) => updateProfile({ setCollectionOrder })}
+            />
+          ) : null}
+
+          <ProfileSectionHeader
+            title="Badges"
+            actionLabel={`${unlockedBadgeIds.size}/${profileBadges.length} earned`}
+          />
+          <View
+            className="rounded-card border border-line bg-surface-card p-3"
+            style={shadows.card}
+          >
+            <View className="flex-row">
+              {profileBadges.map((badge) => {
+                const isUnlocked = unlockedBadgeIds.has(badge.id);
+                const tone = badgeToneStyles[badge.tone];
+
+                return (
+                  <View
+                    key={badge.id}
+                    className={`flex-1 items-center px-1 py-1 ${isUnlocked ? "" : "opacity-40"}`}
+                  >
+                    <View
+                      className={`h-12 w-12 items-center justify-center rounded-pill border-2 ${tone.background} ${tone.border}`}
+                    >
+                      <Ionicons
+                        name={isUnlocked ? badge.icon : "lock-closed"}
+                        size={21}
+                        color={isUnlocked ? tone.color : colors.grayIcon}
+                      />
+                    </View>
+                    <Text
+                      className="mt-2 text-center text-micro font-bold text-content"
+                      numberOfLines={2}
+                    >
+                      {badge.label}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+          <ProfileSectionHeader title="Statistics" actionLabel="Lifetime" />
+          {[statistics.slice(0, 2), statistics.slice(2, 4), statistics.slice(4, 6)].map(
+            (row, rowIndex) => (
+              <View key={`statistics-row-${rowIndex}`} className={`flex-row gap-3 ${rowIndex > 0 ? "mt-3" : ""}`}>
+                {row.map((statistic) => (
+                  <ProfileStatisticCard key={statistic.label} statistic={statistic} />
+                ))}
+              </View>
+            )
+          )}
+        </>
+      ) : (
+        <View className="mt-5 rounded-card border border-line bg-surface-card p-4" style={shadows.card}>
+          <Text className="text-sm font-black text-content">Loading profile details…</Text>
+          <Text className="mt-1 text-xs font-semibold text-content-muted">
+            Equipment, collection, and statistics are getting the trail ready.
+          </Text>
+        </View>
       )}
 
       </View>
@@ -343,7 +360,7 @@ export function ProfileScreen({ onNavigateToTab }: ProfileScreenProps) {
   );
 }
 
-function ProfileStatisticCard({ statistic }: { statistic: ProfileStatistic }) {
+const ProfileStatisticCard = memo(function ProfileStatisticCard({ statistic }: { statistic: ProfileStatistic }) {
   return (
     <View
       className="h-24 min-w-0 flex-1 flex-row items-center rounded-card border border-line bg-surface-card p-3"
@@ -362,7 +379,7 @@ function ProfileStatisticCard({ statistic }: { statistic: ProfileStatistic }) {
       </View>
     </View>
   );
-}
+});
 
 type SetCollectionOrderModalProps = {
   visible: boolean;
@@ -571,7 +588,7 @@ function SetCollectionOrderModal({
   );
 }
 
-function SetCollectionCard({ progress }: { progress: EquipmentSetProgress }) {
+const SetCollectionCard = memo(function SetCollectionCard({ progress }: { progress: EquipmentSetProgress }) {
   const theme = getEquipmentSetTheme(progress.setId);
   if (!theme) return null;
 
@@ -656,7 +673,7 @@ function SetCollectionCard({ progress }: { progress: EquipmentSetProgress }) {
       />
     </View>
   );
-}
+});
 
 function ProfileSectionHeader({
   actionIcon,
@@ -676,7 +693,7 @@ function ProfileSectionHeader({
         <QuestActionButton
           accessibilityLabel={`${actionLabel} ${title.toLowerCase()}`}
           className="w-40"
-          completedLabel="Opening shop"
+          completedLabel="Opening stash"
           icon={actionIcon ?? "create-outline"}
           label={actionLabel}
           mode="tap"

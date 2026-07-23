@@ -14,7 +14,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { colors } from "../constants/colors";
-import { useAppState } from "../contexts/appContext";
+import { useGameProfile, useGameResources } from "../contexts/appContext";
 import { PixelParrot } from "./PixelParrot";
 import { ResourcePill } from "./ResourcePill";
 
@@ -23,12 +23,8 @@ type ResourceBarProps = {
 };
 
 export function ResourceBar({ onDailyCheckInPress }: ResourceBarProps) {
-  const {
-    coins,
-    dailyCheckInClaimedToday,
-    dailyStreak,
-    energy
-  } = useAppState();
+  const { dailyStreak } = useGameProfile();
+  const { coins, dailyCheckInClaimedToday, energy } = useGameResources();
 
   return (
     <View className="flex-row items-center justify-between">

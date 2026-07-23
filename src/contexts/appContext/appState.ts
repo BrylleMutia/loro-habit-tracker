@@ -1,11 +1,10 @@
 import { createInitialHabits } from "../../constants/habits";
 import { equipmentSets } from "../../constants/equipment";
-import { defaultTabId } from "../../constants/home";
-import type { AppState, HabitId, TabId } from "../../types/app";
+import type { AppState, HabitId } from "../../types/app";
 import type { PersistedGameState } from "../../types/backend";
+import { createGuildQuestBoard } from "../../utility/guildQuests";
 
 export type AppAction =
-  | { type: "SET_ACTIVE_TAB"; tabId: TabId }
   | { type: "SET_ACTIVE_HABIT"; habitId: HabitId }
   | { type: "HYDRATE_GAME_STATE"; snapshot: PersistedGameState };
 
@@ -24,6 +23,21 @@ function getDeviceTimeZone() {
   }
 }
 
+function getDateKeyInTimeZone(now: string, timeZone: string) {
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(new Date(now));
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+  } catch {
+    return now.slice(0, 10);
+  }
+}
+
 export function createInitialAppState({
   playerId = "loading",
   playerName = "Adventurer",
@@ -31,7 +45,6 @@ export function createInitialAppState({
   timeZone = getDeviceTimeZone()
 }: InitialAppStateOptions = {}): AppState {
   return {
-    activeTab: defaultTabId,
     activeHabitId: "exercise",
     profile: {
       id: playerId,
@@ -67,6 +80,7 @@ export function createInitialAppState({
       streakShields: 0,
       activeBuffs: []
     },
+    guildQuestBoard: createGuildQuestBoard(getDateKeyInTimeZone(now, timeZone)),
     settings: {
       dailyReminderEnabled: true,
       dailyReminderTime: "19:00",
@@ -80,16 +94,10 @@ export function createInitialAppState({
 
 export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
-    case "SET_ACTIVE_TAB":
-      return { ...state, activeTab: action.tabId };
     case "SET_ACTIVE_HABIT":
       return { ...state, activeHabitId: action.habitId };
     case "HYDRATE_GAME_STATE":
-      return {
-        ...action.snapshot,
-        activeTab: state.activeTab,
-        activeHabitId: state.activeHabitId
-      };
+      return { ...action.snapshot, activeHabitId: state.activeHabitId };
     default:
       return state;
   }

@@ -21,6 +21,8 @@ import {
   completeDailyQuest as completeDailyQuestRemote,
   equipItem as equipItemRemote,
   getGameSnapshot,
+  acceptGuildQuest as acceptGuildQuestRemote,
+  claimGuildQuestReward as claimGuildQuestRewardRemote,
   startDailyQuest as startDailyQuestRemote,
   updateProfile as updateProfileRemote,
   updateSettings as updateSettingsRemote
@@ -32,6 +34,8 @@ import {
   completeLocalDailyQuest,
   equipLocalItem,
   getLocalGameSnapshot,
+  acceptLocalGuildQuest,
+  claimLocalGuildQuestReward,
   startLocalDailyQuest,
   updateLocalProfile,
   updateLocalSettings
@@ -39,14 +43,17 @@ import {
 import type {
   AppSettings,
   AppState,
+  GuildQuestKind,
+  GuildQuestRewardPreview,
   HabitId,
   HabitState,
-  PlayerProfile,
-  TabId
+  PlayerProfile
 } from "../../types/app";
 import type {
   CheckInOutcome,
   EquipmentUpdatedOutcome,
+  GuildQuestAcceptanceOutcome,
+  GuildQuestRewardOutcome,
   GameMutationId,
   GameResponse,
   ProfileUpdatedOutcome,
@@ -62,6 +69,11 @@ import {
   getEffectiveStreak,
   type AdventureSnapshot
 } from "../../utility/adventurePath";
+import {
+  getGuildQuestViews,
+  getGuildQuestRewardPreviewSelection,
+  type GuildQuestView
+} from "../../utility/guildQuests";
 import { appReducer, createInitialAppState } from "./appState";
 
 export { createInitialAppState } from "./appState";
@@ -71,13 +83,39 @@ type EditableProfileFields = Partial<
   Pick<PlayerProfile, "avatarClassId" | "avatarVariant" | "name" | "setCollectionOrder">
 >;
 
-type AppContextValue = AppState & {
-  todayDateKey: string;
+type GameHabitsContextValue = {
+  activeHabitId: HabitId;
   habitList: HabitState[];
   activeHabit: HabitState;
   activeAdventure: AdventureSnapshot;
   activeHabitProgressPercent: number;
+};
+
+type GameProfileContextValue = {
+  profile: PlayerProfile;
+  dailyStreak: number;
+  longestStreak: number;
+};
+
+type GameInventoryContextValue = {
+  inventory: AppState["inventory"];
+};
+
+type GameResourcesContextValue = {
+  coins: number;
+  energy: AppState["energy"];
+  dailyCheckIn: AppState["dailyCheckIn"];
   dailyCheckInClaimedToday: boolean;
+};
+
+type GameQuestsContextValue = {
+  sideCandidates: GuildQuestView[];
+  mainCandidates: GuildQuestView[];
+  timeZone: string;
+};
+
+type GameSyncContextValue = {
+  todayDateKey: string;
   syncStatus: SyncStatus;
   syncError: GameRepositoryError | null;
   mutationInFlight: GameMutationId | null;
@@ -85,11 +123,15 @@ type AppContextValue = AppState & {
   hasHydrated: boolean;
   isOnline: boolean;
   serverClockOffsetMs: number;
-  setActiveTab: (tabId: TabId) => void;
+};
+
+type GameActionsContextValue = {
   setActiveHabit: (habitId: HabitId) => void;
   startDailyQuest: (habitId: HabitId) => Promise<QuestStartOutcome>;
   completeDailyQuest: (habitId: HabitId) => Promise<QuestCompletionOutcome>;
   claimChapterReward: (habitId: HabitId, sectionId: string) => Promise<RewardClaimOutcome>;
+  acceptGuildQuest: (questKind: GuildQuestKind, questId: string) => Promise<GuildQuestAcceptanceOutcome>;
+  claimGuildQuestReward: (questKind: GuildQuestKind, questId: string) => Promise<GuildQuestRewardOutcome>;
   claimDailyCheckIn: () => Promise<CheckInOutcome>;
   equipItem: (itemId: string) => Promise<EquipmentUpdatedOutcome>;
   updateSettings: (settings: Partial<AppSettings>) => Promise<SettingsUpdatedOutcome>;
@@ -105,7 +147,13 @@ type AppStateProviderProps = {
   storageMode?: "local" | "remote";
 };
 
-const AppContext = createContext<AppContextValue | null>(null);
+const GameHabitsContext = createContext<GameHabitsContextValue | null>(null);
+const GameProfileContext = createContext<GameProfileContextValue | null>(null);
+const GameInventoryContext = createContext<GameInventoryContextValue | null>(null);
+const GameResourcesContext = createContext<GameResourcesContextValue | null>(null);
+const GameQuestsContext = createContext<GameQuestsContextValue | null>(null);
+const GameSyncContext = createContext<GameSyncContextValue | null>(null);
+const GameActionsContext = createContext<GameActionsContextValue | null>(null);
 
 function toGameError(error: unknown) {
   return error instanceof GameRepositoryError
@@ -172,8 +220,7 @@ export function AppStateProvider({
 
       stateRef.current = {
         ...response.snapshot,
-        activeHabitId: stateRef.current.activeHabitId,
-        activeTab: stateRef.current.activeTab
+        activeHabitId: stateRef.current.activeHabitId
       };
       dispatch({ type: "HYDRATE_GAME_STATE", snapshot: response.snapshot });
       setTodayDateKey(response.localDateKey);
@@ -371,97 +418,248 @@ export function AppStateProvider({
     todayDateKey
   );
 
-  const value = useMemo<AppContextValue>(
+  const setActiveHabit = useCallback(
+    (habitId: HabitId) => dispatch({ type: "SET_ACTIVE_HABIT", habitId }),
+    []
+  );
+  const startDailyQuest = useCallback(
+    (habitId: HabitId) =>
+      runMutation("quest-start", async () =>
+        storageMode === "local"
+          ? startLocalDailyQuest(stateRef.current, habitId, todayDateKey)
+          : startDailyQuestRemote(habitId)
+      ),
+    [runMutation, storageMode, todayDateKey]
+  );
+  const completeDailyQuest = useCallback(
+    (habitId: HabitId) =>
+      runMutation("quest-complete", async () =>
+        storageMode === "local"
+          ? completeLocalDailyQuest(stateRef.current, habitId, todayDateKey)
+          : completeDailyQuestRemote(habitId)
+      ),
+    [runMutation, storageMode, todayDateKey]
+  );
+  const claimChapterReward = useCallback(
+    (habitId: HabitId, sectionId: string) =>
+      runMutation("chapter-reward", async () =>
+        storageMode === "local"
+          ? claimLocalChapterReward(stateRef.current, habitId, sectionId, todayDateKey)
+          : claimChapterRewardRemote(habitId, sectionId)
+      ),
+    [runMutation, storageMode, todayDateKey]
+  );
+  const acceptGuildQuest = useCallback(
+    (questKind: GuildQuestKind, questId: string) => {
+      const quest = getGuildQuestViews(stateRef.current, todayDateKey, questKind).find(
+        (candidate) => candidate.definition.id === questId
+      );
+      if (!quest) {
+        return Promise.reject(
+          new GameRepositoryError("That Guild Quest is no longer available.", "GUILD_QUEST_INVALID_SELECTION")
+        );
+      }
+      const rewardPreview: GuildQuestRewardPreview = getGuildQuestRewardPreviewSelection(quest);
+
+      return runMutation("guild-quest-accept", async () =>
+        storageMode === "local"
+          ? acceptLocalGuildQuest(
+              stateRef.current,
+              questKind,
+              questId,
+              todayDateKey,
+              rewardPreview
+            )
+          : acceptGuildQuestRemote(questKind, questId, rewardPreview)
+      );
+    },
+    [runMutation, storageMode, todayDateKey]
+  );
+  const claimGuildQuestReward = useCallback(
+    (questKind: GuildQuestKind, questId: string) =>
+      runMutation("guild-quest-claim", async () =>
+        storageMode === "local"
+          ? claimLocalGuildQuestReward(stateRef.current, questKind, questId, todayDateKey)
+          : claimGuildQuestRewardRemote(questKind, questId)
+      ),
+    [runMutation, storageMode, todayDateKey]
+  );
+  const claimDailyCheckIn = useCallback(
+    () =>
+      runMutation("daily-check-in", async () =>
+        storageMode === "local"
+          ? claimLocalDailyCheckIn(stateRef.current, todayDateKey)
+          : claimDailyCheckInRemote()
+      ),
+    [runMutation, storageMode, todayDateKey]
+  );
+  const equipItem = useCallback(
+    (itemId: string) =>
+      runMutation("equipment", async () =>
+        storageMode === "local"
+          ? equipLocalItem(stateRef.current, itemId, todayDateKey)
+          : equipItemRemote(itemId)
+      ),
+    [runMutation, storageMode, todayDateKey]
+  );
+  const updateSettings = useCallback(
+    (settings: Partial<AppSettings>) =>
+      runMutation("settings", async () =>
+        storageMode === "local"
+          ? updateLocalSettings(stateRef.current, settings, todayDateKey)
+          : updateSettingsRemote(settings)
+      ),
+    [runMutation, storageMode, todayDateKey]
+  );
+  const updateProfile = useCallback(
+    (fields: EditableProfileFields) =>
+      runMutation("profile", async () =>
+        storageMode === "local"
+          ? updateLocalProfile(stateRef.current, fields, todayDateKey)
+          : updateProfileRemote(fields)
+      ),
+    [runMutation, storageMode, todayDateKey]
+  );
+  const clearSyncError = useCallback(() => setSyncError(null), []);
+
+  const habitsValue = useMemo<GameHabitsContextValue>(
     () => ({
-      ...state,
-      habits,
-      dailyStreak,
-      todayDateKey,
+      activeHabitId: state.activeHabitId,
       habitList,
       activeHabit,
       activeAdventure,
-      activeHabitProgressPercent: activeAdventure.chapterProgressPercent,
-      dailyCheckInClaimedToday: state.dailyCheckIn.lastClaimedDateKey === todayDateKey,
+      activeHabitProgressPercent: activeAdventure.chapterProgressPercent
+    }),
+    [activeAdventure, activeHabit, habitList, state.activeHabitId]
+  );
+  const profileValue = useMemo<GameProfileContextValue>(
+    () => ({ profile: state.profile, dailyStreak, longestStreak: state.longestStreak }),
+    [dailyStreak, state.longestStreak, state.profile]
+  );
+  const inventoryValue = useMemo<GameInventoryContextValue>(
+    () => ({ inventory: state.inventory }),
+    [state.inventory]
+  );
+  const resourcesValue = useMemo<GameResourcesContextValue>(
+    () => ({
+      coins: state.coins,
+      energy: state.energy,
+      dailyCheckIn: state.dailyCheckIn,
+      dailyCheckInClaimedToday: state.dailyCheckIn.lastClaimedDateKey === todayDateKey
+    }),
+    [state.coins, state.dailyCheckIn, state.energy, todayDateKey]
+  );
+  const questsValue = useMemo<GameQuestsContextValue>(() => {
+    const sideCandidates = getGuildQuestViews(state, todayDateKey, "side");
+    const mainCandidates = getGuildQuestViews(state, todayDateKey, "main");
+    return {
+      sideCandidates,
+      mainCandidates,
+      timeZone: state.settings.timeZone
+    };
+  }, [state.activityLog, state.guildQuestBoard, state.habits, state.settings.timeZone, todayDateKey]);
+  const syncValue = useMemo<GameSyncContextValue>(
+    () => ({
+      todayDateKey,
       syncStatus,
       syncError,
       mutationInFlight,
       lastSyncedAt,
       hasHydrated,
       isOnline,
-      serverClockOffsetMs,
-      setActiveTab: (tabId) => dispatch({ type: "SET_ACTIVE_TAB", tabId }),
-      setActiveHabit: (habitId) => dispatch({ type: "SET_ACTIVE_HABIT", habitId }),
-      startDailyQuest: (habitId) =>
-        runMutation("quest-start", async () =>
-          storageMode === "local"
-            ? startLocalDailyQuest(stateRef.current, habitId, todayDateKey)
-            : startDailyQuestRemote(habitId)
-        ),
-      completeDailyQuest: (habitId) =>
-        runMutation("quest-complete", async () =>
-          storageMode === "local"
-            ? completeLocalDailyQuest(stateRef.current, habitId, todayDateKey)
-            : completeDailyQuestRemote(habitId)
-        ),
-      claimChapterReward: (habitId, sectionId) =>
-        runMutation("chapter-reward", async () =>
-          storageMode === "local"
-            ? claimLocalChapterReward(stateRef.current, habitId, sectionId, todayDateKey)
-            : claimChapterRewardRemote(habitId, sectionId)
-        ),
-      claimDailyCheckIn: () =>
-        runMutation("daily-check-in", async () =>
-          storageMode === "local"
-            ? claimLocalDailyCheckIn(stateRef.current, todayDateKey)
-            : claimDailyCheckInRemote()
-        ),
-      equipItem: (itemId) =>
-        runMutation("equipment", async () =>
-          storageMode === "local"
-            ? equipLocalItem(stateRef.current, itemId, todayDateKey)
-            : equipItemRemote(itemId)
-        ),
-      updateSettings: (settings) =>
-        runMutation("settings", async () =>
-          storageMode === "local"
-            ? updateLocalSettings(stateRef.current, settings, todayDateKey)
-            : updateSettingsRemote(settings)
-        ),
-      updateProfile: (fields) =>
-        runMutation("profile", async () =>
-          storageMode === "local"
-            ? updateLocalProfile(stateRef.current, fields, todayDateKey)
-            : updateProfileRemote(fields)
-        ),
-      refreshGameState,
-      clearSyncError: () => setSyncError(null)
+      serverClockOffsetMs
     }),
     [
-      activeAdventure,
-      activeHabit,
-      dailyStreak,
-      habitList,
-      habits,
       hasHydrated,
       isOnline,
       lastSyncedAt,
       mutationInFlight,
-      refreshGameState,
-      runMutation,
       serverClockOffsetMs,
-      state,
-      storageMode,
       syncError,
       syncStatus,
       todayDateKey
     ]
   );
+  const actionsValue = useMemo<GameActionsContextValue>(
+    () => ({
+      setActiveHabit,
+      startDailyQuest,
+      completeDailyQuest,
+      claimChapterReward,
+      acceptGuildQuest,
+      claimGuildQuestReward,
+      claimDailyCheckIn,
+      equipItem,
+      updateSettings,
+      updateProfile,
+      refreshGameState,
+      clearSyncError
+    }),
+    [
+      claimChapterReward,
+      claimDailyCheckIn,
+      clearSyncError,
+      completeDailyQuest,
+      equipItem,
+      claimGuildQuestReward,
+      refreshGameState,
+      setActiveHabit,
+      startDailyQuest,
+      acceptGuildQuest,
+      updateProfile,
+      updateSettings
+    ]
+  );
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <GameHabitsContext.Provider value={habitsValue}>
+      <GameProfileContext.Provider value={profileValue}>
+        <GameInventoryContext.Provider value={inventoryValue}>
+          <GameResourcesContext.Provider value={resourcesValue}>
+            <GameQuestsContext.Provider value={questsValue}>
+              <GameSyncContext.Provider value={syncValue}>
+                <GameActionsContext.Provider value={actionsValue}>
+                  {children}
+                </GameActionsContext.Provider>
+              </GameSyncContext.Provider>
+            </GameQuestsContext.Provider>
+          </GameResourcesContext.Provider>
+        </GameInventoryContext.Provider>
+      </GameProfileContext.Provider>
+    </GameHabitsContext.Provider>
+  );
 }
 
-export function useAppState() {
-  const context = useContext(AppContext);
-  if (!context) throw new Error("useAppState must be used within an AppStateProvider");
-  return context;
+function useRequiredContext<T>(context: React.Context<T | null>, hookName: string) {
+  const value = useContext(context);
+  if (!value) throw new Error(`${hookName} must be used within an AppStateProvider`);
+  return value;
+}
+
+export function useGameHabits() {
+  return useRequiredContext(GameHabitsContext, "useGameHabits");
+}
+
+export function useGameProfile() {
+  return useRequiredContext(GameProfileContext, "useGameProfile");
+}
+
+export function useGameInventory() {
+  return useRequiredContext(GameInventoryContext, "useGameInventory");
+}
+
+export function useGameResources() {
+  return useRequiredContext(GameResourcesContext, "useGameResources");
+}
+
+export function useGameQuests() {
+  return useRequiredContext(GameQuestsContext, "useGameQuests");
+}
+
+export function useGameSync() {
+  return useRequiredContext(GameSyncContext, "useGameSync");
+}
+
+export function useGameActions() {
+  return useRequiredContext(GameActionsContext, "useGameActions");
 }

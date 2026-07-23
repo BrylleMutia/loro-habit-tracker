@@ -2,16 +2,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
 import { colors } from "../constants/colors";
-import { useAppState } from "../contexts/appContext";
+import { useGameActions, useGameSync } from "../contexts/appContext";
 
 export function SyncStatusBanner() {
-  const {
-    clearSyncError,
-    isOnline,
-    refreshGameState,
-    syncError,
-    syncStatus
-  } = useAppState();
+  const { isOnline, syncError, syncStatus } = useGameSync();
+  const { clearSyncError, refreshGameState } = useGameActions();
 
   if (syncStatus === "ready" || syncStatus === "loading") return null;
 

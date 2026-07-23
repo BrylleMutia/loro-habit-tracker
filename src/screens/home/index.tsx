@@ -12,7 +12,11 @@ import {
 import { ResourceBar } from "../../components/ResourceBar";
 import { colors } from "../../constants/colors";
 import { images } from "../../constants/images";
-import { useAppState } from "../../contexts/appContext";
+import {
+  useGameActions,
+  useGameHabits,
+  useGameProfile
+} from "../../contexts/appContext";
 import { useScreenContentWidth } from "../../hooks/useScreenContentWidth";
 import { shadows } from "../../styles/shadows";
 import { HabitPathScreen } from "./HabitPathScreen";
@@ -64,7 +68,8 @@ export function HomeScreen({ onDailyCheckInPress }: HomeScreenProps) {
 }
 
 function HeroGreeting() {
-  const { activeHabit, profile } = useAppState();
+  const { activeHabit } = useGameHabits();
+  const { profile } = useGameProfile();
 
   return (
     <View className="mt-5 overflow-hidden rounded-card border border-line-blue bg-canvas-sky">
@@ -104,9 +109,9 @@ function ActiveHabitCard() {
     activeHabitId,
     activeAdventure,
     activeHabitProgressPercent,
-    habitList,
-    setActiveHabit
-  } = useAppState();
+    habitList
+  } = useGameHabits();
+  const { setActiveHabit } = useGameActions();
 
   return (
     <View className="-mt-2 rounded-card border border-line bg-surface-card p-4" style={shadows.card}>

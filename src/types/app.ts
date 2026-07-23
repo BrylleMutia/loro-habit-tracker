@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 
-export type TabId = "home" | "quests" | "shop" | "profile" | "more";
+export type TabId = "home" | "guild" | "stash" | "profile" | "more";
 export type EquipmentSlotId =
   | "helmet"
   | "chest"
@@ -18,6 +18,19 @@ export type QuestTrackingType = "timed" | "one-time";
 export type AvatarClassId = "druid" | "mercenary" | "ranger" | "warrior" | "wizard";
 export type AvatarVariant = "default" | "alternate";
 export type EquipmentRarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
+export type GuildQuestKind = "side" | "main";
+export type GuildQuestMetric =
+  | "same-habit-days"
+  | "unique-habits"
+  | "multi-habit-days"
+  | "daily-completions"
+  | "timed-and-one-time"
+  | "distinct-completion-days"
+  | "two-habits-two-days"
+  | "chapter-nodes"
+  | "chapter-reward-claimed"
+  | "habit-completions-each"
+  | "max-habit-streak";
 export type EquipmentAttributeId =
   | "agility"
   | "defense"
@@ -36,6 +49,40 @@ export type TabItem = {
 export type AdventureReward = {
   coins: number;
   xp: number;
+};
+
+export type GuildQuestReward = AdventureReward & {
+  itemRarityFloor: EquipmentRarity;
+};
+
+export type GuildQuestRewardPreview = {
+  itemDefinitionId: string;
+  rarity: EquipmentRarity;
+};
+
+export type GuildQuestDefinition = {
+  id: string;
+  kind: GuildQuestKind;
+  title: string;
+  description: string;
+  icon: IconName;
+  metric: GuildQuestMetric;
+  target: number;
+  secondaryTarget?: number;
+  reward: GuildQuestReward;
+};
+
+export type GuildQuestPeriodState = {
+  periodKey: DateKey;
+  candidateIds: string[];
+  lockedIds: string[];
+  claimedIds: string[];
+  rewardPreviews?: Record<string, GuildQuestRewardPreview>;
+};
+
+export type GuildQuestBoardState = {
+  side: GuildQuestPeriodState;
+  main: GuildQuestPeriodState;
 };
 
 type AdventureNodeBase = {
@@ -143,9 +190,11 @@ export type InventoryItem = {
   rarity: EquipmentRarity;
   stats: EquipmentStats;
   acquiredAt: string;
-  sourceHabitId: HabitId;
-  sourceNodeId: string;
+  sourceHabitId: HabitId | null;
+  sourceNodeId: string | null;
   sourceDateKey: DateKey;
+  sourceGuildQuestId?: string | null;
+  sourceGuildPeriodKey?: DateKey | null;
 };
 
 export type InventoryStack = {
@@ -187,7 +236,6 @@ export type ActivityLogEntry = {
 };
 
 export type AppState = {
-  activeTab: TabId;
   activeHabitId: HabitId;
   profile: PlayerProfile;
   habits: Record<HabitId, HabitState>;
@@ -198,6 +246,7 @@ export type AppState = {
   energy: EnergyState;
   dailyCheckIn: DailyCheckInState;
   inventory: InventoryState;
+  guildQuestBoard: GuildQuestBoardState;
   settings: AppSettings;
   activityLog: ActivityLogEntry[];
 };
