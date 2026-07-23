@@ -56,6 +56,7 @@ export function groupInventoryItems(
   direction: InventorySortDirection
 ) {
   const groups = new Map<string, InventoryItem[]>();
+  const equippedIds = new Set(equippedItemIds);
 
   items.forEach((item) => {
     const groupKey = getInventoryStackKey(item);
@@ -71,14 +72,24 @@ export function groupInventoryItems(
 
   return Array.from(groups.entries())
     .map(([key, groupItems]): InventoryStack => {
-      const sortedByRecent = [...groupItems].sort(
-        (first, second) => getTimestamp(second.acquiredAt) - getTimestamp(first.acquiredAt)
-      );
-      const representative = sortedByRecent[0];
-      const firstAcquiredAt = [...groupItems].sort(
-        (first, second) => getTimestamp(first.acquiredAt) - getTimestamp(second.acquiredAt)
-      )[0].acquiredAt;
-      const equippedItem = groupItems.find((item) => equippedItemIds.includes(item.id)) ?? null;
+      let representative = groupItems[0];
+      let firstAcquiredAt = groupItems[0].acquiredAt;
+      let newestTimestamp = getTimestamp(representative.acquiredAt);
+      let earliestTimestamp = newestTimestamp;
+
+      for (let index = 1; index < groupItems.length; index += 1) {
+        const item = groupItems[index];
+        const timestamp = getTimestamp(item.acquiredAt);
+        if (timestamp > newestTimestamp) {
+          representative = item;
+          newestTimestamp = timestamp;
+        }
+        if (timestamp < earliestTimestamp) {
+          firstAcquiredAt = item.acquiredAt;
+          earliestTimestamp = timestamp;
+        }
+      }
+      const equippedItem = groupItems.find((item) => equippedIds.has(item.id)) ?? null;
       const itemValue = getInventoryItemValue(representative);
 
       return {

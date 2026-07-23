@@ -1,5 +1,6 @@
 import { Image, Pressable, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { memo } from "react";
 
 import { colors } from "../constants/colors";
 import { equipmentItemsById } from "../constants/equipment";
@@ -17,7 +18,7 @@ type InventoryStashGridProps = {
   onPageChange: (pageIndex: number) => void;
 };
 
-function InventoryStackCell({
+const InventoryStackCell = memo(function InventoryStackCell({
   onPress,
   stack
 }: {
@@ -69,9 +70,9 @@ function InventoryStackCell({
       </View>
     </Pressable>
   );
-}
+});
 
-function PageButton({
+const PageButton = memo(function PageButton({
   disabled,
   icon,
   label,
@@ -95,9 +96,9 @@ function PageButton({
       <Ionicons name={icon} size={18} color={colors.blueDark} />
     </TouchableOpacity>
   );
-}
+});
 
-export function InventoryStashGrid({
+export const InventoryStashGrid = memo(function InventoryStashGrid({
   pageCount,
   pageIndex,
   stacks,
@@ -161,4 +162,4 @@ export function InventoryStashGrid({
       </View>
     </View>
   );
-}
+});
