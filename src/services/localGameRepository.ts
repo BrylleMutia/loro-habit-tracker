@@ -525,7 +525,7 @@ export function acceptLocalGuildQuest(
 ) {
   state = withCurrentGuildQuestBoard(state, localDateKey);
   const periodState = state.guildQuestBoard[questKind];
-  const acceptanceLimit = questKind === "side" ? 3 : 1;
+  const acceptanceLimit = questKind === "side" ? 2 : 1;
   if (periodState.lockedIds.length >= acceptanceLimit) {
     throw new GameRepositoryError(
       questKind === "side"

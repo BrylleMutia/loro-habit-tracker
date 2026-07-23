@@ -135,13 +135,25 @@ function hashValue(value: string) {
   return hash >>> 0;
 }
 
+function getCandidateLimit(kind: GuildQuestKind) {
+  return kind === "side" ? 4 : 2;
+}
+
 function getCandidates(kind: GuildQuestKind, periodKey: DateKey) {
   const catalog = kind === "side" ? guildSideQuestCatalog : guildMainQuestCatalog;
-  const count = kind === "side" ? 5 : 3;
   return [...catalog]
     .sort((first, second) => hashValue(`${periodKey}:${first.id}`) - hashValue(`${periodKey}:${second.id}`))
-    .slice(0, count)
+    .slice(0, getCandidateLimit(kind))
     .map((quest) => quest.id);
+}
+
+function normalizeCandidateIds(
+  kind: GuildQuestKind,
+  periodState: GuildQuestPeriodState,
+  periodKey: DateKey
+) {
+  const generatedIds = getCandidates(kind, periodKey);
+  return Array.from(new Set([...periodState.lockedIds, ...generatedIds])).slice(0, getCandidateLimit(kind));
 }
 
 export function getGuildQuestPeriod(kind: GuildQuestKind, dateKey: DateKey): GuildQuestPeriod {
@@ -188,9 +200,24 @@ export function createGuildQuestBoard(dateKey: DateKey): GuildQuestBoardState {
 export function refreshGuildQuestBoard(board: GuildQuestBoardState, dateKey: DateKey) {
   const sidePeriod = getGuildQuestPeriod("side", dateKey);
   const mainPeriod = getGuildQuestPeriod("main", dateKey);
+  const side =
+    board.side.periodKey === sidePeriod.key
+      ? {
+          ...board.side,
+          candidateIds: normalizeCandidateIds("side", board.side, sidePeriod.key)
+        }
+      : createPeriodState("side", dateKey);
+  const main =
+    board.main.periodKey === mainPeriod.key
+      ? {
+          ...board.main,
+          candidateIds: normalizeCandidateIds("main", board.main, mainPeriod.key)
+        }
+      : createPeriodState("main", dateKey);
+
   return {
-    side: board.side.periodKey === sidePeriod.key ? board.side : createPeriodState("side", dateKey),
-    main: board.main.periodKey === mainPeriod.key ? board.main : createPeriodState("main", dateKey)
+    side,
+    main
   };
 }
 
