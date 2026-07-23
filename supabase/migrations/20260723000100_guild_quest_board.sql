@@ -135,8 +135,8 @@ declare
   main_candidates text[] := loro_private.guild_candidate_ids('main', main_key);
   side_locked text[] := '{}';
   main_locked text[] := '{}';
-  stored_side_reward_previews jsonb := '{}'::jsonb;
-  stored_main_reward_previews jsonb := '{}'::jsonb;
+  side_reward_previews jsonb := '{}'::jsonb;
+  main_reward_previews jsonb := '{}'::jsonb;
   side_claimed text[] := '{}';
   main_claimed text[] := '{}';
 begin
@@ -393,6 +393,8 @@ declare
   main_locked text[] := '{}';
   side_reward_previews jsonb := '{}'::jsonb;
   main_reward_previews jsonb := '{}'::jsonb;
+  stored_side_reward_previews jsonb := '{}'::jsonb;
+  stored_main_reward_previews jsonb := '{}'::jsonb;
   preview_item_definition_id text;
   preview_rarity text;
   preview_equipment public.equipment_items%rowtype;
