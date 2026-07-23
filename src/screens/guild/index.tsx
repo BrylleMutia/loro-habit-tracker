@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { InventoryStackDetailsModal } from "../../components/InventoryStackDetailsModal";
+import { GuildBriefingCard } from "../../components/GuildBriefingCard";
 import {
    QuestCelebrationModal,
    type LootDropDetails,
@@ -54,6 +55,7 @@ export function GuildScreen({ onDailyCheckInPress }: GuildScreenProps) {
    const acceptedMainCount = mainCandidates.filter(
       (quest) => quest.isLocked,
    ).length;
+   const lockedMainQuest = mainCandidates.find((quest) => quest.isLocked);
 
    const acceptQuest = async (quest: GuildQuestView) => {
       if (!isOnline || isBusy || quest.isLocked) return;
@@ -136,6 +138,15 @@ export function GuildScreen({ onDailyCheckInPress }: GuildScreenProps) {
                      />
                   </View>
                ))}
+               {lockedMainQuest ? (
+                  <View key="main-quest-briefing" className="w-1/2 px-1">
+                     <GuildBriefingCard
+                        quest={lockedMainQuest}
+                        now={now}
+                        timeZone={timeZone}
+                     />
+                  </View>
+               ) : null}
             </View>
 
             <GuildSectionHeader
