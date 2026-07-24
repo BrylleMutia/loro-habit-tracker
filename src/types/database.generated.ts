@@ -485,6 +485,57 @@ export type Database = {
           },
         ]
       }
+      lory_daily_briefings: {
+        Row: {
+          context_hash: string | null
+          context_version: string
+          created_at: string
+          date_key: string
+          generated_at: string | null
+          generation_token: string | null
+          lease_expires_at: string | null
+          message: string | null
+          model: string
+          prompt_version: string
+          refresh_count: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          context_hash?: string | null
+          context_version: string
+          created_at?: string
+          date_key: string
+          generated_at?: string | null
+          generation_token?: string | null
+          lease_expires_at?: string | null
+          message?: string | null
+          model?: string
+          prompt_version: string
+          refresh_count?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          context_hash?: string | null
+          context_version?: string
+          created_at?: string
+          date_key?: string
+          generated_at?: string | null
+          generation_token?: string | null
+          lease_expires_at?: string | null
+          message?: string | null
+          model?: string
+          prompt_version?: string
+          refresh_count?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_class_id: string
