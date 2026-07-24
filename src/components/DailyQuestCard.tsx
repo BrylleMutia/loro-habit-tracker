@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAudioPlayer } from "expo-audio";
 
+import { sounds } from "../constants/audio";
 import { colors } from "../constants/colors";
 import {
   useGameActions,
@@ -41,11 +43,24 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
   const { energy } = useGameResources();
   const { isOnline, mutationInFlight, serverClockOffsetMs } = useGameSync();
   const { clearSyncError, completeDailyQuest, startDailyQuest } = useGameActions();
+  const shortPressSoundPlayer = useAudioPlayer(sounds.shortPressButton, {
+    keepAudioSessionActive: true
+  });
   const [nowMilliseconds, setNowMilliseconds] = useState(
     () => Date.now() + serverClockOffsetMs
   );
   const activeLocation = activeAdventure.activeLocation;
   const timedQuestProgress = activeAdventure.timedQuestProgress;
+
+  useEffect(() => {
+    shortPressSoundPlayer.loop = false;
+    shortPressSoundPlayer.volume = 0.35;
+  }, [shortPressSoundPlayer]);
+
+  const playShortPressSound = () => {
+    void shortPressSoundPlayer.seekTo(0).catch(() => undefined);
+    shortPressSoundPlayer.play();
+  };
 
   useEffect(() => {
     if (!timedQuestProgress) {
@@ -261,6 +276,7 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
               clearSyncError();
               void startDailyQuest(activeHabit.id).catch(() => undefined);
             }}
+            onPressSound={playShortPressSound}
           />
         )
       ) : (

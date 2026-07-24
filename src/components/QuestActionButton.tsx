@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAudioPlayer } from "expo-audio";
 import Animated, {
   cancelAnimation,
   Easing,
@@ -11,7 +12,9 @@ import Animated, {
   withTiming
 } from "react-native-reanimated";
 
+import { sounds } from "../constants/audio";
 import { colors } from "../constants/colors";
+import { useAppAudio } from "../contexts/audioContext";
 import type { IconName } from "../types/app";
 
 export type QuestActionMode = "hold" | "tap";
@@ -29,6 +32,7 @@ type QuestActionButtonProps = {
   loading?: boolean;
   mode: QuestActionMode;
   onAction: () => void;
+  onPressSound?: () => void;
   size?: "compact" | "default";
   variant?: "danger" | "primary" | "secondary";
 };
@@ -50,6 +54,7 @@ export function QuestActionButton({
   loading = false,
   mode,
   onAction,
+  onPressSound,
   size = "default",
   variant = "primary"
 }: QuestActionButtonProps) {
@@ -63,7 +68,18 @@ export function QuestActionButton({
   const pressDepth = useSharedValue(0);
   const completionPulse = useSharedValue(0);
   const reduceMotion = useReducedMotion();
+  const holdSoundPlayer = useAudioPlayer(mode === "hold" ? sounds.longPressButton : null);
+  const { playShortPressActionSound } = useAppAudio();
   const isComplete = completed || hasCompletedInteraction;
+
+  useEffect(() => {
+    if (mode !== "hold") {
+      return;
+    }
+
+    holdSoundPlayer.loop = true;
+    holdSoundPlayer.volume = 0.35;
+  }, [holdSoundPlayer, mode]);
 
   useEffect(
     () => () => {
@@ -82,6 +98,33 @@ export function QuestActionButton({
     },
     [completionPulse, pressDepth, progress]
   );
+
+  const startHoldSound = () => {
+    if (mode !== "hold") {
+      return;
+    }
+
+    holdSoundPlayer.pause();
+    void holdSoundPlayer.seekTo(0).catch(() => undefined);
+    holdSoundPlayer.play();
+  };
+
+  const stopHoldSound = () => {
+    if (mode !== "hold") {
+      return;
+    }
+
+    holdSoundPlayer.pause();
+    void holdSoundPlayer.seekTo(0).catch(() => undefined);
+  };
+
+  const playTapSound = () => {
+    if (mode !== "tap") {
+      return;
+    }
+
+    (onPressSound ?? playShortPressActionSound)();
+  };
 
   const startPress = () => {
     if (disabled || isComplete) {
@@ -102,12 +145,15 @@ export function QuestActionButton({
     cancelAnimation(progress);
     pressDepth.value = withTiming(1, { duration: 90 });
 
-    if (mode === "hold") {
+    if (mode === "tap") {
+      playTapSound();
+    } else {
       progress.value = 0;
       progress.value = withTiming(1, {
         duration: holdDurationMs,
         easing: Easing.linear
       });
+      startHoldSound();
     }
   };
 
@@ -118,6 +164,7 @@ export function QuestActionButton({
     });
 
     if (mode === "hold" && !completionRef.current) {
+      stopHoldSound();
       cancelAnimation(progress);
       progress.value = reduceMotion
         ? 0
@@ -139,6 +186,7 @@ export function QuestActionButton({
     }
 
     completionRef.current = true;
+    stopHoldSound();
     setHasCompletedInteraction(true);
     setIsIncompleteHold(false);
     completionPulse.value = reduceMotion
