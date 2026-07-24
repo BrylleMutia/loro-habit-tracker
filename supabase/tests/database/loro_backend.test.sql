@@ -1,12 +1,25 @@
 begin;
 
-select plan(69);
+select plan(75);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'equipment_slots', 'equipment slot catalog exists');
 select has_table('public', 'equipment_sets', 'equipment set catalog exists');
 select has_table('public', 'equipment_items', 'equipment item catalog exists');
 select has_table('public', 'inventory_items', 'inventory item instances exist');
+select has_table('public', 'lory_daily_briefings', 'daily Lory briefing cache exists');
+select ok(
+  (select relrowsecurity from pg_catalog.pg_class where oid = 'public.lory_daily_briefings'::regclass),
+  'daily Lory briefing cache has RLS enabled'
+);
+select ok(
+  not has_table_privilege('authenticated', 'public.lory_daily_briefings', 'SELECT'),
+  'authenticated clients cannot read briefing cache rows directly'
+);
+select ok(
+  has_table_privilege('service_role', 'public.lory_daily_briefings', 'SELECT,INSERT,UPDATE,DELETE'),
+  'the server-side briefing function can manage the cache'
+);
 select has_table('public', 'quest_nodes', 'quest catalog exists');
 select has_function('public', 'get_game_snapshot', array[]::text[], 'snapshot RPC exists');
 select is((select count(*) from public.habit_definitions), 6::bigint, 'six habits are seeded');
@@ -127,6 +140,31 @@ values
     '',
     ''
   );
+
+select throws_ok(
+  $$
+    insert into public.lory_daily_briefings (
+      user_id, date_key, status, message, prompt_version, context_version
+    ) values (
+      '11111111-1111-1111-1111-111111111111', '2026-07-24', 'ready', repeat('x', 129), 'lory-briefing-v2', '1'
+    )
+  $$,
+  '23514',
+  null,
+  'briefings reject messages longer than 128 characters'
+);
+select throws_ok(
+  $$
+    insert into public.lory_daily_briefings (
+      user_id, date_key, status, message, prompt_version, context_version, refresh_count
+    ) values (
+      '11111111-1111-1111-1111-111111111111', '2026-07-24', 'failed', null, 'lory-briefing-v2', '1', 3
+    )
+  $$,
+  '23514',
+  null,
+  'briefing refresh count cannot exceed two per day'
+);
 
 select is(
   (select display_name from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
@@ -256,7 +294,7 @@ select ok(
     where inventory.user_id = '11111111-1111-1111-1111-111111111111'
       and inventory.rarity in ('common', 'uncommon', 'rare', 'epic', 'legendary')
       and jsonb_typeof(inventory.stats) = 'object'
-      and jsonb_object_length(inventory.stats) between 1 and 2
+      and (select count(*) from jsonb_object_keys(inventory.stats)) between 1 and 2
   ),
   'the loot instance stores a supported rarity and one or two stats'
 );
