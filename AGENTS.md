@@ -1,8 +1,8 @@
-﻿# Loro Habit Tracker Engineering Guide
+﻿# Loro - Gamified Habits Engineering Guide
 
 ## Product Overview
 
-- `Loro Habit Tracker` is an Expo React Native app that turns everyday habits into short adventure quests.
+- `Loro - Gamified Habits` is an Expo React Native app that turns everyday habits into short adventure quests.
 - The initial habits are `Exercise`, `Reading`, `Water`, and `Sleep`.
 - Lory is the app mascot. Use the blue/red/green pixel-art `Trail Captain` version consistently when Lory appears.
 - The experience is light, friendly, compact, and game-inspired. It should encourage consistency without making routine logging tedious.

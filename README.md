@@ -1,6 +1,6 @@
-# Loro Habit Tracker
+# Loro - Gamified Habits
 
-Loro is an Expo habit tracker whose durable game state is backed by Supabase Auth and Postgres. The app keeps Context as its UI-facing state layer, while authenticated Postgres functions own rewards, energy, streaks, path progress, and activity history.
+Loro - Gamified Habits is an Expo app whose durable game state is backed by Supabase Auth and Postgres. The app keeps Context as its UI-facing state layer, while authenticated Postgres functions own rewards, energy, streaks, path progress, and activity history.
 
 ## Prerequisites
 
@@ -76,3 +76,9 @@ Keep email confirmation enabled. Before a public launch, configure custom SMTP a
 - Client code can read only its own rows. Direct economy and progress writes are revoked; mutations go through the authenticated RPCs.
 
 Offline sessions may read their last SQLite-cached snapshot. Quest starts, completions, daily check-ins, and reward claims require a connection and refresh the canonical snapshot after success.
+
+## Lory AI briefing
+
+The signed-in Home hero requests one compact daily briefing from the `generate-lory-briefing` Supabase Edge Function. Configure `DEEPSEEK_API_KEY` as a Supabase Edge Function secret before deploying the function. Keep this secret server-side; it must never be added to an `EXPO_PUBLIC_*` variable or bundled into Expo.
+
+Guest and offline users continue to use the local habit prompt, while authenticated users read the server-cached briefing for their current local date.
