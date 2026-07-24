@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "Loro - Habit Tracker",
-    "slug": "loro-habit-tracker",
+    "name": "Loro - Gamified Habits",
+    "slug": "loro-gamified-habits",
     "version": "0.1.0",
     "scheme": "loro",
     "orientation": "portrait",
     "icon": "./src/assets/images/app-logo-lory.png",
     "userInterfaceStyle": "light",
-    "description": "A gamified habit tracker where Lory guides daily quests, lessons, and streaks.",
+    "description": "Loro - Gamified Habits turns everyday routines into short adventure quests guided by Lory.",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -19,11 +19,14 @@
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/images/app-logo-lory.png",
         "backgroundColor": "#DAF7EE"
-      }
+      },
+      "permissions": [
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",
-      "name": "Loro - Habit Tracker",
+      "name": "Loro - Gamified Habits",
       "shortName": "Loro",
       "favicon": "./src/assets/images/favicon-lory.png"
     },
@@ -31,7 +34,19 @@
       "expo-asset",
       "expo-font",
       "expo-secure-store",
-      "expo-sqlite"
-    ]
+      "expo-sqlite",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "59a8765e-9361-4b72-867f-bb48599c4783"
+      }
+    }
   }
 }

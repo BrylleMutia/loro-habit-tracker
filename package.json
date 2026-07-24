@@ -1,5 +1,5 @@
 {
-  "name": "loro-habit-tracker",
+  "name": "loro-gamified-habits",
   "version": "0.1.0",
   "private": true,
   "main": "expo/AppEntry.js",
@@ -25,6 +25,7 @@
     "@supabase/supabase-js": "^2.110.6",
     "expo": "~54.0.36",
     "expo-asset": "~12.0.13",
+    "expo-audio": "~1.1.1",
     "expo-font": "~14.0.12",
     "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.12",
