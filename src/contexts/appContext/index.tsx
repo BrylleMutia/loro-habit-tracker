@@ -132,6 +132,10 @@ type GameBriefingContextValue = {
   briefingContext: LoryBriefingContext;
 };
 
+type GameSettingsContextValue = {
+  settings: AppSettings;
+};
+
 type GameActionsContextValue = {
   setActiveHabit: (habitId: HabitId) => void;
   startDailyQuest: (habitId: HabitId) => Promise<QuestStartOutcome>;
@@ -161,6 +165,7 @@ const GameResourcesContext = createContext<GameResourcesContextValue | null>(nul
 const GameQuestsContext = createContext<GameQuestsContextValue | null>(null);
 const GameSyncContext = createContext<GameSyncContextValue | null>(null);
 const GameBriefingContext = createContext<GameBriefingContextValue | null>(null);
+const GameSettingsContext = createContext<GameSettingsContextValue | null>(null);
 const GameActionsContext = createContext<GameActionsContextValue | null>(null);
 
 function toGameError(error: unknown) {
@@ -595,6 +600,10 @@ export function AppStateProvider({
     () => ({ briefingContext: buildLoryBriefingContext(state, todayDateKey) }),
     [state, todayDateKey]
   );
+  const settingsValue = useMemo<GameSettingsContextValue>(
+    () => ({ settings: state.settings }),
+    [state.settings]
+  );
   const actionsValue = useMemo<GameActionsContextValue>(
     () => ({
       setActiveHabit,
@@ -634,9 +643,11 @@ export function AppStateProvider({
             <GameQuestsContext.Provider value={questsValue}>
               <GameSyncContext.Provider value={syncValue}>
                 <GameBriefingContext.Provider value={briefingValue}>
-                  <GameActionsContext.Provider value={actionsValue}>
-                    {children}
-                  </GameActionsContext.Provider>
+                  <GameSettingsContext.Provider value={settingsValue}>
+                    <GameActionsContext.Provider value={actionsValue}>
+                      {children}
+                    </GameActionsContext.Provider>
+                  </GameSettingsContext.Provider>
                 </GameBriefingContext.Provider>
               </GameSyncContext.Provider>
             </GameQuestsContext.Provider>
@@ -679,6 +690,10 @@ export function useGameSync() {
 
 export function useGameBriefing() {
   return useRequiredContext(GameBriefingContext, "useGameBriefing");
+}
+
+export function useGameSettings() {
+  return useRequiredContext(GameSettingsContext, "useGameSettings");
 }
 
 export function useGameActions() {
