@@ -18,6 +18,7 @@ import {
    useGameHabits,
    useGameQuests,
    useGameProfile,
+   useGameSync,
 } from "../../contexts/appContext";
 import { useLoryBriefing } from "../../hooks/useLoryBriefing";
 import { useScreenContentWidth } from "../../hooks/useScreenContentWidth";
@@ -270,6 +271,7 @@ function ActiveHabitCard() {
       habitList,
    } = useGameHabits();
    const { setActiveHabit } = useGameActions();
+   const { todayDateKey } = useGameSync();
    const focusLocation = activeAdventure.focusLocation;
 
    return (
@@ -326,17 +328,35 @@ function ActiveHabitCard() {
          <View className="-mx-1 mt-4 flex-row flex-wrap">
             {habitList.map((habit) => {
                const isActive = habit.id === activeHabitId;
+               const completedToday = habit.lastCompletedDateKey === todayDateKey;
+               const inProgress =
+                  habit.activeTimedQuest !== null &&
+                  habit.activeTimedQuest.startedOn === todayDateKey;
+
+               let borderClass = "border-line bg-surface-panel";
+               let iconColor = colors.muted;
+               let labelClass = "text-content-muted";
+
+               if (isActive) {
+                  borderClass = "border-primary bg-primary-soft";
+                  iconColor = colors.blueDark;
+                  labelClass = "text-primary-strong";
+               } else if (completedToday) {
+                  borderClass = "border-success bg-success-soft";
+                  iconColor = colors.green;
+                  labelClass = "text-content-green";
+               } else if (inProgress) {
+                  borderClass = "border-line-reward bg-reward-soft";
+                  iconColor = colors.gold;
+                  labelClass = "text-content-gold";
+               }
 
                return (
                   <View key={habit.id} className="mb-2 w-1/3 px-1">
                      <TouchableOpacity
-                        className={`h-11 flex-row items-center justify-center rounded-card border px-2 ${
-                           isActive
-                              ? "border-primary bg-primary-soft"
-                              : "border-line bg-surface-panel"
-                        }`}
+                        className={`h-11 flex-row items-center justify-center rounded-card border px-2 ${borderClass}`}
                         activeOpacity={0.82}
-                        accessibilityLabel={`Show ${habit.label} habit`}
+                        accessibilityLabel={`${habit.label}${completedToday ? ", completed" : inProgress ? ", in progress" : ""}`}
                         accessibilityRole="button"
                         accessibilityState={{ selected: isActive }}
                         onPress={() => setActiveHabit(habit.id)}
@@ -344,14 +364,10 @@ function ActiveHabitCard() {
                         <Ionicons
                            name={habit.icon}
                            size={16}
-                           color={isActive ? colors.blueDark : colors.muted}
+                           color={iconColor}
                         />
                         <Text
-                           className={`ml-1 text-micro font-black ${
-                              isActive
-                                 ? "text-primary-strong"
-                                 : "text-content-muted"
-                           }`}
+                           className={`ml-1 text-micro font-black ${labelClass}`}
                            numberOfLines={1}
                         >
                            {habit.label}
