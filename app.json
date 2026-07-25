@@ -22,7 +22,8 @@
       },
       "permissions": [
         "android.permission.MODIFY_AUDIO_SETTINGS"
-      ]
+      ],
+      "package": "com.bryllemutia.lorogamifiedhabits"
     },
     "web": {
       "bundler": "metro",
