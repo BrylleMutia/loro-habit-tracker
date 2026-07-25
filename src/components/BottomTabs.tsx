@@ -13,6 +13,7 @@ import Animated, {
 
 import { colors } from "../constants/colors";
 import { tabs } from "../constants/home";
+import { useHaptics } from "../hooks/useHaptics";
 import type { TabId } from "../types/app";
 
 type BottomTabsProps = {
@@ -51,6 +52,12 @@ function AnimatedTabItem({
 }) {
   const reduceMotion = useReducedMotion();
   const highlightProgress = useSharedValue(isActive ? 1 : 0);
+  const { light } = useHaptics();
+
+  const handlePress = () => {
+    light();
+    onPress();
+  };
 
   useEffect(() => {
     if (reduceMotion) {
@@ -96,7 +103,7 @@ function AnimatedTabItem({
       accessibilityLabel={`${tab.label} tab`}
       accessibilityRole="button"
       accessibilityState={{ selected: isActive }}
-      onPress={onPress}
+      onPress={handlePress}
     >
       <Animated.View
         pointerEvents="none"

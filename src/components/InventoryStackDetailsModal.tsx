@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../constants/colors";
 import { equipmentItemsById, equipmentRaritiesById } from "../constants/equipment";
 import { equipmentAttributes, loadoutSlots } from "../constants/profile";
+import { useHaptics } from "../hooks/useHaptics";
 import { shadows } from "../styles/shadows";
 import type { InventoryStack } from "../types/app";
 import type { EquipmentLootPreview } from "../utility/equipmentLoot";
@@ -50,6 +51,8 @@ export function InventoryStackDetailsModal({
 }) {
   if (!stack && !preview) return null;
 
+  const { medium } = useHaptics();
+
   const itemName = stack?.representative.name ?? preview?.definition.name ?? "Equipment";
   const itemDefinition = stack
     ? equipmentItemsById[stack.representative.itemDefinitionId]
@@ -63,6 +66,7 @@ export function InventoryStackDetailsModal({
 
   const handleEquip = async () => {
     if (!stack || !onEquip || !actionItemId) return;
+    medium();
     const succeeded = await onEquip(actionItemId);
     if (succeeded) onClose();
   };

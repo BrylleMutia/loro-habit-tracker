@@ -16,6 +16,7 @@ import {
   equipmentRaritiesById
 } from "../constants/equipment";
 import { equipmentAttributes, loadoutSlots } from "../constants/profile";
+import { useHaptics } from "../hooks/useHaptics";
 import { shadows } from "../styles/shadows";
 import type { EquipmentAttributeId, InventoryItem } from "../types/app";
 import type { QuestActionMode } from "./QuestActionButton";
@@ -236,6 +237,7 @@ function LootDropCelebration({
   onClose: () => void;
 }) {
   const [page, setPage] = useState<"rewards" | "streak">("rewards");
+  const { heavy, medium } = useHaptics();
   const rewards = [
     { icon: "ellipse" as const, color: colors.gold, label: `+${details.coinReward} coins` },
     { icon: "sparkles" as const, color: colors.green, label: `+${details.xpReward} XP` }
@@ -350,9 +352,16 @@ function LootDropCelebration({
                   className="mt-5 flex-1"
                   completedLabel="Rewards collected"
                   icon="bag-check"
-                  label="Collect rewards"
-                  mode="tap"
-                  onAction={() => setPage("streak")}
+                    label="Collect rewards"
+                    mode="tap"
+                    onAction={() => {
+                      if (lootItem.rarity === "legendary") {
+                        heavy();
+                      } else {
+                        medium();
+                      }
+                      setPage("streak");
+                    }}
                 />
                 <View className="-mb-2 ml-3">
                   <PixelParrot size="sm" mirrorX />

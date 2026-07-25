@@ -11,6 +11,7 @@ import {
   useGameResources,
   useGameSync
 } from "../contexts/appContext";
+import { useHaptics } from "../hooks/useHaptics";
 import { shadows } from "../styles/shadows";
 import { QuestActionButton } from "./QuestActionButton";
 import type { LootDropDetails } from "./QuestCelebrationModal";
@@ -46,6 +47,7 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
   const shortPressSoundPlayer = useAudioPlayer(sounds.shortPressButton, {
     keepAudioSessionActive: true
   });
+  const { medium } = useHaptics();
   const [nowMilliseconds, setNowMilliseconds] = useState(
     () => Date.now() + serverClockOffsetMs
   );
@@ -156,6 +158,7 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
       : "Need more energy";
   const completeQuest = async () => {
     clearSyncError();
+    medium();
     try {
       const outcome = await completeDailyQuest(activeHabit.id);
       if (outcome.alreadyCompleted || !outcome.lootItem) return;
@@ -274,6 +277,7 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
             mode="tap"
             onAction={() => {
               clearSyncError();
+              medium();
               void startDailyQuest(activeHabit.id).catch(() => undefined);
             }}
             onPressSound={playShortPressSound}
