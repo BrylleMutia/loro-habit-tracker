@@ -227,6 +227,36 @@ For quest or state changes, also verify:
 6. Rewards, XP, activity history, and path progress update together.
 7. Node seven unlocks the chapter reward without losing completed path data.
 
+## Feature Roadmap (PLANS.md)
+
+The file `plans/PLANS.md` is the single source of truth for Loro's development roadmap. It contains a prioritized feature matrix (40 features across P0–P3 tiers), detailed implementation notes, a conversation log, and an implementation order graph. Follow these rules when working with it:
+
+### Before implementing a feature
+
+1. **Check PLANS.md first.** Read the feature's entry in the Priority Matrix and its dedicated section under Feature Details. Confirm the feature isn't already implemented (☑ status).
+2. **Review the implementation notes.** Each feature section contains guidance on what files to touch, what patterns to follow, and how the feature correlates with others.
+3. **Scan for conflicts.** The [Conflict Analysis](#conflict-analysis) section maps user-requested items to planned features. Cross-reference to avoid duplicate work or contradictory implementations.
+4. **Check dependencies.** Some features depend on others (e.g., #3 Habit Switcher enables `selection` haptic from #6). Read related features to understand the full context.
+
+### After completing a feature or significant change
+
+1. **Update the priority matrix** — change the feature's status from ☐ to ☑.
+2. **Update the "Last updated" date** at the top of the file.
+3. **Append a conversation log entry** under `## Conversation Log` with:
+   - What was implemented
+   - Which files were changed
+   - Key design decisions made
+   - Any remaining future work or limitations
+4. **Update `Implementation notes`** in the feature's dedicated section if the actual implementation diverged from the plan. Mark implementation details with ✅ to indicate what was actually built vs. planned.
+5. **Add new features** discovered during implementation that aren't in the matrix yet. Assign a priority tier, effort estimate, and impact level.
+
+### Guidelines
+
+- Treat PLANS.md as the canonical feature register. If a feature isn't in it, it doesn't exist yet.
+- The conversation log serves as the project's changelog — keep entries factual, terse, and developer-facing.
+- Don't remove completed features from the matrix. The ☑ status preserves the historical record.
+- When a feature's implementation diverges from the original plan, document the divergence rather than erasing the original plan. Both the intent and the outcome are valuable.
+
 ## External References
 
 - NativeWind: https://www.nativewind.dev/llms.txt
