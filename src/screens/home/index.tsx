@@ -23,6 +23,7 @@ import {
 import { useLoryBriefing } from "../../hooks/useLoryBriefing";
 import { useScreenContentWidth } from "../../hooks/useScreenContentWidth";
 import { shadows } from "../../styles/shadows";
+import type { IconName } from "../../types/app";
 import { HabitPathScreen } from "./HabitPathScreen";
 import Animated, {
    cancelAnimation,
@@ -333,23 +334,33 @@ function ActiveHabitCard() {
                   habit.activeTimedQuest !== null &&
                   habit.activeTimedQuest.startedOn === todayDateKey;
 
-               let borderClass = "border-line bg-surface-panel";
-               let iconColor = colors.muted;
-               let labelClass = "text-content-muted";
+               // All pills share a blue background for visual consistency.
+               // Status is communicated through the icon only.
+               const borderClass = isActive
+                  ? "border-primary-strong bg-primary-soft"
+                  : "border-primary bg-primary-soft";
 
-               if (isActive) {
-                  borderClass = "border-primary bg-primary-soft";
-                  iconColor = colors.blueDark;
-                  labelClass = "text-primary-strong";
-               } else if (completedToday) {
-                  borderClass = "border-success bg-success-soft";
-                  iconColor = colors.green;
-                  labelClass = "text-content-green";
+               let statusIcon: IconName = habit.icon;
+               let statusIconColor = colors.muted;
+
+               if (completedToday) {
+                  statusIcon = "checkmark-circle";
+                  statusIconColor = colors.green;
                } else if (inProgress) {
-                  borderClass = "border-line-reward bg-reward-soft";
-                  iconColor = colors.gold;
-                  labelClass = "text-content-gold";
+                  statusIcon = "play-circle-outline";
+                  statusIconColor = colors.gold;
+               } else if (isActive) {
+                  statusIcon = habit.icon;
+                  statusIconColor = colors.blueDark;
                }
+
+               const labelClass = isActive
+                  ? "text-primary-strong"
+                  : completedToday
+                    ? "text-content-green"
+                    : inProgress
+                      ? "text-content-gold"
+                      : "text-content-muted";
 
                return (
                   <View key={habit.id} className="mb-2 w-1/3 px-1">
@@ -362,9 +373,9 @@ function ActiveHabitCard() {
                         onPress={() => setActiveHabit(habit.id)}
                      >
                         <Ionicons
-                           name={habit.icon}
+                           name={statusIcon}
                            size={16}
-                           color={iconColor}
+                           color={statusIconColor}
                         />
                         <Text
                            className={`ml-1 text-micro font-black ${labelClass}`}
