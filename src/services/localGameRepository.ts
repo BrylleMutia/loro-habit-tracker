@@ -159,7 +159,7 @@ export function startLocalDailyQuest(
 
   const nextState: AppState = {
     ...state,
-    energy: { ...state.energy, current: state.energy.current - location.node.energyCost },
+    energy: { ...state.energy, current: state.energy.current - location.node.energyCost, lastRefillAt: now },
     habits: {
       ...state.habits,
       [habitId]: {
@@ -261,7 +261,7 @@ export function completeLocalDailyQuest(
   const nextState: AppState = {
     ...state,
     coins: state.coins + node.reward.coins,
-    energy: { ...state.energy, current: state.energy.current - completionEnergyCost },
+    energy: { ...state.energy, current: state.energy.current - completionEnergyCost, lastRefillAt: now },
     profile: addProfileXp(state.profile, node.reward.xp),
     dailyStreak,
     longestStreak: Math.max(state.longestStreak, dailyStreak),
