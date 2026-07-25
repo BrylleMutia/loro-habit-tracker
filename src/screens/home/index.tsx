@@ -219,20 +219,19 @@ function HeroGreeting() {
                      </Text>
                      {showRefreshButton ? (
                         <TouchableOpacity
-                           className={`ml-2 h-7 w-7 items-center justify-center rounded-card border ${
-                              canRefreshBriefing
+                           className={`ml-2 h-7 w-7 items-center justify-center rounded-card border ${canRefreshBriefing
                                  ? "border-line-primary bg-primary-soft"
                                  : "border-line bg-surface-panel"
-                           }`}
+                              }`}
                            activeOpacity={0.8}
                            accessibilityLabel={
                               isLoading
                                  ? "Generating a new Lory briefing"
                                  : canRefreshBriefing
-                                   ? `Refresh Lory briefing. ${2 - refreshCount} refreshes remaining today`
-                                   : refreshCount >= 2
-                                     ? "Daily Lory briefing refresh limit reached"
-                                     : "Lory briefing refresh unavailable"
+                                    ? `Refresh Lory briefing. ${2 - refreshCount} refreshes remaining today`
+                                    : refreshCount >= 2
+                                       ? "Daily Lory briefing refresh limit reached"
+                                       : "Lory briefing refresh unavailable"
                            }
                            accessibilityRole="button"
                            accessibilityState={{ disabled: !canRefreshBriefing }}
@@ -357,10 +356,10 @@ function ActiveHabitCard() {
                const labelClass = isActive
                   ? "text-primary-strong"
                   : completedToday
-                    ? "text-content-green"
-                    : inProgress
-                      ? "text-content-gold"
-                      : "text-content-muted";
+                     ? "text-content-green"
+                     : inProgress
+                        ? "text-content-gold"
+                        : "text-content-muted";
 
                return (
                   <View key={habit.id} className="mb-2 w-1/3 px-1">
