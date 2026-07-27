@@ -18,7 +18,7 @@ import type { TabId } from "../types/app";
 
 type BottomTabsProps = {
   activeTab: TabId;
-  onChangeTab: (tab: TabId) => void;
+  onChangeTab: (tab: TabId) => boolean;
 };
 
 export function BottomTabs({ activeTab, onChangeTab }: BottomTabsProps) {
@@ -47,16 +47,15 @@ function AnimatedTabItem({
   tab
 }: {
   isActive: boolean;
-  onPress: () => void;
+  onPress: () => boolean;
   tab: (typeof tabs)[number];
 }) {
   const reduceMotion = useReducedMotion();
   const highlightProgress = useSharedValue(isActive ? 1 : 0);
-  const { light } = useHaptics();
+  const { selection } = useHaptics();
 
   const handlePress = () => {
-    light();
-    onPress();
+    if (onPress()) selection();
   };
 
   useEffect(() => {

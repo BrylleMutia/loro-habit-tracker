@@ -160,11 +160,11 @@ export function PersistentTabHost({ initialTab, renderScene }: PersistentTabHost
   const requestTabChange = useCallback(
     (nextTab: TabId) => {
       const fromTab = activeTabRef.current;
-      if (fromTab === nextTab || isTransitioningRef.current) return;
+      if (fromTab === nextTab || isTransitioningRef.current) return false;
 
       const fromIndex = getTabIndex(fromTab);
       const nextIndex = getTabIndex(nextTab);
-      if (fromIndex < 0 || nextIndex < 0) return;
+      if (fromIndex < 0 || nextIndex < 0) return false;
 
       activeTabRef.current = nextTab;
       setActiveTab(nextTab);
@@ -178,7 +178,7 @@ export function PersistentTabHost({ initialTab, renderScene }: PersistentTabHost
       if (reduceMotion) {
         transitionProgress.value = 1;
         resetSwipe();
-        return;
+        return true;
       }
 
       const nextTransition: TabTransition = {
@@ -202,6 +202,7 @@ export function PersistentTabHost({ initialTab, renderScene }: PersistentTabHost
           if (finished) runOnJS(finishTransition)(nextTransition.id);
         }
       );
+      return true;
     },
     [finishTransition, reduceMotion, resetSwipe, transitionProgress]
   );
