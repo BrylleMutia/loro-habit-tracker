@@ -87,6 +87,7 @@ export const images = {
       "../assets/images/equipment-placeholders/equipment-slot-buddy.png"
     ),
   },
+  clearedStamp: require("../assets/images/cleared-stamp.png"),
   headerBackground: require("../assets/images/header-background-pixel.jpg"),
   parrotMascot: require("../assets/images/parrot-trail-captain.png"),
 } as const;

@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { AdventurePathPreview } from "../../components/AdventurePathPreview";
 import { DailyQuestCard } from "../../components/DailyQuestCard";
+import { HabitIconWithStatus } from "../../components/HabitIconWithStatus";
 import { LoryThinkingIndicator } from "../../components/LoryThinkingIndicator";
 import { PixelParrot } from "../../components/PixelParrot";
 import {
@@ -339,18 +340,17 @@ function ActiveHabitCard() {
                   ? "border-primary-strong bg-primary-soft"
                   : "border-primary bg-primary-soft";
 
-               let statusIcon: IconName = habit.icon;
+               const statusIcon: IconName | null = completedToday
+                  ? "checkmark-circle"
+                  : inProgress
+                     ? "play-circle-outline"
+                     : null;
                let statusIconColor = colors.muted;
 
                if (completedToday) {
-                  statusIcon = "checkmark-circle";
                   statusIconColor = colors.green;
                } else if (inProgress) {
-                  statusIcon = "play-circle-outline";
                   statusIconColor = colors.gold;
-               } else if (isActive) {
-                  statusIcon = habit.icon;
-                  statusIconColor = colors.blueDark;
                }
 
                const labelClass = isActive
@@ -371,10 +371,13 @@ function ActiveHabitCard() {
                         accessibilityState={{ selected: isActive }}
                         onPress={() => setActiveHabit(habit.id)}
                      >
-                        <Ionicons
-                           name={statusIcon}
-                           size={16}
-                           color={statusIconColor}
+                        <HabitIconWithStatus
+                           habitIcon={habit.icon}
+                           iconSize={16}
+                           containerClassName="relative h-6 w-6 items-center justify-center"
+                           mainIconColor={isActive ? colors.blueDark : colors.muted}
+                           statusIcon={statusIcon}
+                           statusIconColor={statusIconColor}
                         />
                         <Text
                            className={`ml-1 text-micro font-black ${labelClass}`}

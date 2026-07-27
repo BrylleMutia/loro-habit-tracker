@@ -2,6 +2,7 @@ import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { ResourceBar } from "../../components/ResourceBar";
+import { HabitSwitcher } from "../../components/HabitSwitcher";
 import { QuestActionButton } from "../../components/QuestActionButton";
 import { colors } from "../../constants/colors";
 import { useGameActions, useGameHabits, useGameSync } from "../../contexts/appContext";
@@ -51,6 +52,10 @@ export function HabitPathScreen({ onBack, onDailyCheckInPress }: HabitPathScreen
         <View className="h-11 w-11 items-center justify-center rounded-card bg-primary-soft">
           <Ionicons name={activeHabit.icon} size={23} color={colors.blueDark} />
         </View>
+      </View>
+
+      <View className="mt-4">
+        <HabitSwitcher />
       </View>
 
       <View className="mt-5 overflow-hidden rounded-card border border-line bg-surface-card" style={shadows.card}>
