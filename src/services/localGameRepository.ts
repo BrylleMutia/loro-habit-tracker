@@ -226,7 +226,11 @@ export function completeLocalDailyQuest(
     if (!timer) {
       throw new GameRepositoryError("Start the quest timer before completing it.", "TIMER_NOT_STARTED");
     }
-    if (Date.parse(now) - Date.parse(timer.startedAt) < node.targetDurationSeconds * 1000) {
+    const override = state.targetOverrides[habitId];
+    const effectiveDuration = override !== undefined
+      ? Math.max(5, override) * 60
+      : node.targetDurationSeconds;
+    if (Date.parse(now) - Date.parse(timer.startedAt) < effectiveDuration * 1000) {
       throw new GameRepositoryError(
         "Keep going until the quest timer reaches its target.",
         "TIMER_NOT_FINISHED"

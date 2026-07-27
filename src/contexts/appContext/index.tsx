@@ -134,10 +134,12 @@ type GameBriefingContextValue = {
 
 type GameSettingsContextValue = {
   settings: AppSettings;
+  targetOverrides: AppState["targetOverrides"];
 };
 
 type GameActionsContextValue = {
   setActiveHabit: (habitId: HabitId) => void;
+  setTargetOverride: (habitId: HabitId, value: number | null) => void;
   startDailyQuest: (habitId: HabitId) => Promise<QuestStartOutcome>;
   completeDailyQuest: (habitId: HabitId) => Promise<QuestCompletionOutcome>;
   claimChapterReward: (habitId: HabitId, sectionId: string) => Promise<RewardClaimOutcome>;
@@ -438,6 +440,22 @@ export function AppStateProvider({
     (habitId: HabitId) => dispatch({ type: "SET_ACTIVE_HABIT", habitId }),
     []
   );
+  const setTargetOverride = useCallback(
+    (habitId: HabitId, value: number | null) => {
+      dispatch({ type: "SET_TARGET_OVERRIDE", habitId, value });
+      if (storageMode === "remote") {
+        const nextOverrides = { ...stateRef.current.targetOverrides };
+        if (value === null) {
+          delete nextOverrides[habitId];
+        } else {
+          nextOverrides[habitId] = value;
+        }
+        updateSettingsRemote({ targetOverrides: nextOverrides } as Partial<AppSettings>)
+          .catch(() => undefined);
+      }
+    },
+    [storageMode]
+  );
   const startDailyQuest = useCallback(
     (habitId: HabitId) =>
       runMutation("quest-start", async () =>
@@ -601,12 +619,13 @@ export function AppStateProvider({
     [state, todayDateKey]
   );
   const settingsValue = useMemo<GameSettingsContextValue>(
-    () => ({ settings: state.settings }),
-    [state.settings]
+    () => ({ settings: state.settings, targetOverrides: state.targetOverrides }),
+    [state.settings, state.targetOverrides]
   );
   const actionsValue = useMemo<GameActionsContextValue>(
     () => ({
       setActiveHabit,
+      setTargetOverride,
       startDailyQuest,
       completeDailyQuest,
       claimChapterReward,
@@ -628,6 +647,7 @@ export function AppStateProvider({
       claimGuildQuestReward,
       refreshGameState,
       setActiveHabit,
+      setTargetOverride,
       startDailyQuest,
       acceptGuildQuest,
       updateProfile,

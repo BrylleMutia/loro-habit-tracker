@@ -254,5 +254,6 @@ export type AppState = {
   inventory: InventoryState;
   guildQuestBoard: GuildQuestBoardState;
   settings: AppSettings;
+  targetOverrides: Partial<Record<HabitId, number>>;
   activityLog: ActivityLogEntry[];
 };

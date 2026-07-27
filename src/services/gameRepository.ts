@@ -313,6 +313,12 @@ function isPersistedGameState(value: unknown): value is PersistedGameState {
     isBoolean(value.settings.soundEnabled) &&
     isBoolean(value.settings.hapticsEnabled) &&
     isString(value.settings.timeZone) &&
+    (value.targetOverrides === undefined ||
+      value.targetOverrides === null ||
+      (isRecord(value.targetOverrides) &&
+        Object.entries(value.targetOverrides).every(
+          ([key, val]) => isHabitId(key) && isFiniteNumber(val)
+        ))) &&
     Array.isArray(value.activityLog) &&
     value.activityLog.every(
       (activity) =>
@@ -503,6 +509,13 @@ export function parseGameResponse(value: unknown): GameResponse {
   );
   const snapshot: PersistedGameState = {
     ...parsedSnapshot,
+    targetOverrides: isRecord(parsedSnapshot.targetOverrides)
+      ? Object.fromEntries(
+          Object.entries(parsedSnapshot.targetOverrides).filter(
+            ([key, value]) => habitIds.includes(key as HabitId) && isFiniteNumber(value)
+          )
+        )
+      : {},
     profile: {
       ...parsedProfile,
       setCollectionOrder: normalizeEquipmentSetOrder(parsedProfile.setCollectionOrder)

@@ -6,6 +6,7 @@ import { createGuildQuestBoard } from "../../utility/guildQuests";
 
 export type AppAction =
   | { type: "SET_ACTIVE_HABIT"; habitId: HabitId }
+  | { type: "SET_TARGET_OVERRIDE"; habitId: HabitId; value: number | null }
   | { type: "HYDRATE_GAME_STATE"; snapshot: PersistedGameState };
 
 export type InitialAppStateOptions = {
@@ -88,6 +89,7 @@ export function createInitialAppState({
       hapticsEnabled: true,
       timeZone
     },
+    targetOverrides: {},
     activityLog: []
   };
 }
@@ -96,8 +98,23 @@ export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case "SET_ACTIVE_HABIT":
       return { ...state, activeHabitId: action.habitId };
+    case "SET_TARGET_OVERRIDE": {
+      const next = { ...state.targetOverrides };
+      if (action.value === null) {
+        delete next[action.habitId];
+      } else {
+        next[action.habitId] = action.value;
+      }
+      return { ...state, targetOverrides: next };
+    }
     case "HYDRATE_GAME_STATE":
-      return { ...action.snapshot, activeHabitId: state.activeHabitId };
+      return {
+        ...action.snapshot,
+        activeHabitId: state.activeHabitId,
+        targetOverrides: action.snapshot.targetOverrides && Object.keys(action.snapshot.targetOverrides).length > 0
+          ? action.snapshot.targetOverrides
+          : state.targetOverrides
+      };
     default:
       return state;
   }
