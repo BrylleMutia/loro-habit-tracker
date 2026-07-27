@@ -14,7 +14,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { colors } from "../constants/colors";
-import { useGameProfile, useGameResources } from "../contexts/appContext";
+import { useGameInventory, useGameProfile, useGameResources } from "../contexts/appContext";
 import { PixelParrot } from "./PixelParrot";
 import { ResourcePill } from "./ResourcePill";
 
@@ -27,6 +27,7 @@ const ENERGY_REFILL_INTERVAL_MS = 30 * 60 * 1000; // 1 energy per 30 minutes
 export function ResourceBar({ onDailyCheckInPress }: ResourceBarProps) {
   const { dailyStreak } = useGameProfile();
   const { coins, dailyCheckInClaimedToday, energy } = useGameResources();
+  const { inventory } = useGameInventory();
   const [nowMs, setNowMs] = useState(Date.now);
 
   useEffect(() => {
@@ -66,6 +67,13 @@ export function ResourceBar({ onDailyCheckInPress }: ResourceBarProps) {
           suffix={energySuffix}
         />
         <ResourcePill icon="flame" value={dailyStreak.toString()} color={colors.red} />
+        {inventory.streakShields > 0 ? (
+          <ResourcePill
+            icon="shield-checkmark"
+            value={inventory.streakShields.toString()}
+            color={colors.blue}
+          />
+        ) : null}
         <ResourcePill icon="ellipse" value={coins.toLocaleString("en-US")} color={colors.gold} />
         <TouchableOpacity
           className={`ml-2 h-9 w-9 items-center justify-center rounded-card ${

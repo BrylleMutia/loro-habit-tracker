@@ -176,6 +176,19 @@ export function ProfileScreen({ onNavigateToTab }: ProfileScreenProps) {
           <View className="mt-4 flex-row items-center">
             <Ionicons name="flame" size={18} color={colors.red} />
             <Text className="ml-1 text-sm font-black text-content">{dailyStreak} day streak</Text>
+            {inventory.streakShields > 0 ? (
+              <>
+                <Ionicons
+                  name="shield-checkmark"
+                  size={16}
+                  color={colors.blue}
+                  style={{ marginLeft: 8 }}
+                />
+                <Text className="ml-1 text-sm font-black text-primary-strong">
+                  {inventory.streakShields}
+                </Text>
+              </>
+            ) : null}
             <View className="mx-3 h-4 w-px bg-line-blue" />
             <Text className="text-sm font-black text-content">
               {profile.xp} / {profile.xpToNextLevel} XP

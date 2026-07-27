@@ -31,7 +31,8 @@ import {
   getActiveNodeLocation,
   getApplicableTimedQuestProgress,
   getNextStreak,
-  isSectionComplete
+  isSectionComplete,
+  isStreakReset
 } from "../utility/adventurePath";
 import {
   createEquipmentLootItem,
@@ -240,8 +241,20 @@ export function completeLocalDailyQuest(
     throw new GameRepositoryError("You need more energy for that quest.", "INSUFFICIENT_ENERGY");
   }
 
-  const habitStreak = getNextStreak(habit.streak, habit.lastCompletedDateKey, localDateKey);
-  const dailyStreak = getNextStreak(state.dailyStreak, state.lastStreakDateKey, localDateKey);
+  const habitStreakBase = getNextStreak(habit.streak, habit.lastCompletedDateKey, localDateKey);
+  const dailyStreakBase = getNextStreak(state.dailyStreak, state.lastStreakDateKey, localDateKey);
+  const habitStreakWouldReset =
+    habit.streak > 0 && isStreakReset(habit.lastCompletedDateKey, localDateKey);
+  const dailyStreakWouldReset =
+    state.dailyStreak > 0 && isStreakReset(state.lastStreakDateKey, localDateKey);
+  const shieldConsumed =
+    state.inventory.streakShields > 0 && (habitStreakWouldReset || dailyStreakWouldReset);
+  const habitStreak = shieldConsumed && habitStreakWouldReset
+    ? habit.streak + 1
+    : habitStreakBase;
+  const dailyStreak = shieldConsumed && dailyStreakWouldReset
+    ? state.dailyStreak + 1
+    : dailyStreakBase;
   const lootItem = rollEquipmentLoot({
     habitId,
     nodeId: node.id,
@@ -273,6 +286,9 @@ export function completeLocalDailyQuest(
     habits: { ...state.habits, [habitId]: completedHabit },
     inventory: {
       ...state.inventory,
+      streakShields: shieldConsumed
+        ? state.inventory.streakShields - 1
+        : state.inventory.streakShields,
       items: [...state.inventory.items, lootItem],
       discoveredItemDefinitionIds: Array.from(
         new Set([
@@ -357,6 +373,10 @@ export function claimLocalChapterReward(
     coins: state.coins + section.reward.coins,
     profile: addProfileXp(state.profile, section.reward.xp),
     habits: { ...state.habits, [habitId]: rewardedHabit },
+    inventory: {
+      ...state.inventory,
+      streakShields: state.inventory.streakShields + 1
+    },
     activityLog: [
       {
         id: `chapter-${sectionId}-${now}`,

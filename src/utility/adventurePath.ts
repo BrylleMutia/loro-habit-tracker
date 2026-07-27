@@ -51,6 +51,14 @@ export function getDateKeyDifference(from: DateKey, to: DateKey) {
   return Math.round((toUtc - fromUtc) / DAY_IN_MILLISECONDS);
 }
 
+export function isStreakReset(lastDateKey: DateKey | null, today: DateKey) {
+  if (lastDateKey === today) {
+    return false;
+  }
+
+  return !lastDateKey || getDateKeyDifference(lastDateKey, today) > 1;
+}
+
 export function getNextStreak(current: number, lastDateKey: DateKey | null, today: DateKey) {
   if (lastDateKey === today) {
     return current;
