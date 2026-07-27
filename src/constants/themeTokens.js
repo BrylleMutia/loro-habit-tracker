@@ -117,7 +117,7 @@ const themeSpacing = {
   "path-node": "4.625rem",
   speech: "14.625rem",
   action: "11.875rem",
-  hero: "17.125rem"
+  hero: "18.125rem"
 };
 
 const themeEffects = {
