@@ -4,7 +4,7 @@ import test from "node:test";
 import type { HabitId } from "../types/app.ts";
 
 // @ts-expect-error Node's native TypeScript runner requires the explicit extension.
-import { ONBOARDING_STARTER_REWARD, resolveOnboardingHabitIds, toggleOnboardingHabitSelection } from "./onboarding.ts";
+import { ONBOARDING_STARTER_REWARD, createOnboardingImportId, isOnboardingImportId, resolveOnboardingHabitIds, toggleOnboardingHabitSelection } from "./onboarding.ts";
 
 const currentHabits = ["exercise", "reading", "journaling", "water", "sleep", "outdoors"] as const;
 const exactSelectionCases: Array<{ label: string; selectedHabitIds: HabitId[] }> = [
@@ -55,4 +55,11 @@ for (const { label, selectedHabitIds } of exactSelectionCases) {
 
 test("the introductory reward is fixed and bounded", () => {
   assert.deepEqual(ONBOARDING_STARTER_REWARD, { coins: 10, xp: 10, streakShields: 1 });
+});
+
+test("onboarding import IDs are UUIDs accepted by the server RPC", () => {
+  const importId = createOnboardingImportId();
+
+  assert.equal(isOnboardingImportId(importId), true);
+  assert.equal(isOnboardingImportId("onboarding-legacy-id"), false);
 });

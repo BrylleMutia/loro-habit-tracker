@@ -220,34 +220,34 @@ function GuestDataWarningModal({
   return (
     <Modal animationType={reduceMotion ? "none" : "fade"} transparent visible={visible} onRequestClose={onCancel}>
       <View className="flex-1 items-center justify-center bg-black/35 px-5">
-        <View className="max-h-[88%] w-full max-w-xl rounded-3xl border border-line bg-surface-card p-5" style={shadows.card}>
-          <ScrollView contentContainerStyle={{ gap: 14 }} showsVerticalScrollIndicator={false}>
+        <View className="max-h-[84%] w-full max-w-xl rounded-card border border-line bg-surface-card p-4" style={shadows.card}>
+          <ScrollView contentContainerStyle={{ gap: 12 }} showsVerticalScrollIndicator={false}>
             <View className="items-center">
-              <View className="h-14 w-14 items-center justify-center rounded-full bg-primary-soft">
-                <Ionicons name="cloud-upload-outline" size={28} color={colors.blueDark} />
+              <View className="h-12 w-12 items-center justify-center rounded-full bg-primary-soft">
+                <Ionicons name="cloud-upload-outline" size={24} color={colors.blueDark} />
               </View>
-              <Text className="mt-3 text-center text-2xl font-black text-content">Continue as a guest?</Text>
-              <Text className="mt-2 text-center text-sm font-semibold leading-5 text-content-muted">
+              <Text className="mt-3 text-center text-xl font-black text-content">Continue as a guest?</Text>
+              <Text className="mt-2 text-center text-xs font-semibold leading-4 text-content-muted">
                 Your trail will stay on this device while you use guest mode. If you later create a verified account, only the bounded items listed below will be carried over.
               </Text>
             </View>
 
-            <View className="rounded-card border border-line-green bg-surface-green p-4">
-              <Text className="text-sm font-black text-content">Will sync if you create a verified account</Text>
+            <View className="rounded-card border border-line-green bg-surface-green p-3">
+              <Text className="text-xs font-black text-content">Will sync if you create a verified account</Text>
               {guestVerifiedAccountSyncItems.map((item) => (
                 <View key={item} className="mt-2 flex-row items-start gap-2">
                   <Ionicons name="cloud-done-outline" size={17} color={colors.green} />
-                  <Text className="flex-1 text-sm font-semibold leading-5 text-content">{item}</Text>
+                  <Text className="flex-1 text-xs font-semibold leading-4 text-content">{item}</Text>
                 </View>
               ))}
             </View>
 
-            <View className="rounded-card border border-line bg-surface-soft p-4">
-              <Text className="text-sm font-black text-content">Will not sync from guest mode</Text>
+            <View className="rounded-card border border-line bg-surface-soft p-3">
+              <Text className="text-xs font-black text-content">Will not sync from guest mode</Text>
               {guestNonSyncItems.map((item) => (
                 <View key={item} className="mt-2 flex-row items-start gap-2">
                   <Ionicons name="remove-circle-outline" size={17} color={colors.grayIcon} />
-                  <Text className="flex-1 text-sm font-semibold leading-5 text-content-muted">{item}</Text>
+                  <Text className="flex-1 text-xs font-semibold leading-4 text-content-muted">{item}</Text>
                 </View>
               ))}
             </View>
@@ -289,32 +289,32 @@ export function GuestMigrationWarningModal({
   return (
     <Modal animationType={reduceMotion ? "none" : "fade"} transparent visible={visible} onRequestClose={onCancel}>
       <View className="flex-1 items-center justify-center bg-black/35 px-5">
-        <View className="max-h-[88%] w-full max-w-xl rounded-3xl border border-line bg-surface-card p-5" style={shadows.card}>
-          <ScrollView contentContainerStyle={{ gap: 14 }} showsVerticalScrollIndicator={false}>
+        <View className="max-h-[84%] w-full max-w-xl rounded-card border border-line bg-surface-card p-4" style={shadows.card}>
+          <ScrollView contentContainerStyle={{ gap: 12 }} showsVerticalScrollIndicator={false}>
             <View className="items-center">
-              <View className="h-14 w-14 items-center justify-center rounded-full bg-primary-soft">
-                <Ionicons name="cloud-done-outline" size={28} color={colors.blueDark} />
+              <View className="h-12 w-12 items-center justify-center rounded-full bg-primary-soft">
+                <Ionicons name="cloud-done-outline" size={24} color={colors.blueDark} />
               </View>
-              <Text className="mt-3 text-center text-2xl font-black text-content">Save your guest progress?</Text>
-              <Text className="mt-2 text-center text-sm font-semibold leading-5 text-content-muted">
+              <Text className="mt-3 text-center text-xl font-black text-content">Save your guest progress?</Text>
+              <Text className="mt-2 text-center text-xs font-semibold leading-4 text-content-muted">
                 Before you create a verified account, review exactly what will sync. Only the bounded onboarding result is imported; the rest stays guest-only. Your guest data stays on this device unless the import succeeds.
               </Text>
             </View>
-            <View className="rounded-card border border-line-green bg-surface-green p-4">
-              <Text className="text-sm font-black text-content">Will sync to your verified account</Text>
+            <View className="rounded-card border border-line-green bg-surface-green p-3">
+              <Text className="text-xs font-black text-content">Will sync to your verified account</Text>
               {guestVerifiedAccountSyncItems.map((item) => (
                 <View key={item} className="mt-2 flex-row items-start gap-2">
                   <Ionicons name="checkmark-circle" size={17} color={colors.green} />
-                  <Text className="flex-1 text-sm font-semibold leading-5 text-content">{item}</Text>
+                  <Text className="flex-1 text-xs font-semibold leading-4 text-content">{item}</Text>
                 </View>
               ))}
             </View>
-            <View className="rounded-card border border-line bg-surface-soft p-4">
-              <Text className="text-sm font-black text-content">Will not sync from guest mode</Text>
+            <View className="rounded-card border border-line bg-surface-soft p-3">
+              <Text className="text-xs font-black text-content">Will not sync from guest mode</Text>
               {guestNonSyncItems.map((item) => (
                 <View key={item} className="mt-2 flex-row items-start gap-2">
                   <Ionicons name="remove-circle-outline" size={17} color={colors.grayIcon} />
-                  <Text className="flex-1 text-sm font-semibold leading-5 text-content-muted">{item}</Text>
+                  <Text className="flex-1 text-xs font-semibold leading-4 text-content-muted">{item}</Text>
                 </View>
               ))}
             </View>
@@ -333,23 +333,23 @@ export function AuthLandingScreen({ onGetStarted, onLogin }: AuthLandingProps) {
   return (
     <SafeAreaView className="flex-1 bg-canvas-sky">
       <StatusBar style="dark" />
-      <LinearGradient colors={[colors.sky, colors.mint, colors.cream]} className="flex-1">
+      <LinearGradient colors={[colors.blueSoft, colors.card]} className="flex-1">
         <ScrollView
           contentContainerStyle={{ alignItems: "center", flexGrow: 1, justifyContent: "center", padding: 20 }}
           contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
         >
-          <View className="w-full items-center rounded-3xl border border-line bg-surface-card px-5 pb-6 pt-8" style={[{ maxWidth: contentWidth + 40 }, shadows.card]}>
+          <View className="w-full items-center px-2" style={{ maxWidth: contentWidth + 40 }}>
             <OnboardingIllustration
               accessibilityLabel="Lory, the Trail Captain"
               source={images.onboarding.welcome}
-              style={{ height: 230, width: "100%" }}
+              style={{ height: 170, width: "100%" }}
             />
-            <Text className="mt-4 text-center text-3xl font-black text-content">Start your adventure</Text>
-            <Text className="mt-2 text-center text-sm font-semibold leading-6 text-content-muted">
+            <Text className="mt-4 text-center text-xl font-black text-content">Start your adventure</Text>
+            <Text className="mt-2 max-w-[18rem] text-center text-xs font-semibold leading-4 text-content-muted">
               Personalize a trail with Lory, then decide whether to save it to an account.
             </Text>
-            <View className="mt-6 w-full gap-3">
+            <View className="mt-6 w-full gap-2.5">
               <QuestActionButton icon="sparkles" label="Get Started" mode="tap" onAction={onGetStarted} />
               <QuestActionButton icon="log-in-outline" label="I already have an account" mode="tap" onAction={onLogin} variant="secondary" />
             </View>
@@ -456,14 +456,14 @@ export function OnboardingScreen({
           </Text>
         </View>
       </View>
-      <View className="mt-4 gap-2.5">
+      <View className="mt-4 gap-2">
         {catalog.map((habit) => {
           const isSelected = selectedIds.has(habit.id);
           const visual = onboardingHabitVisuals[habit.id];
           return (
             <Pressable
               key={habit.id}
-              className={`min-h-14 flex-row items-center rounded-card border px-2.5 py-2 ${
+              className={`min-h-14 flex-row items-center rounded-card border p-4 ${
                 isSelected
                   ? "border-primary-strong bg-surface-blue"
                   : "border-transparent bg-surface-card"
@@ -478,8 +478,8 @@ export function OnboardingScreen({
                 <Ionicons name={habit.icon} size={18} color={visual.iconColor} />
               </View>
               <View className="ml-2.5 min-w-0 flex-1">
-                <Text className="text-xs font-black text-content">{habit.label}</Text>
-                <Text className="text-[9px] font-semibold leading-3 text-content-muted" numberOfLines={2}>
+                <Text className="text-base font-black text-content">{habit.label}</Text>
+                <Text className="text-[10px] font-medium pb-1 leading-3 text-content-muted" numberOfLines={2}>
                   {onboardingHabitDescriptions[habit.id]}
                 </Text>
               </View>
@@ -491,14 +491,13 @@ export function OnboardingScreen({
         })}
       </View>
       <QuestActionButton
-        className="mt-7"
+        className="mt-6"
         disabled={session.selectedHabitIds.length === 0}
         icon="arrow-forward"
         iconPosition="right"
         label="Continue to first quest"
         mode="tap"
         onAction={() => update({ phase: "quest" })}
-        size="compact"
       />
       <Pressable className="min-h-11 items-center justify-center" accessibilityRole="button" onPress={skipForNow}>
         <Text className="text-xs font-black text-content-muted">Skip for now</Text>
@@ -539,92 +538,100 @@ export function OnboardingScreen({
       ? getDailyQuestSummary(firstHabit.id, activeNode.title, target)
       : "Complete one small, clear action for your selected habit.";
     return (
-      <>
+      <View className="flex-1 self-center px-2.5" style={{ maxWidth: 420, width: "100%" }}>
         <PageHeader
+          compact
           onBack={() => update({ phase: "habits" })}
           onForward={session.onboardingQuestCompleted ? () => update({ phase: "ready" }) : undefined}
           phase="quest"
           title="Try one small win"
         />
-        <View className="flex mt-auto mb-auto w-full flex-col items-center justify-center">
-          <View>
-          <View className="items-center rounded-3xl border border-line bg-surface-card p-5" style={shadows.card}>
-            <OnboardingIllustration accessibilityLabel="Lory ready for a first quest" source={images.onboarding.questReward} style={{ height: 190, width: "100%" }} />
-            <View className="w-full rounded-card border border-line-blue bg-primary-soft p-4">
-              <Text className="text-xs font-black uppercase tracking-widest text-primary-strong">Quest goal</Text>
-              <Text className="mt-2 text-xl font-black text-content">{firstHabit?.label ?? "Your first habit"}</Text>
-              <Text className="mt-2 text-sm font-semibold leading-5 text-content-muted">{questSummary}</Text>
-            </View>
-            {introQuestError ? <Text className="text-center text-sm font-semibold leading-5 text-danger">{introQuestError} Try again.</Text> : null}
-              <View className="mt-5">
-                <QuestActionButton
-                  completed={session.onboardingQuestCompleted}
-                  completedLabel="Quest cleared"
-                  disabled={session.onboardingQuestCompleted}
-                  icon="checkmark-circle-outline"
-                  label="Complete intro quest"
-                  loading={isSavingIntroQuest}
-                  mode="hold"
-                  onAction={completeIntroQuest}
-                  />
+        <View className="flex flex-1 h-full">
+          <View className="my-auto w-full">
+            <View className="items-center rounded-card border border-line-blue bg-surface-card p-4" style={shadows.card}>
+              <OnboardingIllustration accessibilityLabel="Lory ready for a first quest" source={images.onboarding.questReward} style={{ height: 140, width: "100%" }} />
+              <View className="mt-3 w-full rounded-card border border-line-blue bg-primary-soft p-3">
+                <Text className="text-[10px] font-black uppercase tracking-widest text-primary-strong">Quest goal</Text>
+                <Text className="mt-1.5 text-base font-black text-content">{firstHabit?.label ?? "Your first habit"}</Text>
+                <Text className="mt-1.5 text-xs font-semibold leading-4 text-content-muted">{questSummary}</Text>
               </View>
+              {introQuestError ? (
+                <View className="mt-3 w-full flex-row items-start gap-2 rounded-card border border-line-red bg-surface-red px-3 py-2">
+                  <Ionicons name="alert-circle-outline" size={17} color={colors.red} />
+                  <Text className="flex-1 text-xs font-semibold leading-4 text-content-red">{introQuestError} Try again.</Text>
+                </View>
+              ) : null}
+              <QuestActionButton
+                className="mt-4 w-full"
+                completed={session.onboardingQuestCompleted}
+                completedLabel="Quest cleared"
+                disabled={session.onboardingQuestCompleted}
+                icon="checkmark-circle-outline"
+                label="Complete intro quest"
+                loading={isSavingIntroQuest}
+                mode="hold"
+                onAction={completeIntroQuest}
+              />
             </View>
           </View>
         </View>
-      </>
+      </View>
     );
   };
 
   const renderReady = () => (
-    <>
-      <PageHeader onBack={() => update({ phase: "quest" })} phase="ready" title="Your trail is ready!" />
-        <View className="flex mt-auto mb-auto w-full items-center justify-center">
-          <View>
-            <View className="items-center rounded-3xl border border-line bg-surface-card p-5" style={shadows.card}>
-              <OnboardingIllustration accessibilityLabel="Lory beside a ready trail" source={images.onboarding.trailReady} style={{ height: 210, width: "100%" }} />
-              <Text className="mt-2 text-center text-sm font-semibold leading-5 text-content-muted">
-                Lory saved your starting point. You can save it to an account or keep exploring on this device.
-              </Text>
-              <View className="mt-4 w-full flex-row flex-wrap justify-center gap-2">
-                {session.selectedHabitIds.map((habitId) => {
-                  const habit = catalog.find((item) => item.id === habitId);
-                  return habit ? (
-                    <View key={habit.id} className="flex-row items-center rounded-pill border border-line-blue bg-primary-soft px-3 py-2">
-                      <Ionicons name={habit.icon} size={15} color={colors.blueDark} />
-                      <Text className="ml-1 text-xs font-black text-primary-strong">{habit.label}</Text>
-                    </View>
-                  ) : null;
-                })}
-              </View>
-              <View className="flex mt-5 gap-3">
-                <QuestActionButton
-                  disabled={isOpeningAccount}
-                  icon="person-add-outline"
-                  label="Create an account"
-                  loading={isOpeningAccount}
-                  mode="tap"
-                  onAction={openCreateAccount}
-                />
-                {accountError ? (
-                  <Text className="text-center text-sm font-semibold leading-5 text-danger">
-                    {accountError} Try again when you are ready.
-                  </Text>
-                ) : null}
-                <QuestActionButton
-                  icon="compass-outline"
-                  label="Continue as a guest"
-                  mode="tap"
-                  onAction={() => {
-                    setGuestError(null);
-                    setIsGuestWarningVisible(true);
-                  }}
-                  variant="secondary"
-                />
-                {guestError ? (
-                  <Text className="text-center text-sm font-semibold leading-5 text-danger">
-                    {guestError} Try again when you are ready.
-                  </Text>
-                ) : null}
+    <View className="flex-1 self-center px-2.5" style={{ maxWidth: 420, width: "100%" }}>
+      <PageHeader compact onBack={() => update({ phase: "quest" })} phase="ready" title="Your trail is ready!" />
+
+      <View className="flex flex-1 h-full">
+        <View className="my-auto w-full">
+          <View className="items-center rounded-card border border-line-blue bg-surface-card p-4" style={shadows.card}>
+            <OnboardingIllustration accessibilityLabel="Lory beside a ready trail" source={images.onboarding.trailReady} style={{ height: 150, width: "100%" }} />
+            <Text className="mt-2 text-center text-xs font-semibold leading-4 text-content-muted">
+              Lory saved your starting point. You can save it to an account or keep exploring on this device.
+            </Text>
+            <View className="mt-3 w-full flex-row flex-wrap justify-center gap-1.5">
+              {session.selectedHabitIds.map((habitId) => {
+                const habit = catalog.find((item) => item.id === habitId);
+                return habit ? (
+                  <View key={habit.id} className="flex-row items-center rounded-pill border border-line-blue bg-primary-soft px-2.5 py-1.5">
+                    <Ionicons name={habit.icon} size={14} color={colors.blueDark} />
+                    <Text className="ml-1 text-[10px] font-black text-primary-strong">{habit.label}</Text>
+                  </View>
+                ) : null;
+              })}
+            </View>
+            <View className="mt-6 w-full gap-2.5">
+              <QuestActionButton
+                disabled={isOpeningAccount}
+                icon="person-add-outline"
+                label="Create an account"
+                loading={isOpeningAccount}
+                mode="tap"
+                onAction={openCreateAccount}
+              />
+              {accountError ? (
+                <View className="flex-row items-start gap-2 rounded-card border border-line-red bg-surface-red px-3 py-2">
+                  <Ionicons name="alert-circle-outline" size={17} color={colors.red} />
+                  <Text className="flex-1 text-xs font-semibold leading-4 text-content-red">{accountError} Try again when you are ready.</Text>
+                </View>
+              ) : null}
+              <QuestActionButton
+                icon="compass-outline"
+                label="Continue as a guest"
+                mode="tap"
+                onAction={() => {
+                  setGuestError(null);
+                  setIsGuestWarningVisible(true);
+                }}
+                variant="secondary"
+              />
+              {guestError ? (
+                <View className="flex-row items-start gap-2 rounded-card border border-line-red bg-surface-red px-3 py-2">
+                  <Ionicons name="alert-circle-outline" size={17} color={colors.red} />
+                  <Text className="flex-1 text-xs font-semibold leading-4 text-content-red">{guestError} Try again when you are ready.</Text>
+                </View>
+              ) : null}
             </View>
           </View>
         </View>
@@ -648,14 +655,14 @@ export function OnboardingScreen({
         confirming={isStartingGuest}
         visible={isGuestWarningVisible}
       />
-    </>
+    </View>
   );
 
   return (
     <SafeAreaView className="flex-1 bg-canvas-sky">
       <StatusBar style="dark" />
       <LinearGradient
-        colors={session.phase === "habits" ? [colors.blueSoft, colors.card] : [colors.sky, colors.mint, colors.cream]}
+        colors={[colors.blueSoft, colors.card]}
         className="flex-1"
       >
         <ScrollView
