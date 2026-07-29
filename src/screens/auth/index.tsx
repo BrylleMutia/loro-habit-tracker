@@ -262,6 +262,14 @@ export function AuthScreen({
     void request().catch(() => undefined);
   };
 
+  const openSignUp = () => {
+    // RootGate may already be mounted in auth mode with initialView="signUp".
+    // Explicitly update the child view as well so returning to sign-in and
+    // opening signup again always produces a real view transition.
+    setView("signUp");
+    onCreateAccount?.();
+  };
+
   const runSignUp = () => {
     run(() =>
       signUp(
@@ -504,7 +512,7 @@ export function AuthScreen({
         </Text>
         <TextAction
           label="New to Loro? Create account"
-          onPress={onCreateAccount ?? (() => setView("signUp"))}
+          onPress={openSignUp}
         />
       </View>
     </>

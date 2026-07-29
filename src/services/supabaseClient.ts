@@ -119,4 +119,12 @@ if (Platform.OS !== "web") {
       supabase.auth.stopAutoRefresh();
     }
   });
+
+  // Native apps usually mount while already active, so no AppState change
+  // event is guaranteed to fire after the client is created. Start the
+  // refresh loop immediately so a persisted session can refresh after a
+  // cold launch instead of appearing signed out once its access token ages.
+  if (AppState.currentState === "active") {
+    supabase.auth.startAutoRefresh();
+  }
 }

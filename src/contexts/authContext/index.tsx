@@ -83,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // This is intentionally memory-only and is cleared as soon as signup is confirmed or abandoned.
   const pendingPasswordRef = useRef<string | null>(null);
   const onboardingImportInFlightRef = useRef(false);
+  const authInitializationCompleteRef = useRef(false);
 
   const completeStoredOnboardingImport = useCallback(async () => {
     const onboardingSession = await readOnboardingSession();
@@ -152,6 +153,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!isMounted) return;
         setSession(nextSession);
 
+        // INITIAL_SESSION can arrive before the awaited getSession() call
+        // finishes reading native storage. Keep RootGate in its booting state
+        // until that authoritative initialization path chooses the status.
+        if (!authInitializationCompleteRef.current) return;
+
         if (event === "PASSWORD_RECOVERY") {
           setStatus("passwordRecovery");
         } else if (nextSession) {
@@ -173,7 +179,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const guestEnabled = await readGuestSessionEnabled();
         if (!isSupabaseConfigured) {
-          if (isMounted) setStatus(guestEnabled ? "guest" : "signedOut");
+          if (isMounted) {
+            authInitializationCompleteRef.current = true;
+            setStatus(guestEnabled ? "guest" : "signedOut");
+          }
           return;
         }
 
@@ -196,9 +205,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           onboardingImportInFlightRef.current = false;
           setStatus(guestEnabled ? "guest" : "signedOut");
         }
+        authInitializationCompleteRef.current = true;
         if (initialUrl) void handleAuthUrl(initialUrl);
       } catch (error) {
         if (!isMounted) return;
+        authInitializationCompleteRef.current = true;
         onboardingImportInFlightRef.current = false;
         setStatus("signedOut");
         setErrorMessage(getAuthErrorMessage(error));
