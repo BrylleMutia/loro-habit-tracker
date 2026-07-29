@@ -28,6 +28,7 @@ type QuestActionButtonProps = {
   disabled?: boolean;
   holdDurationMs?: number;
   icon: IconName;
+  iconPosition?: "left" | "right";
   label: string;
   loading?: boolean;
   mode: QuestActionMode;
@@ -50,6 +51,7 @@ export function QuestActionButton({
   disabled = false,
   holdDurationMs = DEFAULT_HOLD_DURATION_MS,
   icon,
+  iconPosition = "left",
   label,
   loading = false,
   mode,
@@ -253,6 +255,13 @@ export function QuestActionButton({
       : variant === "danger"
         ? "text-content-red"
         : "text-white";
+  const iconPositionClass = iconPosition === "right"
+    ? size === "compact"
+      ? "right-3"
+      : "right-4"
+    : size === "compact"
+      ? "left-3"
+      : "left-4";
 
   return (
     <View
@@ -293,7 +302,7 @@ export function QuestActionButton({
               size === "compact" ? "px-10" : "px-12"
             }`}
           >
-            <View className={`absolute ${size === "compact" ? "left-3" : "left-4"}`}>
+            <View className={`absolute ${iconPositionClass}`}>
               {loading ? (
                 <ActivityIndicator size="small" color={foregroundColor} />
               ) : (

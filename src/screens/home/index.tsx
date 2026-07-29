@@ -28,7 +28,7 @@ import {
 import { useLoryBriefing } from "../../hooks/useLoryBriefing";
 import { useScreenContentWidth } from "../../hooks/useScreenContentWidth";
 import { shadows } from "../../styles/shadows";
-import type { IconName } from "../../types/app";
+import type { HabitId, IconName } from "../../types/app";
 import { groupInventoryItems } from "../../utility/inventory";
 import { HabitPathScreen } from "./HabitPathScreen";
 import Animated, {
@@ -54,6 +54,17 @@ const LORY_BRIEFING_MAX_LINES = 4;
 const LORY_BRIEFING_LINE_HEIGHT = 20;
 const LORY_BRIEFING_MAX_HEIGHT =
    LORY_BRIEFING_MAX_LINES * LORY_BRIEFING_LINE_HEIGHT;
+
+// Keep the active habit accents aligned with the onboarding selector palette
+// while giving every habit its own visual anchor on the home screen.
+const activeHabitAccentColors: Record<HabitId, string> = {
+   exercise: colors.blueDark,
+   reading: colors.rarity.rare,
+   journaling: colors.red,
+   water: colors.blue,
+   sleep: colors.rarity.epic,
+   outdoors: colors.green,
+};
 
 function getTimeOfDayGreeting(date: Date, timeZone: string) {
    try {
@@ -409,11 +420,8 @@ function ActiveHabitCard({ onNavigateToMoreSettings }: { onNavigateToMoreSetting
       >
           <View className="flex-row items-end justify-between">
              <View className="flex-1 pr-3">
-                <Text className="text-micro font-black uppercase tracking-wide text-content-muted">
-                   Active habits
-                </Text>
-                <Text className="mt-1 text-lg font-black text-content">
-                   Choose your trail
+                <Text className="text-xs font-extrabold uppercase text-content-muted">
+                   Today's trail
                 </Text>
              </View>
              <View className="flex-row items-center gap-1">
@@ -453,7 +461,7 @@ function ActiveHabitCard({ onNavigateToMoreSettings }: { onNavigateToMoreSetting
                </Text>
                <Text className="mt-1 text-xs font-bold text-content-muted">
                   {focusLocation
-                     ? `${focusLocation.section.title} | Day ${focusLocation.node.day} of ${focusLocation.section.nodes.length}`
+                     ? `${focusLocation.section.title}`
                      : "All available chapters complete"}
                </Text>
             </View>
@@ -502,7 +510,8 @@ function ActiveHabitCard({ onNavigateToMoreSettings }: { onNavigateToMoreSetting
                return (
                   <View key={habit.id} className="mb-2 w-1/3 px-1">
                      <TouchableOpacity
-                        className={`h-11 flex-row items-center justify-center rounded-card border px-2 ${borderClass}`}
+                        className={`h-11 flex-row items-center justify-center rounded-card border border-l-4 px-2 ${borderClass}`}
+                        style={{ borderLeftColor: activeHabitAccentColors[habit.id] }}
                         activeOpacity={0.82}
                         accessibilityLabel={`${habit.label}${completedToday ? ", completed" : inProgress ? ", in progress" : ""}`}
                         accessibilityRole="button"
@@ -512,13 +521,13 @@ function ActiveHabitCard({ onNavigateToMoreSettings }: { onNavigateToMoreSetting
                         <HabitIconWithStatus
                            habitIcon={habit.icon}
                            iconSize={16}
-                           containerClassName="relative h-6 w-6 items-center justify-center"
+                           containerClassName="relative h-6 w-6 items-center justify-center -left-1.5"
                            mainIconColor={isActive ? colors.blueDark : colors.muted}
                            statusIcon={statusIcon}
                            statusIconColor={statusIconColor}
                         />
                         <Text
-                           className={`ml-1 text-micro font-black ${labelClass}`}
+                           className={`ml-1 text-micro font-black ${labelClass} -left-1.5`}
                            numberOfLines={1}
                         >
                            {habit.label}
