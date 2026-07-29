@@ -22,7 +22,7 @@ import {
   writeOnboardingSession
 } from "../services/onboardingSession";
 import type { AuthView, OnboardingSession } from "../types/backend";
-import { ONBOARDING_STARTER_REWARD } from "../utility/onboarding";
+import { createOnboardingImportId, ONBOARDING_STARTER_REWARD } from "../utility/onboarding";
 import { AppNavigator } from "./AppNavigator";
 
 function getLocalDateKeyInTimeZone(timeZone: string) {
@@ -143,9 +143,7 @@ export function RootGate() {
 
     const now = new Date().toISOString();
     const next: OnboardingSession = {
-      importId:
-        globalThis.crypto?.randomUUID?.() ??
-        `onboarding-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      importId: createOnboardingImportId(),
       phase: "habits",
       selectedHabitIds: [],
       firstHabitId: null,

@@ -16,7 +16,8 @@ import { clearCachedGameState } from "../../services/gameCache";
 import { completeOnboardingImport } from "../../services/onboardingImport";
 import {
   clearOnboardingSession,
-  readOnboardingSession
+  readOnboardingSession,
+  writeOnboardingSession
 } from "../../services/onboardingSession";
 import { writeOnboardingCompleted } from "../../services/onboardingSession";
 import {
@@ -24,6 +25,7 @@ import {
   writeGuestSessionEnabled
 } from "../../services/guestSession";
 import { isSupabaseConfigured, supabase } from "../../services/supabaseClient";
+import { createOnboardingImportId, isOnboardingImportId } from "../../utility/onboarding";
 import type { AuthStatus, AuthView, AwaitingAuthAction } from "../../types/backend";
 import type { AvatarClassId, AvatarVariant } from "../../types/app";
 
@@ -86,8 +88,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const authInitializationCompleteRef = useRef(false);
 
   const completeStoredOnboardingImport = useCallback(async () => {
-    const onboardingSession = await readOnboardingSession();
+    let onboardingSession = await readOnboardingSession();
     if (!onboardingSession || onboardingSession.phase !== "completed") return null;
+
+    // Older clients generated a timestamp-based import ID when native crypto
+    // was unavailable. The RPC column is uuid, so re-key that still-pending
+    // local payload before the first server attempt.
+    if (!isOnboardingImportId(onboardingSession.importId)) {
+      onboardingSession = {
+        ...onboardingSession,
+        importId: createOnboardingImportId(),
+        updatedAt: new Date().toISOString()
+      };
+      await writeOnboardingSession(onboardingSession);
+    }
+
     const outcome = await completeOnboardingImport(onboardingSession);
     await writeOnboardingCompleted(true);
     if (onboardingSession.source === "guest-migration") {
