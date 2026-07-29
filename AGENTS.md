@@ -64,6 +64,28 @@ The complete engineering contract is in `docs/ARCHITECTURE.md`.
 - Respect accessibility, large text, safe areas, disabled/error/offline states, and reduced motion.
 - Add comments only for non-obvious invariants or platform constraints. Explain why the constraint exists rather than restating the code.
 
+## Supabase Migration History and Multi-Agent Coordination
+
+Migration filenames and the remote `supabase_migrations.schema_migrations` history are separate sources of truth. A remote schema can contain a change whose original migration file is absent from this checkout, and a local file can be present without having been applied remotely. Treat that divergence as a deployment blocker until it is reconciled deliberately.
+
+- Only one designated agent may repair remote migration history or run a mutating linked-database command at a time. Other agents may inspect migrations and the linked schema read-only, but must not run `supabase migration repair`, `supabase db push`, `supabase db reset` against a shared remote, or equivalent commands concurrently. Announce the migration owner and the version range being handled in the task commentary before making the change.
+- Before creating, repairing, or pushing migrations, inspect the worktree and the complete migration matrix:
+  - `git status --short`
+  - `supabase migration list`
+  - `supabase db push --dry-run`
+  Never assume that another agent's migration file has been committed or that a remote deployment completed just because the code is present locally.
+- Do not edit, rename, delete, or reorder a migration that may already be applied in any environment. Create a forward migration with `supabase migration new <descriptive-name>` for corrections. Preserve the migration's transaction boundaries, `security definer`/empty `search_path` settings, ownership, explicit grants/revokes, RLS, and idempotency guarantees.
+- A `[missing local]` remote version is not permission to mark it reverted. First inspect the linked schema read-only (`supabase db dump --linked` or an equivalent approved read-only query) and the checked-in migrations. Map the remote version to an exact local migration or to a demonstrably identical set of schema/data/function/policy changes. Compare object definitions, columns, constraints, indexes, policies, grants, function bodies, and relevant catalog data—not just names or timestamps.
+- If no exact local equivalent can be proven, stop and request direction. Do not use `--include-all`, force flags, a blind `db pull`, or a guessed repair to make `db push` proceed. Preserve the unknown remote version and escalate the mismatch instead of hiding it.
+- When an exact equivalence is proven, repair history in an auditable order: mark the unknown remote alias `reverted`, mark the checked-in equivalent migration `applied`, then run `supabase db push --dry-run` again. The dry run must list only genuinely unapplied forward migrations; if it would replay existing DDL/data or omit an expected migration, stop and investigate before pushing.
+- Never mark a local migration `applied` merely because a similarly named table exists. This is safe only when the full behavior is already present and the repair record names the remote version, local version, evidence inspected, and any limitations. Keep a factual entry in `docs/history/YYYY-MM.md` for non-trivial history repairs.
+- Push only the verified pending set, with explicit authorization for the shared remote. Afterward verify all of the following:
+  - `supabase migration list` has matching local and remote versions with no missing rows.
+  - `supabase db push --dry-run` reports that the remote database is up to date.
+  - A read-only deployed-schema check confirms critical RPC/snapshot response fields and security properties.
+  - `npm run supabase:reset`, `npm run supabase:test`, `npm run supabase:lint`, `npm run supabase:types`, and `npm run typecheck` are run when the change affects local schema, generated types, or client contracts.
+- Preserve unrelated agent work. Remote repair must not be bundled with a worktree reset or cleanup, and temporary schema dumps must be written outside the repository and removed after inspection.
+
 ## External Library and Platform Documentation
 
 Use the `context7-mcp` skill and Context7 MCP whenever work depends on an external library, framework, SDK, API, CLI, cloud service, or plugin. This includes Expo, React, React Native, Supabase, NativeWind, Tailwind, Reanimated, SecureStore, SQLite, Linking, Network, Ionicons, and newly introduced dependencies.

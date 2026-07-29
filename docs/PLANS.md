@@ -1,6 +1,6 @@
 # Loro — Development Plans & Feature Roadmap
 
-> **Last updated:** 2026-07-27
+> **Last updated:** 2026-07-29
 > **Version:** 0.3.1
 > **Conversation:** Monthly development-history archive
 >
@@ -24,7 +24,7 @@
 | 🔴 P0 | [1](#feature-1) | Today-at-a-glance habit strip | Low | High | ☑ |
 | 🔴 P0 | [2](#feature-2) | Energy regeneration countdown timer | Low | High | ☑ |
 | 🔴 P0 | [3](#feature-3) | Habit quick-switcher (horizontal pill row) | Medium | High | ☑ |
-| 🟡 P1 | [4](#feature-4) | Streak shield earn & consume mechanics | Medium | High | ◐ |
+| 🟡 P1 | [4](#feature-4) | Streak shield earn & consume mechanics | Medium | High | ☑ |
 | 🟡 P1 | [5](#feature-5) | Shop tab (shields, potions, charms, cosmetics) | High | High | ☐ |
 | 🟡 P1 | [6](#feature-6) | Haptic feedback (quest start/complete, level-up) | Low | Medium | ☑ |
 | 🟡 P1 | [7](#feature-7) | Statistics & insights dashboard (More tab) | Medium | Medium | ◐ |
@@ -34,7 +34,7 @@
 | 🟡 P1 | [43](#feature-43) | Launch readiness (observability, security, QA, delivery) | High | High | ☐ |
 | 🟢 P2 | [10](#feature-10) | Push notifications (reminders, streak at risk, energy) | Medium | High | ☐ |
 | 🟢 P2 | [11](#feature-11) | Achievement/badge system | Medium | Medium | ☐ |
-| 🟢 P2 | [12](#feature-12) | Level-up celebration modal | Low | Medium | ☐ |
+| 🟢 P2 | [12](#feature-12) | Level-up celebration modal | Low | Medium | ◐ |
 | 🟢 P2 | [13](#feature-13) | Dark mode | High | Medium | ☐ |
 | 🟢 P2 | [14](#feature-14) | Onboarding guided tour / tutorial | High | High | ☐ |
 | 🟢 P2 | [15](#feature-15) | Path node animation polish (pulse, unlock, chapter burst) | Medium | Medium | ☐ |
@@ -46,7 +46,7 @@
 | 🟢 P2 | [38](#feature-38) | "New" badge on recently acquired items | Low | Medium | ☐ |
 | 🟢 P2 | [39](#feature-39) | Pull-to-refresh + skeleton loading states | Medium | Medium | ☐ |
 | 🟢 P2 | [40](#feature-40) | Guild quest progress toasts + quest history | Medium | Medium | ☐ |
-| 🟢 P2 | [41](#feature-41) | Tap loot preview in celebration modal for item details | Low | Medium | ☐ |
+| 🟢 P2 | [41](#feature-41) | Tap loot preview in celebration modal for item details | Low | Medium | ☑ |
 | 🟢 P2 | [42](#feature-42) | Item catalog (all collected items, even sold/lost) | Medium | Medium | ◐ |
 | 🟢 P2 | [44](#feature-44) | Asset optimization and bundle budgets | Medium | Medium | ☐ |
 | 🔵 P3 | [18](#feature-18) | Home screen widget (iOS/Android) | High | Medium | ☐ |
@@ -56,7 +56,7 @@
 | 🔵 P3 | [22](#feature-22) | Empty state illustrations (Lory variants) | Medium | Low | ☐ |
 | 🔵 P3 | [23](#feature-23) | Daily/weekly summary at check-in | Medium | Medium | ☐ |
 | 🔵 P3 | [24](#feature-24) | Calendar heatmap (GitHub-style contribution grid) | Medium | Medium | ☐ |
-| 🔵 P3 | [25](#feature-25) | IKEA-effect onboarding (habits first, auth later) | Medium | High | ☐ |
+| 🔵 P3 | [25](#feature-25) | IKEA-effect onboarding (habits first, auth later) | Medium | High | ☑ |
 | 🔵 P3 | [26](#feature-26) | Badge indicators on tab bar | Low | Medium | ☐ |
 | 🔵 P3 | [27](#feature-27) | Campfire rest days (streak freeze alternative) | Medium | Medium | ☐ |
 | 🔵 P3 | [29](#feature-29) | SSO login (Google) | Medium | Medium | ☐ |
@@ -99,7 +99,7 @@ Source code, tests, migrations, and deployed configuration remain the final trut
 
 ### <a id="feature-1"></a>1. Today-at-a-Glance Habit Strip (P0)
 
-**What:** A compact horizontal strip below the resource bar on Home showing all 6 habits with a check/dot indicator for today's completion status. Tapping a habit switches to it.
+**What:** A compact habit grid below the resource bar on Home showing each currently enabled habit from the shared catalog with a check/dot indicator for today's completion status. Tapping a habit switches to it.
 
 **Why:** Currently players must navigate into individual habits to see daily status. This reduces friction and encourages multi-habit days (synergy with guild quests like "Double Step" and "Four Corners").
 
@@ -114,6 +114,7 @@ Source code, tests, migrations, and deployed configuration remain the final trut
   - **Default/unstarted:** muted habit icon + muted label
 - ✅ `DailyQuestCard` keeps the active habit icon as its primary icon and overlays the matching completion/in-progress status badge at the lower-right.
 - Uses `useGameHabits().habitList`, `useGameSync().todayDateKey`, and `useGameActions().setActiveHabit`
+- The grid's contents and order follow the enabled-habit preferences edited in More; existing users still start with the full current catalog.
 - Future enhancement: add a `3/6 trails cleared` counter summary above the grid with individual habit completion dots
 - Future enhancement: show a "Possible loot" rarity teaser (e.g., `?` silhouette matching the node's loot tier) on the `DailyQuestCard` to build anticipation before quest completion
 
@@ -128,6 +129,7 @@ Source code, tests, migrations, and deployed configuration remain the final trut
 **Implementation notes (as built):**
 - ✅ Client: Added a 30-second interval in `ResourceBar` that calculates remaining time until next energy refill and the effective energy including passive regeneration
 - ✅ Client: When `lastRefillAt` is available and energy is below max, displays "+1 in Nm" suffix and updates the displayed value to include passively regenerated points
+- ✅ Home layout: energy, streak, shields, and coins now share one reference-style segmented capsule at the top-left. The adjacent daily check-in remains a distinct 44×44 action, and the refill suffix stacks inside the energy segment when needed so narrow screens retain the full value and label.
 - ✅ Local repo: `lastRefillAt` now set to `now` on energy deduction in `startLocalDailyQuest` and `completeLocalDailyQuest` (was only set during daily check-in)
 - ✅ Server: New migration `20260726000100_energy_passive_refill.sql` that:
   - Updates `start_daily_quest` RPC to set `last_energy_refill_at = action_time` when energy is consumed
@@ -167,11 +169,13 @@ Source code, tests, migrations, and deployed configuration remain the final trut
 - ✅ Added `isStreakReset` helper in `src/utility/adventurePath.ts` to detect when a streak would reset (gap > 1 day or no prior completion).
 - ✅ On chapter reward claim (`claimLocalChapterReward` in `src/services/localGameRepository.ts`), increments `inventory.streakShields` by 1.
 - ✅ On quest completion (`completeLocalDailyQuest`), checks if either habit streak or daily streak would reset. If `streakShields > 0`, consumes exactly one shield and preserves both streaks (habit.streak + 1, dailyStreak + 1) instead of resetting to 1.
-- ✅ Shield display: `src/components/ResourceBar.tsx` shows a blue `shield-checkmark` pill with count next to the flame when `streakShields > 0`.
+- ✅ Shield display: `src/components/ResourceBar.tsx` keeps an always-visible themed `shield-checkmark` counter in the Home resource deck, including a readable zero state before the first shield is earned.
 - ✅ Shield display: `src/screens/profile/index.tsx` shows shield count next to the streak line in the profile header.
 - ✅ Shield consumption is atomic — one shield protects all at-risk streaks for a single quest completion.
-- ⚠️ **Authenticated parity is incomplete:** the current earn/consume rules are implemented in `localGameRepository.ts`, but the remote chapter/quest RPCs do not yet apply the same shield rules. A later snapshot migration also emits `streakShields: 0` instead of the stored profile value. Feature #4 remains **◐ Partial** until the remote RPCs, snapshot, and pgTAP coverage are corrected.
-- Future enhancement: "Streak Protected!" non-blocking toast banner on day-after-miss.
+- ✅ **Authenticated parity is complete:** a forward migration now corrects the composed snapshot, increments shields only for newly accepted chapter claims, and applies the same local-date protected-streak rules in the quest RPC with row locks and idempotent duplicate outcomes.
+- ✅ Quest outcomes expose typed `streakShieldConsumed` and `remainingStreakShields` fields on guest and authenticated paths, with malformed remote responses rejected.
+- ✅ The daily quest celebration modal presents a compact “Streak protected” notice with the consumed shield and remaining count on the streak page; it does not imply adventure-path risk.
+- ✅ pgTAP coverage verifies earning, snapshot parity, protected and unprotected completions, duplicate retries, transactionally consistent streak/resource records, and role grants.
 
 ---
 
@@ -180,6 +184,8 @@ Source code, tests, migrations, and deployed configuration remain the final trut
 **What:** A dedicated shop where players spend coins on items that enhance gameplay.
 
 **Why:** Coins currently have no spend outlet beyond psychological satisfaction. A shop closes the economy loop.
+
+**Dependency gate:** Feature #5 remains blocked from shipping any shield purchase until Feature #4's authenticated/guest parity, idempotency, and concurrency verification is deployed and accepted.
 
 **Shop inventory:**
 | Item | Cost | Effect |
@@ -325,11 +331,10 @@ Source code, tests, migrations, and deployed configuration remain the final trut
 **Why:** Currently XP is tracked and levels exist, but the only celebration is quest-complete. Leveling up should feel like an event too.
 
 **Implementation notes:**
-- Detect and persist level changes inside the same authenticated transaction as quest completion/chapter reward, with equivalent guest-repository logic
-- Emit a typed `levelUp` event in the mutation outcome
-- `QuestCelebrationModal` gets a new `"level-up"` variant
-- Shows: new level number, stat increase (if applicable), Lory cheering
-- Can be a simpler overlay than the full loot drop sequence
+- ✅ Added reusable `NewUnlockCelebrationModal` with a queued app-shell presentation, reduced-motion handling, Lory-style confetti, new-level details, and a focused continuation action.
+- ✅ Hydrated profile level increases enqueue the level-up celebration without firing from the initial hydration pass; loot and check-in modals temporarily retain priority so native modals do not stack.
+- ✅ Chapter reward claims use the same modal component and queue a chapter-specific reward presentation.
+- ☐ Persist `previousLevel`, `newLevel`, and `levelsGained` as typed mutation-outcome fields inside each authenticated XP transaction; the current UI observes the authoritative refreshed profile level until that contract is added.
 - Note: distinct from the [chapter completion celebration](#feature-36) — level-ups can happen mid-chapter; chapter completions are 7-day milestones
 
 ---
@@ -538,27 +543,30 @@ Source code, tests, migrations, and deployed configuration remain the final trut
 
 ### <a id="feature-25"></a>25. IKEA-Effect Onboarding (P3)
 
-**What:** Let users select habits and complete their first quest BEFORE signing up. Auth comes after they've invested effort.
+**Status: Complete**
 
-**Why:** User-requested. The IKEA effect (valuing something more when you help build it) increases signup conversion.
+**What:** Sequential onboarding that lets a new user personalize a trail before choosing an account or local guest mode.
 
-**Flow:**
-1. Splash → "Pick up to 5 habits to start your adventure"
-2. Habit selection grid (checkboxes, max 5)
-3. Immediately start first quest (timed or one-time demo)
-4. After completion: "Great job! Create your account to save your progress."
-5. Signup → "Lory: Your account is ready! Your progress is safe." 🦜
-6. Existing users: "I already have an account" → login
+**Implemented flow:**
 
-**Implementation notes:**
-- Existing guest mode, local repository, and platform cache provide the foundation, but the pre-auth habit-selection/first-quest funnel is not built.
-- Guest session state must persist through the trial → signup transition
-- The current `AuthScreen` would need a pre-auth onboarding phase
-- **Guest progress migration:** Never trust an arbitrary client-owned guest snapshot as authoritative currency, loot, or streak data. Import a bounded onboarding result (selected habits plus at most the documented first-quest reward) through an idempotent RPC. Current guest cache key: `loro.game.cache.local-guest` in `gameCache.native.ts`.
-- See also: user's existing "IKEA effect on signup" task below
+1. Signed-out landing offers **Get Started** or **I already have an account**.
+2. The catalog-driven habit selector accepts any number of available habits; all six current habits are selectable and future catalog entries do not introduce a fixed ceiling.
+3. A one-time introductory quest shows the selected habit's real first-node target, uses the existing audio long-press interaction, and awards a fixed bounded `+10 XP`, `+10 coins`, and `+1 shield` celebration without changing normal energy, streaks, loot, or quest history.
+4. A trail-ready screen offers **Create an account** or **Continue as a guest**.
+5. Guest mode requires an accessible confirmation modal explaining retained local data and account limitations.
+6. Direct signup carries onboarding state without a migration warning. Later guest signup shows a bounded migration warning before account creation.
+7. ✅ Selecting **Create an account** from the completed onboarding state opens signup directly; the persisted import retains the exact valid selection and order—whether that is a subset such as two or four habits, all six current habits, or a future supported count—plus the bounded starter reward through verification.
+8. ✅ Email-verification session creation and cold-start session restoration keep the signed-in app gate closed until the onboarding import commits, so the first authenticated snapshot cannot replace the exact onboarding selection with catalog defaults.
 
----
+**Persistence and safety:**
 
+- ✅ `OnboardingSession` is persisted in platform storage through interrupted onboarding and email verification.
+- ✅ `enabledHabitIds` is part of the shared app state; selectors consume the enabled list rather than a second fixed list.
+- ✅ `user_habit_preferences` stores ordered server preferences with RLS and authenticated-only access.
+- ✅ `complete_guest_onboarding` validates catalog IDs, writes preferences, records one import per account, and is retry-safe.
+- ✅ The introductory reward is persisted in guest state and granted server-side exactly once for verified imports; the RPC owns the fixed reward values and returns them as typed outcome data.
+- ✅ Guest cache remains intact until the authenticated import succeeds. Arbitrary coins, XP, streaks, shields, loot, inventory, and history are not imported.
+- ✅ Generated onboarding illustrations are registered centrally and use the existing Loro pixel-art direction.
 ### <a id="feature-26"></a>26. Badge Indicators on Tab Bar (P3)
 
 **What:** Red badge dots on tab bar icons for pending actions.
@@ -603,25 +611,25 @@ Source code, tests, migrations, and deployed configuration remain the final trut
 **Constraints:**
 - **Type lock:** `timed` habits stay timed; `one-time` habits stay one-time. No converting Water into a timed quest — this would break energy cost assumptions and path structure.
 - **Minimum floor:** Timed = 5 minutes, one-time = 1 unit. Stock values are the floor.
-- **Per-habit override** stored in `HabitState.settings` (new field), falling back to default chapter blueprints.
+- **Per-habit override** is stored in `AppState.targetOverrides` and `user_settings.target_overrides`, falling back to the active node's chapter blueprint.
 
 **Examples:**
 | Habit | Default | User Sets |
 |-------|---------|-----------|
 | Exercise | 15 min | 30 min |
 | Reading | 10 min | 20 min |
-| Water | 8 glasses | 6 glasses |
+| Water | 6 glasses | 8 glasses |
 
 **Implementation notes (partially built):**
-- Add `habitSettings: Record<HabitId, { targetOverride?: number }>` to `AppState`
+- ✅ Add `targetOverrides: Partial<Record<HabitId, number>>` to `AppState` and the persisted game snapshot.
 - Add a settings row per habit in the Settings UI (More tab, #8)
 - Display: habit icon + label + stepper/slider for the override value
-- `getDailyQuestDetails()` reads the override, clamped to the minimum
+- Shared `getEffectiveHabitTarget()` and `getDailyQuestSummary()` derive the Home display and local enforcement from the persisted override.
 - No path migration needed — overrides only affect quest completion requirements, not adventure path structure
 - This is distinct from the original #28 (custom habit creation) which would create entirely new habits with generated paths
-- ✅ The current implementation contains client display/enforcement, local timed-quest enforcement, a Supabase `target_overrides` migration, and More controls.
+- ✅ The current implementation contains client display/enforcement, local timed-quest enforcement, a Supabase `target_overrides` migration, validated server persistence, a shared effective-target/summary utility, and More controls.
 - ⚠️ One-time quests are still binary actions, so changing a displayed count does not verify that quantity. For the first complete version, either support timed-duration overrides only or add an explicit quantity-tracking interaction as a separate product change.
-- ⚠️ Replace per-tap fire-and-forget writes with a validated draft/save or debounced mutation, and validate allowed habit IDs/ranges inside the RPC before marking complete.
+- ✅ Target changes now use the normal mutation path, hydrate Home from the returned snapshot, roll back failed optimistic updates, and validate allowed habit IDs/ranges inside the settings RPC.
 
 ---
 
@@ -752,6 +760,7 @@ Source code, tests, migrations, and deployed configuration remain the final trut
 - Update `buildLoryBriefingContext()` in `src/utility/loryBriefing.ts`
 - Modify the Supabase Edge Function `generate-lory-briefing` to accept context and adjust prompt
 - Fallback: local template strings when offline, server-generated when online
+- ✅ Briefing presentation caps the visible message viewport at four lines; longer generated text scrolls inside the card while loading and refresh controls remain fixed.
 - Respect the existing daily refresh limit (2 per day)
 - ✅ Daily generation, local/server cache, thinking/failure UI, 128-character validation, and the two-refresh limit already exist.
 - Remaining work: add explicit time bucket, inactivity gap, all-trails-cleared, low-energy, and streak-risk facts; construct or validate all app facts server-side before sending them to DeepSeek.
@@ -853,12 +862,14 @@ Source code, tests, migrations, and deployed configuration remain the final trut
 **Why:** The inline preview card already shows the item image, rarity, name, and stats — but doesn't let the player inspect details or equip it. Adding a tap target on the existing preview avoids UI clutter while giving immediate agency over new loot.
 
 **Implementation notes:**
-- Wrap the inline loot card in `LootDropCelebration` (lines 272–327 of `QuestCelebrationModal.tsx`) with a `TouchableOpacity` or `Pressable`
-- Convert the single loot instance with the shared inventory-stack utility before opening details; do not cast an `InventoryItem` into an `InventoryStack`.
-- `onEquip` callback: calls `equipItem` from `useGameActions()`, closes the details modal on success
-- Avoid fragile nested native modals. Let a shared modal/celebration coordinator temporarily present item details and then restore the celebration step.
-- `InventoryStackDetailsModal` already accepts `onEquip` and handles equip/unequip — no changes needed to that component
-- Do NOT add a separate "View item details" button — the tap target is the existing preview card itself
+- ✅ Completed for loot previews and equipped items on Profile: both entry points use the shared inventory stack builder and `InventoryStackDetailsModal`.
+- ✅ The celebration coordinator temporarily swaps to item details and restores the exact loot-celebration page after close; equip/unequip uses the existing mutation path.
+- ✅ Wrap the inline loot card in `LootDropCelebration` with an accessible `TouchableOpacity` tap target.
+- ✅ Convert the single loot instance with the shared inventory-stack utility before opening details; no `InventoryItem` to `InventoryStack` cast is used.
+- ✅ Wire `onEquip` through `useGameActions()` and close the details modal on success.
+- ✅ Swap from the loot celebration to item details and restore the exact celebration page on close, avoiding nested native modals.
+- ✅ Reuse `InventoryStackDetailsModal` for equipped item taps on Profile, including equip/unequip and syncing state.
+- ✅ Keep the preview card as the only item-details affordance; no additional button was added.
 
 ---
 
@@ -933,11 +944,11 @@ These blueprints are the reviewed implementation contracts for the remaining roa
 
 Complete these cross-cutting items before expanding the economy or adding more mutation-heavy features:
 
-1. **Restore remote/local parity.** Fix Feature #4's authenticated streak-shield snapshot, earning, and consumption before Shop can sell shields.
+1. **✅ Restore remote/local parity.** Feature #4's authenticated snapshot, earning, and protected consumption now match the guest rules. Keep the forward migration and staged verification as the gate before Shop can sell shields.
 2. **Standardize mutation outcomes.** Outcomes that can trigger UI feedback should return explicit events such as `levelUp`, `chapterCompleted`, `achievementUnlocks`, and `guildQuestAdvances` instead of forcing screens to diff arbitrary snapshots.
 3. **Add a UI event coordinator.** Build one queue for celebrations, toasts, and follow-up actions so loot, chapter, level-up, achievement, guild-progress, and item-detail surfaces never compete or nest native modals.
 4. **Add paged read models.** Keep the game snapshot compact. Statistics, activity history, guild history, and catalog metadata use focused typed queries/RPCs with date ranges and pagination.
-5. **Add missing test layers.** Retain `npm run typecheck` and pgTAP, then add pure utility tests and a small component/integration harness for reducers/repositories, critical cards, and modal sequencing.
+5. **Add missing test layers.** Retain `npm run typecheck`, pgTAP, and the new `npm run test:local` pure utility suite, then add a small component/integration harness for reducers/repositories, critical cards, and modal sequencing.
 6. **Add observability before launch-facing work.** Install one crash/error platform and one privacy-conscious product analytics platform. Define event names centrally and never send notes, emails, AI prompt context, or raw habit history as analytics properties.
 
 ### <a id="blueprint-feature-43"></a>Feature #43 — Launch Readiness
@@ -992,22 +1003,22 @@ Complete these cross-cutting items before expanding the economy or adding more m
 
 - A chapter reward grants one shield after the reward transaction succeeds.
 - On the first quest completed after a missed eligible day, one shield protects both the app-wide streak and any affected habit streaks for that completion.
-- The result shows a non-blocking “Streak protected” banner with the remaining shield count. Do not imply that path progress was ever at risk.
+- The quest celebration modal shows a “Streak protected” notice on its streak page with the consumed shield and remaining count. Do not imply that path progress was ever at risk.
 - A shield cannot be manually consumed, purchased with real money, or applied retroactively after the protected completion.
 
 **Client and domain**
 
-- Keep `isStreakReset` and the guest rules in pure utilities/local repository, but add focused test cases for same-day, consecutive-day, one-day gap, multi-day gap, null prior completion, and timezone boundaries.
+- ✅ Keep `isStreakReset` and the guest rules in pure utilities/local repository, with focused native Node tests for same-day, consecutive-day, one-day gap, multi-day gap, null prior completion, and habit/daily-only risk cases.
 - Extend `QuestCompletionOutcome` with `streakShieldConsumed: boolean` and `remainingStreakShields: number`; avoid inferring consumption by comparing cached snapshots.
-- Add a reusable toast event rather than rendering shield messaging directly inside `DailyQuestCard`.
+- Pass the typed shield outcome into the quest celebration modal rather than rendering shield messaging directly inside `DailyQuestCard`.
 
 **Backend and data**
 
-- Correct `loro_private.build_game_snapshot` to emit `profiles.streak_shields`, not a hard-coded zero.
-- Update `claim_chapter_reward` to lock the user's profile row and increment `streak_shields` atomically only when the chapter claim is newly inserted.
-- Update `complete_daily_quest` to evaluate habit and daily streak resets using the user's local date, consume at most one shield, and update both streaks in the same transaction.
-- Preserve idempotency: an already-completed quest or already-claimed chapter must not grant/consume another shield.
-- Add pgTAP cases for remote earning, consumption, no-consumption, duplicate retry, and snapshot parity. Regenerate database types.
+- ✅ Correct `loro_private.build_game_snapshot` to emit `profiles.streak_shields`, not a hard-coded zero.
+- ✅ Update `claim_chapter_reward` to lock the user's profile row and increment `streak_shields` atomically only when the chapter claim is newly inserted.
+- ✅ Update `complete_daily_quest` to evaluate habit and daily streak resets using the user's local date, consume at most one shield, and update both streaks in the same transaction.
+- ✅ Preserve idempotency: an already-completed quest or already-claimed chapter must not grant/consume another shield.
+- ✅ Add pgTAP cases for remote earning, consumption, no-consumption, duplicate retry, and snapshot parity. Regenerate database types.
 
 **Completion gate**
 
@@ -1108,7 +1119,7 @@ Complete these cross-cutting items before expanding the economy or adding more m
 **Reviewed v1 scope**
 
 - Ship timed-habit duration overrides first. Timed quests have a measurable server-enforced duration and fit the current interaction model.
-- Keep one-time habits binary in v1. A displayed target count is informational unless the product intentionally adds counters or evidence; do not claim that “8 glasses” was technically verified by one tap.
+- Keep one-time habits binary in v1. A displayed target count is informational unless the product intentionally adds counters or evidence; do not claim that “6 glasses” was technically verified by one tap.
 - Use sensible per-habit minimums and maximums, not only a global minimum. Long values must remain practical for the timer and UI.
 
 **Client and domain**
@@ -1117,6 +1128,8 @@ Complete these cross-cutting items before expanding the economy or adding more m
 - Store a local draft while the user taps +/-; save once after confirmation or debounce with cancellation so out-of-order responses cannot overwrite the latest value.
 - Derive effective quest details through one pure utility used by Home, Daily Quest, Adventure Path, Lory context, and local completion validation.
 - Display “Default” explicitly rather than relying only on an asterisk.
+- ✅ The More-tab Habit Targets card now owns enabled-habit selection: each catalog habit can be checked or unchecked on demand, with a guard that keeps at least one habit enabled.
+- ✅ The same card exposes accessible up/down controls for enabled-habit ordering; Home and other habit consumers read the shared ordered `habitList` instead of maintaining a second order.
 
 **Backend and data**
 
@@ -1124,6 +1137,7 @@ Complete these cross-cutting items before expanding the economy or adding more m
 - If JSONB remains the storage format, validate every key/value before saving. A normalized `user_habit_settings` table is preferable once more per-habit settings are added.
 - `complete_daily_quest` must use the same effective-target rule as the snapshot/read model. Do not duplicate divergent clamping logic across migrations.
 - Add authenticated and guest parity tests, including timer started before an override change; define whether the started quest snapshots its original target or uses the latest target. Recommended: snapshot the target at quest start.
+- ✅ `update_settings` now accepts an ordered, non-empty `enabledHabitIds` list, validates IDs against the server catalog, and persists the preference order transactionally for authenticated users; the local repository applies the same validation and rollback behavior for guests.
 
 ### <a id="blueprint-feature-33"></a>Feature #33 — Post-Completion Continuation
 
@@ -1460,29 +1474,30 @@ Complete these cross-cutting items before expanding the economy or adding more m
 
 **Product flow**
 
-- Let a new guest choose up to five enabled habits, personalize the first trail, and complete one real guest quest before the save-progress account prompt.
+- Let a new user choose any number of catalog habits, personalize the first trail, and complete one bounded introductory quest before the save-progress account prompt.
 - Keep “I already have an account” available from the first screen.
-- The signup value proposition is persistence/sync, not a threat that progress will disappear immediately.
+- The signup value proposition is persistence and sync, not a threat that progress will disappear immediately.
 
 **Habit-selection model**
 
-- Keep all habit definitions in the catalog. Add user habit preferences (`enabled`, `sortOrder`) rather than deleting hardcoded habits from `AppState`.
-- Expose `enabledHabitIds` or filter selectors so Home, Guild metrics, Lory context, notifications, stats, and “all trails complete” use the selected set.
-- Existing users default to all currently enabled habits until they choose otherwise.
-- Guild quests whose targets depend on habit count must use the user's enabled count or be excluded when impossible.
+- Keep habit definitions in the catalog and persist ordered user preferences (`enabled`, `sort_order`) rather than deleting habits from `AppState`.
+- Expose `enabledHabitIds` so Home, Guild metrics, Lory context, notifications, stats, and all-trails-complete selectors use the selected set.
+- Existing users default to all currently available habits until they choose otherwise.
+- The forward preference migration and its prerequisites are applied to the linked Supabase project, so authenticated refreshes return the committed enabled set and order.
+- ✅ More’s Habit Targets card is the on-demand preference editor: checkboxes change the enabled set and arrows persist its order, which is immediately reflected by Home’s selector and active-habit fallback.
 
 **Safe progress conversion**
 
 - Client-owned guest state is untrusted. Do not insert arbitrary guest coins, XP, loot, streaks, timestamps, or completions into production tables.
-- Generate a client import ID and call an idempotent `complete_guest_onboarding` RPC after signup. The server accepts only selected habit IDs and a bounded first-quest proof/result defined by onboarding.
-- The RPC initializes preferences and grants at most the documented first-quest reward once. A unique `(user_id, import_id)` or one-time onboarding record prevents retries from duplicating rewards.
-- Keep the guest cache until server import succeeds; then mark it migrated and offer cleanup. On account collision/login to an existing account, do not merge automatically.
+- Generate a client import ID and call idempotent `complete_guest_onboarding` after signup. The server accepts only selected habit IDs and the bounded onboarding result.
+- The RPC initializes preferences and grants no client-controlled economy reward. The unique account/import ledger prevents retry duplication.
+- Keep the guest cache until server import succeeds; an existing-account login does not merge automatically.
 
 **Client architecture and verification**
 
-- Add a root funnel state before the existing Auth screen; do not couple onboarding steps to the main game reducer until the guest session begins.
-- Test skip/back/kill/relaunch, max-five enforcement, impossible Guild quests, signup success/failure/retry, existing-account login, malicious oversized import payload, guest cache cleanup, and cross-platform storage.
-
+- ✅ Root funnel state stays before the existing Auth screen; onboarding remains outside the main game reducer until the guest or authenticated provider starts.
+- ✅ Verify skip/back/relaunch, no-selection validation, all-current-habit selection, future-catalog utility behavior, signup success/failure/retry, existing-account login, duplicate/malicious import payloads, cache retention, RLS, and cross-platform storage.
+- ✅ After onboarding completion, logout returns to the existing login page; the login page's guest action can resume the same persisted guest cache without reopening onboarding.
 ### <a id="blueprint-feature-26"></a>Feature #26 — Bottom-Tab Badges
 
 **Rules**
@@ -1787,12 +1802,13 @@ Complete these cross-cutting items before expanding the economy or adding more m
 ### <a id="blueprint-feature-41"></a>Feature #41 — Loot Detail from Celebration
 
 **Interaction**
+- ✅ Loot previews and equipped Profile items now open the shared detail modal; the underlying celebration page is restored after inspection.
 
-- Make the existing loot preview card a `Pressable` with button semantics, focus feedback, and an accessibility hint such as “Open item details.”
-- Use the shared inventory stack builder to create a one-item stack, including equipped status from the latest snapshot.
-- The celebration coordinator swaps from the loot step to item details and restores the exact celebration step on close; do not stack native `Modal` instances.
-- Equip/unequip remains the existing server/local intent. Disable the action while syncing and refresh the detail state from the returned snapshot.
-- Closing details never dismisses or restart the underlying celebration.
+- ✅ Make the existing loot preview card a `TouchableOpacity` with button semantics and an accessibility label to open item details.
+- ✅ Use the shared inventory stack builder to create a one-item stack, including equipped status from the latest snapshot.
+- ✅ The celebration coordinator swaps from the loot step to item details and restores the exact celebration step on close; no native `Modal` instances are stacked.
+- ✅ Equip/unequip remains the existing server/local intent. Disable the action while syncing and refresh the detail state from the returned snapshot.
+- ✅ Closing details never dismisses or restarts the underlying celebration.
 
 **Verification**
 
@@ -2011,10 +2027,10 @@ Gear stats are currently collectible/display-only. Making them affect quest mech
 
 Resolve these before starting a new economy/progression mutation:
 
-1. **Streak-shield remote parity:** authenticated RPCs do not yet earn/consume shields like the guest repository, and later snapshot migrations currently emit a zero shield count. This is the blocking remainder of Feature #4.
+1. **✅ Streak-shield remote parity:** Feature #4's forward migration now aligns authenticated earning, consumption, duplicate outcomes, and snapshot counts with the guest repository. Staged rollout verification remains required before economy expansion.
 2. **Target-override hardening:** the current migration and client support timed overrides, but one-time overrides are not behaviorally enforceable, JSONB keys/ranges need strict server validation, and per-tap fire-and-forget writes can race.
 3. **Shared date/timezone utilities:** date-key and timezone-boundary calculations are repeated across Context, Home greeting, Lory context, and Daily Quest cooldown. Consolidate them before Features #10, #16, #21, #23, and #24 depend on identical boundaries.
-4. **Test harness gap:** the repository has TypeScript checks and Supabase pgTAP but no committed unit/component test command. Add the minimum harness in Feature #43 before complex selectors and celebration sequencing expand.
+4. **Component test harness gap:** TypeScript checks, Supabase pgTAP, and pure local-rule tests are committed; add component/integration coverage in Feature #43 before complex selectors and celebration sequencing expand.
 5. **Snapshot growth:** do not keep adding full histories to `build_game_snapshot`. Introduce focused paged read models for statistics, activity, Guild history, and catalog metadata.
 
 ### Guild Quest Descriptions Are Stale
@@ -2097,7 +2113,7 @@ flowchart TD
 
 | Feature | Must depend on |
 |---------|----------------|
-| #5 Shop | #4 remote parity, economy RPC conventions, #43 tests |
+| #5 Shop | #4 parity rollout gate, economy RPC conventions, #43 tests |
 | #10 Notifications | #8 settings, shared date utility, #16/#21 rules |
 | #11/#12/#36/#40/#41 | Shared celebration/toast coordinator from #33 foundation |
 | #14 Guided tour | Stable Home/Guild/Stash/More surfaces and versioned settings |
@@ -2117,11 +2133,11 @@ flowchart TD
 
 The safest high-value next batch is:
 
-1. Fix Feature #4 authenticated parity and snapshot regression.
-2. Finish Feature #28 as timed-duration customization with strict RPC validation and save semantics.
-3. Add the shared date/timezone utility plus foundational unit tests.
-4. Refactor More into a hub and finish Feature #8 reminder-time/timezone/account-safe settings.
-5. Build the celebration/toast coordinator and ship Feature #33.
+1. Finish Feature #28 as timed-duration customization with strict RPC validation and save semantics.
+2. Add the shared date/timezone utility plus foundational unit tests.
+3. Refactor More into a hub and finish Feature #8 reminder-time/timezone/account-safe settings.
+4. Build the celebration/toast coordinator and ship Feature #33.
+5. Start Feature #43's component/integration test, observability, and delivery gates.
 
 ---
 

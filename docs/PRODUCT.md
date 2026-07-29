@@ -35,14 +35,14 @@ Lory, the blue/red/green pixel-art Trail Captain, is the companion who explains 
 
 The application currently has six fixed habits:
 
-| Habit | Quest type | Default interaction | Energy |
-|-------|------------|---------------------|--------|
-| Exercise | Timed | Start the in-app timer and complete the required duration | Costs energy |
-| Reading | Timed | Start the in-app timer and complete the required duration | Costs energy |
-| Journaling | Timed | Start the in-app timer and complete the required duration | Costs energy |
-| Water | One-time | Confirm the predetermined daily target | No energy required |
-| Sleep | One-time | Confirm the wind-down routine | No energy required |
-| Outdoors | One-time | Confirm time spent outdoors | No energy required |
+| Habit | Quest type | Daily target | Default interaction | Energy |
+|-------|------------|--------------|---------------------|--------|
+| Exercise | Timed | Chapter-defined minutes | Start the in-app timer and complete the required duration | Costs energy |
+| Reading | Timed | Chapter-defined minutes | Start the in-app timer and complete the required duration | Costs energy |
+| Journaling | Timed | Chapter-defined minutes | Start the in-app timer and complete the required duration | Costs energy |
+| Water | One-time | 6 glasses | Confirm the predetermined daily target | No energy required |
+| Sleep | One-time | 8 hours | Confirm the predetermined daily target | No energy required |
+| Outdoors | One-time | 10 minutes | Confirm the predetermined daily target | No energy required |
 
 Timed quests measure elapsed in-app time. One-time quests remain intentionally binary: the application records the player's confirmation and does not claim to verify each glass, minute, or external action.
 
@@ -182,7 +182,9 @@ If all available habits are complete, use a calm “all trails cleared” acknow
 
 - Use a light pastel canvas, warm off-white cards, pastel-blue primary actions, and restrained green/red/gold reward states.
 - Use the shared `rounded-card` token for cards and avoid excessive pills or nested card surfaces.
+- Home presents energy, streak, shields, and coins in one compact segmented capsule at the top-left; daily check-in remains an adjacent, visually separate action.
 - Preserve compact layouts, stable dimensions, and clear visual hierarchy on narrow mobile screens.
+- Lory's briefing card shows no more than four message lines at once; longer generated briefings scroll within the card without moving the surrounding Home layout.
 - Use semantic status icons and text; do not communicate status with color alone.
 - Keep timers and counters visually stable with tabular numerals.
 - Respect safe areas, large text, and at least a 44×44 effective touch target.
