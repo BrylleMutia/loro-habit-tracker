@@ -16,6 +16,7 @@ type EquipmentLoadoutGridProps = {
   countLabel?: string;
   selectedSlotId?: EquipmentSlotId | "all";
   onSlotPress?: (slotId: EquipmentSlotId) => void;
+  onItemPress?: (item: InventoryItem) => void;
 };
 
 function getItemLabel(item: InventoryItem | null) {
@@ -33,22 +34,28 @@ const EquipmentSlotTile = memo(function EquipmentSlotTile({
   item,
   selected,
   slot,
+  onItemPress,
   onPress
 }: {
   item: InventoryItem | null;
   selected: boolean;
   slot: (typeof loadoutSlots)[number];
   onPress?: () => void;
+  onItemPress?: (item: InventoryItem) => void;
 }) {
   const definition = item ? equipmentItemsById[item.itemDefinitionId] : null;
   const itemColors = getItemColors(item);
-  const TileContainer = Pressable;
-  const accessibilityLabel = onPress
-    ? `Filter ${slot.label} equipment`
-    : `${slot.label}: ${getItemLabel(item)}`;
+  const itemForPress = item;
+  const itemPress = itemForPress && onItemPress ? () => onItemPress(itemForPress) : undefined;
+  const handlePress = itemPress ?? onPress;
+  const accessibilityLabel = itemPress
+    ? `View ${itemForPress?.name ?? "item"} details`
+    : onPress
+      ? `Filter ${slot.label} equipment`
+      : `${slot.label}: ${getItemLabel(item)}`;
 
   return (
-    <TileContainer
+    <Pressable
       className="min-w-0 flex-1 rounded-card px-1 py-2"
       style={{
         backgroundColor: itemColors.background,
@@ -57,10 +64,10 @@ const EquipmentSlotTile = memo(function EquipmentSlotTile({
         minHeight: 112
       }}
       accessibilityLabel={`${accessibilityLabel}${selected ? ", selected" : ""}`}
-      accessibilityRole={onPress ? "button" : undefined}
-      accessibilityState={onPress ? { selected } : undefined}
-      disabled={!onPress}
-      onPress={onPress}
+      accessibilityRole={handlePress ? "button" : undefined}
+      accessibilityState={handlePress ? { selected } : undefined}
+      disabled={!handlePress}
+      onPress={handlePress}
     >
       <View className="relative h-16 w-full items-center justify-center">
         {definition ? (
@@ -85,7 +92,7 @@ const EquipmentSlotTile = memo(function EquipmentSlotTile({
       <Text className="mt-1 w-full text-center text-micro font-bold text-content-muted" numberOfLines={1}>
         {getItemLabel(item)}
       </Text>
-    </TileContainer>
+    </Pressable>
   );
 });
 
@@ -94,6 +101,7 @@ export const EquipmentLoadoutGrid = memo(function EquipmentLoadoutGrid({
   equippedItemIds,
   inventoryItems,
   onSlotPress,
+  onItemPress,
   selectedSlotId,
   title
 }: EquipmentLoadoutGridProps) {
@@ -123,6 +131,7 @@ export const EquipmentLoadoutGrid = memo(function EquipmentLoadoutGrid({
               <EquipmentSlotTile
                 key={slot.id}
                 item={inventoryById.get(equippedItemIds[slot.sortOrder]) ?? null}
+                onItemPress={onItemPress}
                 onPress={onSlotPress ? () => onSlotPress(slot.id) : undefined}
                 selected={selectedSlotId === slot.id}
                 slot={slot}

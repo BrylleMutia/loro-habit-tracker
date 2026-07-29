@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AdventurePathPreview } from "../../components/AdventurePathPreview";
 import { DailyQuestCard } from "../../components/DailyQuestCard";
 import { HabitIconWithStatus } from "../../components/HabitIconWithStatus";
+import { InventoryStackDetailsModal } from "../../components/InventoryStackDetailsModal";
 import { LoryThinkingIndicator } from "../../components/LoryThinkingIndicator";
+import type { NewUnlockDetails } from "../../components/NewUnlockCelebrationModal";
 import { PixelParrot } from "../../components/PixelParrot";
 import {
    QuestCelebrationModal,
+   type LootDropPage,
    type LootDropDetails,
 } from "../../components/QuestCelebrationModal";
 import { ResourceBar } from "../../components/ResourceBar";
@@ -17,6 +20,7 @@ import { images } from "../../constants/images";
 import {
    useGameActions,
    useGameHabits,
+   useGameInventory,
    useGameQuests,
    useGameProfile,
    useGameSync,
@@ -25,6 +29,7 @@ import { useLoryBriefing } from "../../hooks/useLoryBriefing";
 import { useScreenContentWidth } from "../../hooks/useScreenContentWidth";
 import { shadows } from "../../styles/shadows";
 import type { IconName } from "../../types/app";
+import { groupInventoryItems } from "../../utility/inventory";
 import { HabitPathScreen } from "./HabitPathScreen";
 import Animated, {
    cancelAnimation,
@@ -39,7 +44,16 @@ import Animated, {
 
 type HomeScreenProps = {
    onDailyCheckInPress: () => void;
+   onLootVisibilityChange: (visible: boolean) => void;
+   onNewUnlock: (details: NewUnlockDetails) => void;
+  onNavigateToMoreSettings?: () => void;
+   onNavigateToTab?: (tab: import("../../types/app").TabId) => void;
 };
+
+const LORY_BRIEFING_MAX_LINES = 4;
+const LORY_BRIEFING_LINE_HEIGHT = 20;
+const LORY_BRIEFING_MAX_HEIGHT =
+   LORY_BRIEFING_MAX_LINES * LORY_BRIEFING_LINE_HEIGHT;
 
 function getTimeOfDayGreeting(date: Date, timeZone: string) {
    try {
@@ -63,17 +77,109 @@ function getTimeOfDayGreeting(date: Date, timeZone: string) {
    }
 }
 
-export function HomeScreen({ onDailyCheckInPress }: HomeScreenProps) {
+export function HomeScreen({
+   onDailyCheckInPress,
+   onLootVisibilityChange,
+   onNewUnlock,
+   onNavigateToMoreSettings,
+   onNavigateToTab
+}: HomeScreenProps) {
    const contentWidth = useScreenContentWidth();
    const [isPathVisible, setIsPathVisible] = useState(false);
    const [lootDropDetails, setLootDropDetails] =
       useState<LootDropDetails | null>(null);
+   const [isLootCelebrationVisible, setIsLootCelebrationVisible] = useState(false);
+   const [lootDropPage, setLootDropPage] = useState<LootDropPage>("rewards");
+   const [selectedLootItem, setSelectedLootItem] = useState<LootDropDetails["lootItem"] | null>(null);
+   const [pendingItemId, setPendingItemId] = useState<string | null>(null);
+   const { inventory } = useGameInventory();
+   const { profile } = useGameProfile();
+   const { equipItem } = useGameActions();
+   const { mutationInFlight } = useGameSync();
+   const selectedLootItemId = selectedLootItem?.id ?? null;
+   const inventoryItemsForDetails = useMemo(() => {
+      if (
+         !selectedLootItem ||
+         inventory.items.some((item) => item.id === selectedLootItem.id)
+      ) {
+         return inventory.items;
+      }
+      return [...inventory.items, selectedLootItem];
+   }, [inventory.items, selectedLootItem]);
+   const inventoryStacks = useMemo(
+      () =>
+         groupInventoryItems(
+            inventoryItemsForDetails,
+            profile.equippedItemIds,
+            "rarity",
+            "desc"
+         ),
+      [inventoryItemsForDetails, profile.equippedItemIds]
+   );
+   const selectedLootStack = useMemo(
+      () =>
+         inventoryStacks.find((stack) =>
+            stack.items.some((item) => item.id === selectedLootItemId)
+         ) ?? null,
+      [inventoryStacks, selectedLootItemId]
+   );
+
+   useEffect(() => {
+      onLootVisibilityChange(isLootCelebrationVisible || selectedLootItemId !== null);
+   }, [isLootCelebrationVisible, onLootVisibilityChange, selectedLootItemId]);
+
+   const openLootCelebration = (details: LootDropDetails) => {
+      setLootDropDetails(details);
+      setLootDropPage("rewards");
+      setIsLootCelebrationVisible(true);
+   };
+
+   const closeLootCelebration = () => {
+      setIsLootCelebrationVisible(false);
+      setLootDropDetails(null);
+      setLootDropPage("rewards");
+   };
+
+   const openLootItemDetails = (item: LootDropDetails["lootItem"]) => {
+      const detailsItems = inventory.items.some((existingItem) => existingItem.id === item.id)
+         ? inventory.items
+         : [...inventory.items, item];
+      const stack = groupInventoryItems(
+         detailsItems,
+         profile.equippedItemIds,
+         "rarity",
+         "desc"
+      ).find((candidate) =>
+         candidate.items.some((candidateItem) => candidateItem.id === item.id)
+      );
+      if (!stack) return;
+      setSelectedLootItem(item);
+      setIsLootCelebrationVisible(false);
+   };
+
+   const closeLootItemDetails = () => {
+      setSelectedLootItem(null);
+      if (lootDropDetails) setIsLootCelebrationVisible(true);
+   };
+
+   const handleEquip = async (itemId: string) => {
+      setPendingItemId(itemId);
+      try {
+         await equipItem(itemId);
+         return true;
+      } catch {
+         return false;
+      } finally {
+         setPendingItemId(null);
+      }
+   };
 
    if (isPathVisible) {
       return (
          <HabitPathScreen
             onBack={() => setIsPathVisible(false)}
             onDailyCheckInPress={onDailyCheckInPress}
+            onNewUnlock={onNewUnlock}
          />
       );
    }
@@ -87,22 +193,34 @@ export function HomeScreen({ onDailyCheckInPress }: HomeScreenProps) {
             contentInsetAdjustmentBehavior="automatic"
             showsVerticalScrollIndicator={false}
             style={{ minHeight: 0 }}
-         >
-            <View className="self-center" style={{ width: contentWidth }}>
-               <ResourceBar onDailyCheckInPress={onDailyCheckInPress} />
-               <HeroGreeting />
-               <ActiveHabitCard />
-               <DailyQuestCard onQuestCompleted={setLootDropDetails} />
+          >
+             <View className="self-center" style={{ width: contentWidth }}>
+                <View className="items-start">
+                   <ResourceBar onDailyCheckInPress={onDailyCheckInPress} />
+                </View>
+                <HeroGreeting />
+                <ActiveHabitCard onNavigateToMoreSettings={onNavigateToMoreSettings} />
+               <DailyQuestCard onQuestCompleted={openLootCelebration} />
                <AdventurePathPreview
                   onViewPath={() => setIsPathVisible(true)}
                />
             </View>
          </ScrollView>
 
+         <InventoryStackDetailsModal
+            loading={mutationInFlight === "equipment" && pendingItemId !== null}
+            onClose={closeLootItemDetails}
+            onEquip={handleEquip}
+            stack={selectedLootStack}
+         />
+
          <QuestCelebrationModal
-            variant={lootDropDetails ? "loot-drop" : null}
+            variant={isLootCelebrationVisible && lootDropDetails ? "loot-drop" : null}
             lootDropDetails={lootDropDetails ?? undefined}
-            onClose={() => setLootDropDetails(null)}
+            lootDropPage={lootDropPage}
+            onClose={closeLootCelebration}
+            onLootDropPageChange={setLootDropPage}
+            onLootItemPress={openLootItemDetails}
          />
       </>
    );
@@ -252,9 +370,18 @@ function HeroGreeting() {
                         <LoryThinkingIndicator />
                      </View>
                   ) : (
-                     <Text className="mt-2 text-sm font-semibold leading-5 text-content">
-                        {briefing || activeHabit.dailyPrompt}
-                     </Text>
+                     <ScrollView
+                        className="mt-2"
+                        style={{ maxHeight: LORY_BRIEFING_MAX_HEIGHT }}
+                        contentContainerStyle={{ flexGrow: 0 }}
+                        nestedScrollEnabled
+                        showsHorizontalScrollIndicator={false}
+                        showsVerticalScrollIndicator
+                     >
+                        <Text className="text-sm font-semibold leading-5 text-content">
+                           {briefing || activeHabit.dailyPrompt}
+                        </Text>
+                     </ScrollView>
                   )}
                </View>
             </View>
@@ -263,7 +390,7 @@ function HeroGreeting() {
    );
 }
 
-function ActiveHabitCard() {
+function ActiveHabitCard({ onNavigateToMoreSettings }: { onNavigateToMoreSettings?: () => void }) {
    const {
       activeHabit,
       activeHabitId,
@@ -280,28 +407,41 @@ function ActiveHabitCard() {
          className="mt-4 rounded-card border border-line bg-surface-card p-4"
          style={shadows.card}
       >
-         <View className="flex-row items-end justify-between">
-            <View className="flex-1 pr-3">
-               <Text className="text-micro font-black uppercase tracking-wide text-content-muted">
-                  Select loadout
-               </Text>
-               <Text className="mt-1 text-lg font-black text-content">
-                  Choose your trail
-               </Text>
-            </View>
-            <View className="flex-row items-center rounded-pill border border-line-primary bg-surface-blue px-2 py-1">
-               <Ionicons
-                  name="flag-outline"
-                  size={13}
-                  color={colors.blueDark}
-               />
-               <Text className="ml-1 text-micro font-black text-primary-strong">
-                  {focusLocation
-                     ? `Day ${focusLocation.node.day} of ${focusLocation.section.nodes.length}`
-                     : "Complete"}
-               </Text>
-            </View>
-         </View>
+          <View className="flex-row items-end justify-between">
+             <View className="flex-1 pr-3">
+                <Text className="text-micro font-black uppercase tracking-wide text-content-muted">
+                   Active habits
+                </Text>
+                <Text className="mt-1 text-lg font-black text-content">
+                   Choose your trail
+                </Text>
+             </View>
+             <View className="flex-row items-center gap-1">
+                <View className="flex-row items-center rounded-pill border border-line-primary bg-surface-blue px-2 py-1">
+                   <Ionicons
+                      name="flag-outline"
+                      size={13}
+                      color={colors.blueDark}
+                   />
+                   <Text className="ml-1 text-micro font-black text-primary-strong">
+                      {focusLocation
+                         ? `Day ${focusLocation.node.day} of ${focusLocation.section.nodes.length}`
+                         : "Complete"}
+                   </Text>
+                </View>
+                {onNavigateToMoreSettings ? (
+                   <TouchableOpacity
+                      className="h-7 w-7 items-center justify-center rounded-card border border-line-primary bg-surface-blue"
+                      activeOpacity={0.7}
+                      accessibilityLabel="Habit target settings"
+                      accessibilityRole="button"
+                      onPress={onNavigateToMoreSettings}
+                   >
+                      <Ionicons name="settings-outline" size={14} color={colors.blueDark} />
+                   </TouchableOpacity>
+                ) : null}
+             </View>
+          </View>
 
          <View className="mt-4 flex-row items-center">
             <View className="h-11 w-11 items-center justify-center rounded-card border border-line-reward bg-reward-soft">
@@ -334,11 +474,9 @@ function ActiveHabitCard() {
                   habit.activeTimedQuest !== null &&
                   habit.activeTimedQuest.startedOn === todayDateKey;
 
-               // All pills share a blue background for visual consistency.
-               // Status is communicated through the icon only.
                const borderClass = isActive
                   ? "border-primary-strong bg-primary-soft"
-                  : "border-primary bg-primary-soft";
+                  : "border-line-muted bg-surface-muted";
 
                const statusIcon: IconName | null = completedToday
                   ? "checkmark-circle"

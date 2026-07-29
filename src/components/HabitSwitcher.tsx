@@ -39,14 +39,21 @@ export function HabitSwitcher() {
             ? "play-circle-outline"
             : null;
         const statusIconColor = completedToday ? colors.green : colors.gold;
+        const labelClass = isActive
+          ? "text-primary-strong"
+          : completedToday
+            ? "text-content-green"
+            : inProgress
+              ? "text-content-gold"
+              : "text-content-muted";
 
         return (
           <TouchableOpacity
             key={habit.id}
             className={`h-11 flex-row items-center rounded-card border px-3 ${
               isActive
-                ? "border-primary-strong bg-primary"
-                : "border-line-primary bg-primary-soft"
+                ? "border-primary-strong bg-primary-soft"
+                : "border-line-muted bg-surface-muted"
             }`}
             activeOpacity={0.82}
             accessibilityLabel={`${habit.label}${statusLabel ? `, ${statusLabel}` : ""}`}
@@ -63,14 +70,12 @@ export function HabitSwitcher() {
               habitIcon={habit.icon}
               iconSize={18}
               containerClassName="relative h-6 w-6 items-center justify-center"
-              mainIconColor={isActive ? colors.card : colors.blueDark}
+              mainIconColor={isActive ? colors.blueDark : colors.muted}
               statusIcon={statusIcon}
               statusIconColor={statusIconColor}
             />
             <Text
-              className={`ml-2 text-xs font-black ${
-                isActive ? "text-white" : "text-primary-strong"
-              }`}
+              className={`ml-2 text-xs font-black ${labelClass}`}
               numberOfLines={1}
             >
               {habit.label}

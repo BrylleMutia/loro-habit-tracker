@@ -10,6 +10,7 @@ import {
    type LootDropDetails,
 } from "../../components/QuestCelebrationModal";
 import { QuestActionButton } from "../../components/QuestActionButton";
+import { RewardClaimedButton } from "../../components/RewardClaimedButton";
 import { ResourceBar } from "../../components/ResourceBar";
 import { colors } from "../../constants/colors";
 import { equipmentRaritiesById } from "../../constants/equipment";
@@ -379,16 +380,7 @@ const GuildQuestCard = memo(function GuildQuestCard({
                   onAction={onClaim ?? (() => undefined)}
                />
             ) : isClaimed ? (
-               <View className="flex-row items-center justify-center rounded-card border border-line-success bg-success-soft px-3 py-3">
-                  <Ionicons
-                     name="checkmark-circle"
-                     size={18}
-                     color={colors.green}
-                  />
-                  <Text className="ml-2 text-sm font-black text-content-green">
-                     Reward claimed
-                  </Text>
-               </View>
+               <RewardClaimedButton />
             ) : (
                <QuestActionButton
                   disabled

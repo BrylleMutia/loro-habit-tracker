@@ -8,10 +8,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 
 import { QuestActionButton } from "../../components/QuestActionButton";
 import { EquipmentLoadoutGrid } from "../../components/EquipmentLoadoutGrid";
+import { InventoryStackDetailsModal } from "../../components/InventoryStackDetailsModal";
 import { SetShowcaseFrame } from "../../components/SetShowcaseFrame";
 import { colors } from "../../constants/colors";
 import { getEquipmentSetTheme } from "../../constants/equipmentSetThemes";
@@ -44,6 +45,7 @@ import {
   getEquipmentAttributeTotals,
   getProfileActivityStatistics
 } from "../../utility/profile";
+import { groupInventoryItems } from "../../utility/inventory";
 
 const badgeToneStyles = {
   primary: { background: "bg-primary-soft", border: "border-primary", color: colors.blueDark },
@@ -71,10 +73,12 @@ export function ProfileScreen({ onNavigateToTab }: ProfileScreenProps) {
   const { dailyStreak, longestStreak, profile } = useGameProfile();
   const { inventory } = useGameInventory();
   const { mutationInFlight } = useGameSync();
-  const { updateProfile } = useGameActions();
+  const { equipItem, updateProfile } = useGameActions();
   const isDetailsReady = useDeferredMount();
   const [isSetCollectionExpanded, setIsSetCollectionExpanded] = useState(true);
   const [isSetOrderModalVisible, setIsSetOrderModalVisible] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [pendingItemId, setPendingItemId] = useState<string | null>(null);
   const contentWidth = useScreenContentWidth();
   const profilePairHorizontalInset = 24;
   const profilePairGap = 12;
@@ -99,6 +103,17 @@ export function ProfileScreen({ onNavigateToTab }: ProfileScreenProps) {
   const featuredSetProgress = orderedEquipmentSetProgress[0] ?? null;
   const completedSetCount = equipmentSetProgress.filter((set) => set.isComplete).length;
   const fullyEquippedSetId = getFullyEquippedSetId(profile.equippedItemIds, inventory.items);
+  const equipmentStacks = useMemo(
+    () => groupInventoryItems(inventory.items, profile.equippedItemIds, "rarity", "desc"),
+    [inventory.items, profile.equippedItemIds]
+  );
+  const selectedItemStack = useMemo(
+    () =>
+      equipmentStacks.find((stack) =>
+        stack.items.some((item) => item.id === selectedItemId)
+      ) ?? null,
+    [equipmentStacks, selectedItemId]
+  );
   const avatarSource =
     profile.avatarVariant === "alternate"
       ? images.classAvatarAlternates[profile.avatarClassId]
@@ -125,6 +140,18 @@ export function ProfileScreen({ onNavigateToTab }: ProfileScreenProps) {
       value: `${unlockedBadgeIds.size + completedSetCount}`
     }
   ];
+
+  const handleEquip = async (itemId: string) => {
+    setPendingItemId(itemId);
+    try {
+      await equipItem(itemId);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setPendingItemId(null);
+    }
+  };
 
   return (
     <ScrollView
@@ -257,6 +284,13 @@ export function ProfileScreen({ onNavigateToTab }: ProfileScreenProps) {
           <EquipmentLoadoutGrid
             equippedItemIds={profile.equippedItemIds}
             inventoryItems={inventory.items}
+            onItemPress={(item) => setSelectedItemId(item.id)}
+          />
+          <InventoryStackDetailsModal
+            loading={mutationInFlight === "equipment" && pendingItemId !== null}
+            onClose={() => setSelectedItemId(null)}
+            onEquip={handleEquip}
+            stack={selectedItemStack}
           />
 
           <View className="mb-3 mt-5 flex-row items-center justify-between px-1">

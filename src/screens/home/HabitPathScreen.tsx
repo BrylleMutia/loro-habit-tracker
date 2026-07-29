@@ -3,7 +3,9 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { ResourceBar } from "../../components/ResourceBar";
 import { HabitSwitcher } from "../../components/HabitSwitcher";
+import type { NewUnlockDetails } from "../../components/NewUnlockCelebrationModal";
 import { QuestActionButton } from "../../components/QuestActionButton";
+import { RewardClaimedButton } from "../../components/RewardClaimedButton";
 import { colors } from "../../constants/colors";
 import { useGameActions, useGameHabits, useGameSync } from "../../contexts/appContext";
 import { shadows } from "../../styles/shadows";
@@ -17,9 +19,14 @@ import {
 type HabitPathScreenProps = {
   onBack: () => void;
   onDailyCheckInPress: () => void;
+  onNewUnlock: (details: NewUnlockDetails) => void;
 };
 
-export function HabitPathScreen({ onBack, onDailyCheckInPress }: HabitPathScreenProps) {
+export function HabitPathScreen({
+  onBack,
+  onDailyCheckInPress,
+  onNewUnlock
+}: HabitPathScreenProps) {
   const { activeHabit } = useGameHabits();
   const { isOnline, mutationInFlight, todayDateKey } = useGameSync();
   const { claimChapterReward } = useGameActions();
@@ -71,7 +78,42 @@ export function HabitPathScreen({ onBack, onDailyCheckInPress }: HabitPathScreen
             actionsDisabled={actionsDisabled}
             unavailableLabel={!isOnline ? "Reconnect to claim" : "Syncing trail…"}
             onClaim={() => {
-              void claimChapterReward(activeHabit.id, section.id).catch(() => undefined);
+              void claimChapterReward(activeHabit.id, section.id)
+                .then((outcome) => {
+                  if (outcome.alreadyClaimed) return;
+
+                  onNewUnlock({
+                    accentBackgroundClass: "bg-reward-soft",
+                    accentBorderClass: "border-line-reward-strong",
+                    accentColor: colors.gold,
+                    accentTextClass: "text-content-gold-strong",
+                    description: `${section.title} is complete. Your rewards are ready for the trail.`,
+                    eyebrow: "Chapter reward",
+                    icon: "gift",
+                    rewards: [
+                      {
+                        backgroundClass: "bg-reward-soft",
+                        color: colors.gold,
+                        icon: "ellipse",
+                        label: `+${section.reward.coins} coins`
+                      },
+                      {
+                        backgroundClass: "bg-success-soft",
+                        color: colors.green,
+                        icon: "sparkles",
+                        label: `+${section.reward.xp} XP`
+                      },
+                      {
+                        backgroundClass: "bg-success-soft",
+                        color: colors.green,
+                        icon: "shield-checkmark",
+                        label: "+1 streak shield"
+                      }
+                    ],
+                    title: "Chapter cleared!"
+                  });
+                })
+                .catch(() => undefined);
             }}
           />
         ))}
@@ -153,22 +195,33 @@ function ChapterSection({
             </View>
             <View className="ml-3 flex-1">
               <Text className="text-sm font-black text-content">Chapter Reward</Text>
-              <Text className="mt-1 text-xs font-semibold text-content-muted">
-                {section.reward.coins} coins | {section.reward.xp} XP
-              </Text>
+              <View className="mt-1 flex-row flex-wrap items-center">
+                <Text className="text-xs font-semibold text-content-muted">
+                  {section.reward.coins} coins | {section.reward.xp} XP
+                </Text>
+                <View className="ml-2 flex-row items-center rounded-pill border border-line-success bg-success-soft px-2 py-1">
+                  <Ionicons name="shield-checkmark" size={12} color={colors.green} />
+                  <Text className="ml-1 text-micro font-black text-content-green">+1 shield</Text>
+                </View>
+              </View>
             </View>
           </View>
-          <QuestActionButton
-            accessibilityLabel={`${isClaimed ? "Claimed" : isComplete ? "Claim" : "Locked"} ${section.title} reward`}
-            className="mt-3"
-            completed={isClaimed}
-            completedLabel="Reward claimed"
-            disabled={!isComplete || isClaimed || actionsDisabled}
-            icon={isComplete ? "gift" : "lock-closed"}
-            label={isComplete ? (actionsDisabled ? unavailableLabel : "Claim chapter reward") : "Reward locked"}
-            mode="tap"
-            onAction={onClaim}
-          />
+          {isClaimed ? (
+            <RewardClaimedButton
+              accessibilityLabel={`${section.title} reward claimed`}
+              className="mt-3"
+            />
+          ) : (
+            <QuestActionButton
+              accessibilityLabel={`${isComplete ? "Claim" : "Locked"} ${section.title} reward`}
+              className="mt-3"
+              disabled={!isComplete || actionsDisabled}
+              icon={isComplete ? "gift" : "lock-closed"}
+              label={isComplete ? (actionsDisabled ? unavailableLabel : "Claim chapter reward") : "Reward locked"}
+              mode="tap"
+              onAction={onClaim}
+            />
+          )}
         </View>
       </View>
     </View>

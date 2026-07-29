@@ -1,11 +1,24 @@
 import { Fragment } from "react";
+import { useEffect } from "react";
 import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming
+} from "react-native-reanimated";
 
 import { colors } from "../constants/colors";
 import { useGameHabits } from "../contexts/appContext";
 import { shadows } from "../styles/shadows";
 import type { AdventureNodeStatus } from "../types/app";
+import { isSectionComplete } from "../utility/adventurePath";
 import { QuestActionButton } from "./QuestActionButton";
 
 type AdventurePathPreviewProps = {
@@ -13,8 +26,13 @@ type AdventurePathPreviewProps = {
 };
 
 export function AdventurePathPreview({ onViewPath }: AdventurePathPreviewProps) {
-  const { activeAdventure } = useGameHabits();
+  const { activeAdventure, activeHabit } = useGameHabits();
   const section = activeAdventure.focusLocation?.section;
+  const hasClaimableChapterReward = activeHabit.sections.some(
+    (candidate) =>
+      isSectionComplete(activeHabit, candidate.id) &&
+      !activeHabit.claimedChapterRewardIds.includes(candidate.id)
+  );
 
   if (!section) {
     return null;
@@ -27,16 +45,23 @@ export function AdventurePathPreview({ onViewPath }: AdventurePathPreviewProps) 
           <Text className="text-xs font-extrabold uppercase text-content-muted">Adventure Map</Text>
           <Text className="mt-1 text-lg font-black text-content">{section.title}</Text>
         </View>
-        <QuestActionButton
-          accessibilityLabel="View full adventure path"
-          className="w-40"
-          completedLabel="Opening path"
-          icon="map-outline"
-          label="Open map"
-          mode="tap"
-          onAction={onViewPath}
-          size="compact"
-        />
+        <View className="relative w-40">
+          <QuestActionButton
+            accessibilityLabel={
+              hasClaimableChapterReward
+                ? "View full adventure path, chapter reward ready to claim"
+                : "View full adventure path"
+            }
+            className="w-full"
+            completedLabel="Opening path"
+            icon="map-outline"
+            label="Open map"
+            mode="tap"
+            onAction={onViewPath}
+            size="compact"
+          />
+          {hasClaimableChapterReward ? <ClaimableRewardBadge /> : null}
+        </View>
       </View>
 
       <View className="mt-4 rounded-card border border-line-primary bg-surface-blue p-3">
@@ -60,6 +85,51 @@ export function AdventurePathPreview({ onViewPath }: AdventurePathPreviewProps) 
         </View>
       </View>
     </View>
+  );
+}
+
+function ClaimableRewardBadge() {
+  const progress = useSharedValue(0);
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    cancelAnimation(progress);
+
+    if (reduceMotion) {
+      progress.value = 0;
+      return;
+    }
+
+    progress.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 180, easing: Easing.out(Easing.quad) }),
+        withTiming(0, { duration: 180, easing: Easing.inOut(Easing.quad) }),
+        withDelay(2400, withTiming(0, { duration: 1 }))
+      ),
+      -1,
+      false
+    );
+
+    return () => cancelAnimation(progress);
+  }, [progress, reduceMotion]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: -Math.abs(progress.value) * 3 },
+      { rotate: `${progress.value * 10}deg` },
+      { scale: 1 + Math.abs(progress.value) * 0.08 }
+    ]
+  }));
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[{ position: "absolute", right: -7, top: -7 }, animatedStyle]}
+    >
+      <View className="h-7 w-7 items-center justify-center rounded-pill border border-line-reward bg-reward-soft">
+        <Ionicons name="gift" size={16} color={colors.gold} />
+      </View>
+    </Animated.View>
   );
 }
 
