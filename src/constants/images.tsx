@@ -4,6 +4,12 @@ export const images = {
     signup: require("../assets/images/auth-signup-hero.jpg"),
     verification: require("../assets/images/auth-verification-hero.jpg"),
   },
+  appLogo: require("../assets/images/app-logo-lory.png"),
+  onboarding: {
+    questReward: require("../assets/images/onboarding/onboarding-quest-reward.png"),
+    trailReady: require("../assets/images/onboarding/onboarding-trail-ready.png"),
+    welcome: require("../assets/images/onboarding/onboarding-welcome.png")
+  },
   classAvatarAlternates: {
     druid: require("../assets/images/druid-male.png"),
     mercenary: require("../assets/images/mercenary-female.png"),
@@ -87,7 +93,6 @@ export const images = {
       "../assets/images/equipment-placeholders/equipment-slot-buddy.png"
     ),
   },
-  clearedStamp: require("../assets/images/cleared-stamp.png"),
   headerBackground: require("../assets/images/header-background-pixel.jpg"),
   parrotMascot: require("../assets/images/parrot-trail-captain.png"),
 } as const;

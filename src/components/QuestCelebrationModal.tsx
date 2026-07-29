@@ -24,11 +24,14 @@ import { PixelParrot } from "./PixelParrot";
 import { QuestActionButton } from "./QuestActionButton";
 
 export type CelebrationVariant = "trail-stamp" | "loot-drop";
+export type LootDropPage = "rewards" | "streak";
 
 export type LootDropDetails = {
   coinReward: number;
   xpReward: number;
   streak: number;
+  streakShieldConsumed?: boolean;
+  remainingStreakShields?: number;
   habitLabel: string;
   lootItem: InventoryItem;
   finalEyebrow?: string;
@@ -44,6 +47,7 @@ export type TrailStampDetails = {
   coinReward: number;
   description: string;
   energyReward?: number;
+  shieldReward?: number;
   title: string;
   xpReward?: number;
 };
@@ -56,12 +60,17 @@ type QuestCelebrationModalProps = {
   trailStampActionDisabled?: boolean;
   trailStampActionMode?: QuestActionMode;
   trailStampDetails?: TrailStampDetails;
+  lootDropPage?: LootDropPage;
+  onLootDropPageChange?: (page: LootDropPage) => void;
+  onLootItemPress?: (item: InventoryItem) => void;
 };
 
 const defaultLootDropDetails: LootDropDetails = {
   coinReward: 20,
   xpReward: 32,
   streak: 1,
+  streakShieldConsumed: false,
+  remainingStreakShields: 0,
   habitLabel: "Daily Quest",
   lootItem: {
     id: "preview-wayfinder-cap",
@@ -103,7 +112,10 @@ export function QuestCelebrationModal({
   onTrailStampAction,
   trailStampActionDisabled = false,
   trailStampActionMode = "tap",
-  trailStampDetails = defaultTrailStampDetails
+  trailStampDetails = defaultTrailStampDetails,
+  lootDropPage,
+  onLootDropPageChange,
+  onLootItemPress
 }: QuestCelebrationModalProps) {
   if (!variant) {
     return null;
@@ -145,7 +157,13 @@ export function QuestCelebrationModal({
           />
         ) : null}
         {variant === "loot-drop" ? (
-          <LootDropCelebration details={lootDropDetails} onClose={onClose} />
+          <LootDropCelebration
+            details={lootDropDetails}
+            onClose={onClose}
+            onLootDropPageChange={onLootDropPageChange}
+            onLootItemPress={onLootItemPress}
+            page={lootDropPage}
+          />
         ) : null}
       </Animated.View>
     </Modal>
@@ -211,6 +229,7 @@ function TrailStampCelebration({
             <RewardRow
               coinReward={details.coinReward}
               energyReward={details.energyReward}
+              shieldReward={details.shieldReward}
               xpReward={details.xpReward}
             />
             <QuestActionButton
@@ -231,13 +250,27 @@ function TrailStampCelebration({
 
 function LootDropCelebration({
   details,
-  onClose
+  onClose,
+  onLootDropPageChange,
+  onLootItemPress,
+  page: controlledPage
 }: {
   details: LootDropDetails;
   onClose: () => void;
+  onLootDropPageChange?: (page: LootDropPage) => void;
+  onLootItemPress?: (item: InventoryItem) => void;
+  page?: LootDropPage;
 }) {
-  const [page, setPage] = useState<"rewards" | "streak">("rewards");
+  const [internalPage, setInternalPage] = useState<LootDropPage>("rewards");
   const { heavy, medium } = useHaptics();
+  const page = controlledPage ?? internalPage;
+  const setPage = (nextPage: LootDropPage) => {
+    if (onLootDropPageChange) {
+      onLootDropPageChange(nextPage);
+    } else {
+      setInternalPage(nextPage);
+    }
+  };
   const rewards = [
     { icon: "ellipse" as const, color: colors.gold, label: `+${details.coinReward} coins` },
     { icon: "sparkles" as const, color: colors.green, label: `+${details.xpReward} XP` }
@@ -270,61 +303,70 @@ function LootDropCelebration({
             </View>
 
             <Animated.View entering={FadeInUp.delay(120).duration(260)}>
-              <View className="mt-4 flex-row rounded-card border border-line bg-surface-panel p-3">
-                <View
-                  className="h-28 w-28 items-center justify-center overflow-hidden rounded-card"
-                  style={{
-                    borderColor: colors.rarity[rarity.id],
-                    borderWidth: 4,
-                    backgroundColor: colors.raritySoft[rarity.id]
-                  }}
-                >
-                  <Image
-                    accessibilityLabel={`${rarity.label} ${lootItem.name}`}
-                    resizeMode="contain"
-                    source={itemDefinition.image}
-                    style={{ height: 104, width: 104 }}
-                  />
-                </View>
-
-                <View className="ml-3 flex-1 justify-center">
-                  <Text
-                    className="text-xs font-black uppercase"
-                    style={{ color: colors.rarity[rarity.id] }}
+              <TouchableOpacity
+                className="mt-4"
+                activeOpacity={onLootItemPress ? 0.82 : 1}
+                accessibilityLabel={`${rarity.label} ${lootItem.name}${onLootItemPress ? ". Open item details" : ""}`}
+                accessibilityRole={onLootItemPress ? "button" : undefined}
+                disabled={!onLootItemPress}
+                onPress={() => onLootItemPress?.(lootItem)}
+              >
+                <View className="flex-row rounded-card border border-line bg-surface-panel p-3">
+                  <View
+                    className="h-28 w-28 items-center justify-center overflow-hidden rounded-card"
+                    style={{
+                      borderColor: colors.rarity[rarity.id],
+                      borderWidth: 4,
+                      backgroundColor: colors.raritySoft[rarity.id]
+                    }}
                   >
-                    {rarity.label} {slotLabel}
-                  </Text>
-                  <Text className="mt-1 text-lg font-black leading-5 text-content">
-                    {lootItem.name}
-                  </Text>
-                  <View className="mt-2 self-start flex-row items-center rounded-pill border border-line-success bg-success-soft px-2 py-1">
-                    <Ionicons name="leaf-outline" size={11} color={colors.green} />
-                    <Text className="ml-1 text-micro font-extrabold text-content-green">
-                      {lootItem.setName}
-                    </Text>
+                    <Image
+                      accessibilityLabel={`${rarity.label} ${lootItem.name}`}
+                      resizeMode="contain"
+                      source={itemDefinition.image}
+                      style={{ height: 104, width: 104 }}
+                    />
                   </View>
-                  <View className="mt-2 flex-row flex-wrap">
-                    {stats.map(([attributeId, amount]) => {
-                      const attribute = equipmentAttributes.find(({ id }) => id === attributeId);
-                      return (
-                        <View
-                          key={attributeId}
-                          className="mb-1 mr-1 flex-row items-center rounded-pill bg-white px-2 py-1"
-                        >
-                          <Ionicons
-                            name={attribute?.icon ?? "sparkles-outline"}
-                            size={12}
-                            color={colors.blueDark}
-                          />
-                          <Text className="ml-1 text-micro font-black text-content">
-                            {attribute?.label ?? attributeId} +{amount}
-                          </Text>
-                        </View>
-                      );
-                    })}
+
+                  <View className="ml-3 flex-1 justify-center">
+                    <Text
+                      className="text-xs font-black uppercase"
+                      style={{ color: colors.rarity[rarity.id] }}
+                    >
+                      {rarity.label} {slotLabel}
+                    </Text>
+                    <Text className="mt-1 text-lg font-black leading-5 text-content">
+                      {lootItem.name}
+                    </Text>
+                    <View className="mt-2 self-start flex-row items-center rounded-pill border border-line-success bg-success-soft px-2 py-1">
+                      <Ionicons name="leaf-outline" size={11} color={colors.green} />
+                      <Text className="ml-1 text-micro font-extrabold text-content-green">
+                        {lootItem.setName}
+                      </Text>
+                    </View>
+                    <View className="mt-2 flex-row flex-wrap">
+                      {stats.map(([attributeId, amount]) => {
+                        const attribute = equipmentAttributes.find(({ id }) => id === attributeId);
+                        return (
+                          <View
+                            key={attributeId}
+                            className="mb-1 mr-1 flex-row items-center rounded-pill bg-white px-2 py-1"
+                          >
+                            <Ionicons
+                              name={attribute?.icon ?? "sparkles-outline"}
+                              size={12}
+                              color={colors.blueDark}
+                            />
+                            <Text className="ml-1 text-micro font-black text-content">
+                              {attribute?.label ?? attributeId} +{amount}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             </Animated.View>
 
             <View className="mt-3 border-y border-line-reward-muted py-1">
@@ -411,6 +453,26 @@ function LootDropCelebration({
                   <Text className="mt-2 text-center text-sm font-semibold leading-5 text-content-muted">
                     {details.finalDescription ?? `Your ${details.habitLabel} adventure is ready for tomorrow.`}
                   </Text>
+                  {details.streakShieldConsumed ? (
+                    <View
+                      className="mt-4 w-full flex-row items-center rounded-card border border-line-success bg-surface-green px-3 py-2"
+                      accessible
+                      accessibilityRole="text"
+                      accessibilityLabel={`Streak protected. One shield used. ${details.remainingStreakShields ?? 0} shields remaining.`}
+                    >
+                      <View className="h-8 w-8 items-center justify-center rounded-pill bg-success-pale">
+                        <Ionicons name="shield-checkmark" size={18} color={colors.green} />
+                      </View>
+                      <View className="ml-2 flex-1">
+                        <Text className="text-sm font-black text-content-green">
+                          Streak protected
+                        </Text>
+                        <Text className="mt-0.5 text-xs font-semibold leading-4 text-content-green-deep">
+                          1 shield used - {details.remainingStreakShields ?? 0} remaining
+                        </Text>
+                      </View>
+                    </View>
+                  ) : null}
                 </>
               )}
               <QuestActionButton
@@ -432,29 +494,39 @@ function LootDropCelebration({
 function RewardRow({
   coinReward,
   energyReward,
+  shieldReward,
   xpReward
 }: {
   coinReward: number;
   energyReward?: number;
+  shieldReward?: number;
   xpReward?: number;
 }) {
   return (
-    <View className="mt-4 flex-row items-center justify-center">
+    <View className="mt-4 flex-row flex-wrap items-center justify-center gap-2">
       <View className="flex-row items-center rounded-pill bg-reward-soft px-3 py-2">
         <Ionicons name="ellipse" size={14} color={colors.gold} />
         <Text className="ml-1 text-xs font-black text-content-gold">+{coinReward}</Text>
       </View>
       {typeof xpReward === "number" ? (
-        <View className="ml-2 flex-row items-center rounded-pill bg-success-soft px-3 py-2">
+        <View className="flex-row items-center rounded-pill bg-success-soft px-3 py-2">
           <Ionicons name="sparkles" size={14} color={colors.green} />
           <Text className="ml-1 text-xs font-black text-content-green">+{xpReward} XP</Text>
         </View>
       ) : null}
       {typeof energyReward === "number" ? (
-        <View className="ml-2 flex-row items-center rounded-pill bg-primary-soft px-3 py-2">
+        <View className="flex-row items-center rounded-pill bg-primary-soft px-3 py-2">
           <Ionicons name="flash" size={14} color={colors.blueDark} />
           <Text className="ml-1 text-xs font-black text-primary-strong">
             +{energyReward} energy
+          </Text>
+        </View>
+      ) : null}
+      {typeof shieldReward === "number" ? (
+        <View className="flex-row items-center rounded-pill bg-success-soft px-3 py-2">
+          <Ionicons name="shield-checkmark" size={14} color={colors.green} />
+          <Text className="ml-1 text-xs font-black text-content-green">
+            +{shieldReward} shield{shieldReward === 1 ? "" : "s"}
           </Text>
         </View>
       ) : null}

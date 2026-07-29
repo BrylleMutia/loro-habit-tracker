@@ -15,7 +15,7 @@ import Animated, {
 
 import { colors } from "../constants/colors";
 import { useGameInventory, useGameProfile, useGameResources } from "../contexts/appContext";
-import { PixelParrot } from "./PixelParrot";
+import { shadows } from "../styles/shadows";
 import { ResourcePill } from "./ResourcePill";
 
 type ResourceBarProps = {
@@ -57,40 +57,69 @@ export function ResourceBar({ onDailyCheckInPress }: ResourceBarProps) {
   }
 
   return (
-    <View className="flex-row items-center justify-between">
-      <PixelParrot size="sm" />
-      <View className="flex-row items-center">
+    <View
+      className="self-center flex-row items-center"
+      style={{ maxWidth: "100%" }}
+    >
+      <View
+        className="flex-row items-stretch overflow-hidden rounded-pill border border-line bg-surface-card px-5"
+        style={[shadows.card, { flexShrink: 1, minWidth: 0 }]}
+      >
         <ResourcePill
           icon="flash"
           value={energyValue}
           color={colors.blueDark}
           suffix={energySuffix}
+          tone="energy"
+          accessibilityLabel={`Energy ${energyValue}${energySuffix ? `, ${energySuffix}` : ""}`}
         />
-        <ResourcePill icon="flame" value={dailyStreak.toString()} color={colors.red} />
-        {inventory.streakShields > 0 ? (
-          <ResourcePill
-            icon="shield-checkmark"
-            value={inventory.streakShields.toString()}
-            color={colors.blue}
-          />
-        ) : null}
-        <ResourcePill icon="ellipse" value={coins.toLocaleString("en-US")} color={colors.gold} />
-        <TouchableOpacity
-          className={`ml-2 h-9 w-9 items-center justify-center rounded-card ${
-            dailyCheckInClaimedToday ? "bg-success-pale" : "bg-primary-soft"
-          }`}
-          activeOpacity={0.82}
-          accessibilityLabel={dailyCheckInClaimedToday ? "Daily reward claimed" : "Claim daily reward"}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: dailyCheckInClaimedToday }}
-          disabled={dailyCheckInClaimedToday}
-          onPress={onDailyCheckInPress}
-        >
-          <DailyCheckInIcon isClaimed={dailyCheckInClaimedToday} />
-        </TouchableOpacity>
+        <ResourceDivider />
+        <ResourcePill
+          icon="flame"
+          value={dailyStreak.toString()}
+          color={colors.red}
+          tone="streak"
+          accessibilityLabel={`${dailyStreak} day streak`}
+        />
+        <ResourceDivider />
+        <ResourcePill
+          icon="shield-checkmark"
+          value={inventory.streakShields.toString()}
+          color={colors.green}
+          tone="shield"
+          accessibilityLabel={`${inventory.streakShields} streak shields`}
+        />
+        <ResourceDivider />
+        <ResourcePill
+          icon="ellipse"
+          value={coins.toLocaleString("en-US")}
+          color={colors.gold}
+          tone="coins"
+          accessibilityLabel={`${coins.toLocaleString("en-US")} coins`}
+        />
       </View>
+      <TouchableOpacity
+        className={`ml-2 h-11 w-11 shrink-0 items-center justify-center rounded-pill border ${
+          dailyCheckInClaimedToday
+            ? "border-line-success bg-success-pale"
+            : "border-line bg-surface-card"
+        }`}
+        style={shadows.card}
+        activeOpacity={0.82}
+        accessibilityLabel={dailyCheckInClaimedToday ? "Daily reward claimed" : "Claim daily reward"}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: dailyCheckInClaimedToday }}
+        disabled={dailyCheckInClaimedToday}
+        onPress={onDailyCheckInPress}
+      >
+        <DailyCheckInIcon isClaimed={dailyCheckInClaimedToday} />
+      </TouchableOpacity>
     </View>
   );
+}
+
+function ResourceDivider() {
+  return <View className="my-2.5 w-px bg-line" />;
 }
 
 function DailyCheckInIcon({ isClaimed }: { isClaimed: boolean }) {

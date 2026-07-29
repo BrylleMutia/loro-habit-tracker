@@ -1,22 +1,25 @@
 import { useEffect, useState } from "react";
-import { Image, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAudioPlayer } from "expo-audio";
 
 import { sounds } from "../constants/audio";
 import { colors } from "../constants/colors";
-import { images } from "../constants/images";
 import {
-  useGameActions,
+   useGameActions,
   useGameHabits,
   useGameQuests,
   useGameResources,
   useGameSettings,
-  useGameSync
+   useGameSync
 } from "../contexts/appContext";
 import { useHaptics } from "../hooks/useHaptics";
 import { shadows } from "../styles/shadows";
 import type { IconName } from "../types/app";
+import {
+   getDailyQuestSummary,
+   getEffectiveHabitTarget
+} from "../utility/habitTargets";
 import { HabitIconWithStatus } from "./HabitIconWithStatus";
 import { QuestActionButton } from "./QuestActionButton";
 import type { LootDropDetails } from "./QuestCelebrationModal";
@@ -229,14 +232,15 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
                      Quest complete
                   </Text>
                </View>
-               <Image
-                  source={images.clearedStamp}
-                  className="h-12 w-28"
-                  resizeMode="contain"
+               <View
+                  className="h-8 items-center justify-center rounded-card border border-line-success bg-success-pale px-2"
+                  style={{ minWidth: 78 }}
                   accessible
                   accessibilityLabel="Quest cleared"
-                  style={{ transform: [{ rotate: "-8deg" }] }}
-               />
+                  accessibilityRole="text"
+               >
+                  <Text className="text-sm font-black text-content-green">Cleared</Text>
+               </View>
             </View>
             {completion ? (
                <View className="mt-2 flex-row justify-between items-start">
@@ -278,18 +282,20 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
    const { node, section } = activeLocation;
    const isTimedQuest = node.questType === "timed";
    const override = targetOverrides[activeHabit.id];
-   const effectiveDurationSeconds =
-      isTimedQuest && override !== undefined
-         ? Math.max(5, override) * 60
-         : node.questType === "timed"
-           ? node.targetDurationSeconds
-           : 0;
-   const effectiveQuantity =
-      !isTimedQuest && override !== undefined
-         ? Math.max(1, override)
-         : node.questType === "one-time"
-           ? node.targetQuantity
-           : 0;
+   const effectiveTarget = getEffectiveHabitTarget(
+      activeHabit.id,
+      node,
+      override
+   );
+   const effectiveDurationSeconds = isTimedQuest
+      ? effectiveTarget * 60
+      : 0;
+   const effectiveQuantity = !isTimedQuest ? effectiveTarget : 0;
+   const questSummary = getDailyQuestSummary(
+      activeHabit.id,
+      node.title,
+      effectiveTarget
+   );
    const actionUnavailable = !isOnline || mutationInFlight !== null;
    const hasEnoughEnergy = energy.current >= node.energyCost;
    const canStartOrCompleteQuest = hasEnoughEnergy && !actionUnavailable;
@@ -309,7 +315,7 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
         : "Need more energy";
    const completeQuest = async () => {
       clearSyncError();
-      medium();
+         medium();
       try {
          const outcome = await completeDailyQuest(activeHabit.id);
          if (outcome.alreadyCompleted || !outcome.lootItem) return;
@@ -318,6 +324,8 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
             coinReward: outcome.coinReward,
             xpReward: outcome.xpReward,
             streak: outcome.streak,
+            streakShieldConsumed: outcome.streakShieldConsumed,
+            remainingStreakShields: outcome.remainingStreakShields,
             habitLabel: activeHabit.label,
             lootItem: outcome.lootItem,
          };
@@ -356,7 +364,7 @@ export function DailyQuestCard({ onQuestCompleted }: DailyQuestCardProps) {
 
          <View className="mt-4 rounded-card bg-surface-panel p-3">
             <Text className="text-sm font-extrabold leading-5 text-content">
-               {node.summary}
+               {questSummary}
             </Text>
             <Text className="mt-1 text-xs font-bold text-content-muted">
                {isTimedQuest

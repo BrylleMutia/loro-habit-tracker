@@ -8,14 +8,54 @@ type ResourcePillProps = {
   value: string;
   color: string;
   suffix?: string;
+  /** Kept in the public contract so callers can describe the resource type. */
+  tone?: "energy" | "streak" | "shield" | "coins";
+  accessibilityLabel?: string;
 };
 
-export function ResourcePill({ icon, value, color, suffix }: ResourcePillProps) {
+export function ResourcePill({
+  icon,
+  value,
+  color,
+  suffix,
+  tone: _tone,
+  accessibilityLabel
+}: ResourcePillProps) {
   return (
-    <View className="ml-2 h-9 flex-row items-center rounded-card border border-line bg-surface-card px-3">
-      <Ionicons name={icon} size={16} color={color} />
-      <Text className="ml-1 text-sm font-black text-content">{value}</Text>
-      {suffix ? <Text className="ml-1 text-xs font-bold text-primary">{suffix}</Text> : null}
+    <View
+      className="min-h-11 flex-row items-center px-2 py-2"
+      style={{
+        flexShrink: 1,
+        flexBasis: "auto",
+        minWidth: suffix ? 80 : 44
+      }}
+      accessible
+      accessibilityLabel={accessibilityLabel ?? value}
+    >
+      <Ionicons name={icon} size={15} color={color} style={{ flexShrink: 0 }} />
+      <View
+        className={`ml-1 ${suffix ? "justify-center" : "flex-row items-center"}`}
+        style={{ flexShrink: 1, minWidth: 0 }}
+      >
+        <Text
+          className="text-sm font-black text-content"
+          style={{ flexShrink: 1, fontVariant: ["tabular-nums"] }}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {value}
+        </Text>
+        {suffix ? (
+          <Text
+            className="text-micro font-bold text-content-muted"
+            style={{ flexShrink: 1 }}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {suffix}
+          </Text>
+        ) : null}
+      </View>
     </View>
   );
 }
