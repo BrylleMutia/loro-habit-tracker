@@ -184,6 +184,7 @@ If all available habits are complete, use a calm “all trails cleared” acknow
 - Use the shared `rounded-card` token for cards and avoid excessive pills or nested card surfaces.
 - Home presents energy, streak, shields, and coins in one compact segmented capsule at the top-left; daily check-in remains an adjacent, visually separate action.
 - Preserve compact layouts, stable dimensions, and clear visual hierarchy on narrow mobile screens.
+- The onboarding habit selector uses a calm blue-to-white canvas, compact selectable habit rows with distinct icon colors, an explicit selected-count badge, and persistent Continue/Skip actions that remain reachable on narrow screens.
 - Lory's briefing card shows no more than four message lines at once; longer generated briefings scroll within the card without moving the surrounding Home layout.
 - Use semantic status icons and text; do not communicate status with color alone.
 - Keep timers and counters visually stable with tabular numerals.

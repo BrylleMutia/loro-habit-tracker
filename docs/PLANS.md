@@ -105,6 +105,7 @@ Source code, tests, migrations, and deployed configuration remain the final trut
 
 **Implementation notes (as built):**
 - ✅ Implemented directly in the existing `ActiveHabitCard` 2×3 habit grid (no standalone strip component)
+- ✅ Home now treats the compact greeting, selected-trail summary, 2×3 grid, and `DailyQuestCard` as the primary choose-then-act sequence. The full Lory briefing and Adventure Map follow the quest so guidance and progression remain available without delaying the daily action.
 - All habit pills share a consistent blue background (`bg-primary-soft`, `border-primary`) for visual clarity
 - Active pill uses a slightly stronger border (`border-primary-strong`)
 - Status is communicated through the icon only:
@@ -557,6 +558,7 @@ Source code, tests, migrations, and deployed configuration remain the final trut
 6. Direct signup carries onboarding state without a migration warning. Later guest signup shows a bounded migration warning before account creation.
 7. ✅ Selecting **Create an account** from the completed onboarding state opens signup directly; the persisted import retains the exact valid selection and order—whether that is a subset such as two or four habits, all six current habits, or a future supported count—plus the bounded starter reward through verification.
 8. ✅ Email-verification session creation and cold-start session restoration keep the signed-in app gate closed until the onboarding import commits, so the first authenticated snapshot cannot replace the exact onboarding selection with catalog defaults.
+9. ✅ The habit-selection screen now follows the compact reference layout: a blue-to-white canvas, centered progress/title/count hierarchy, color-coded icon tiles, outlined selected cards, and a right-arrow primary action while retaining catalog-driven selection and responsive scrolling.
 
 **Persistence and safety:**
 

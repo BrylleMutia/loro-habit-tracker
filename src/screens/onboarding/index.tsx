@@ -60,14 +60,66 @@ const guestNonSyncItems = [
   "Daily quest completions, activity history, and other arbitrary local progress"
 ] as const;
 
-function ProgressDots({ phase }: { phase: OnboardingPhase }) {
+const onboardingHabitDescriptions: Record<HabitId, string> = {
+  exercise: "Let's move, build strength, and earn today's win!",
+  reading: "Let's turn a few pages and uncover something new!",
+  journaling: "Take a quiet moment to capture a thought.",
+  water: "Time to refill and keep your energy flowing!",
+  sleep: "Let's prepare a calm landing for tomorrow.",
+  outdoors: "Step outside, breathe deeply, and explore."
+};
+
+const onboardingHabitVisuals: Record<
+  HabitId,
+  { backgroundClassName: string; iconColor: string }
+> = {
+  exercise: {
+    backgroundClassName: "bg-primary-soft",
+    iconColor: colors.blueDark
+  },
+  reading: {
+    backgroundClassName: "bg-rarity-epic-soft",
+    iconColor: colors.rarity.epic
+  },
+  journaling: {
+    backgroundClassName: "bg-surface-red",
+    iconColor: colors.red
+  },
+  water: {
+    backgroundClassName: "bg-primary-pale",
+    iconColor: colors.blue
+  },
+  sleep: {
+    backgroundClassName: "bg-rarity-epic-soft",
+    iconColor: colors.rarity.epic
+  },
+  outdoors: {
+    backgroundClassName: "bg-success-soft",
+    iconColor: colors.green
+  }
+};
+
+function ProgressDots({
+  compact = false,
+  phase
+}: {
+  compact?: boolean;
+  phase: OnboardingPhase;
+}) {
   const current = phase === "habits" ? 1 : phase === "quest" ? 2 : 3;
   return (
-    <View className="flex-row items-center justify-center gap-2" accessibilityLabel={`Onboarding step ${current} of 3`}>
+    <View
+      className={`flex-row items-center justify-center ${compact ? "gap-1.5" : "gap-2"}`}
+      accessibilityLabel={`Onboarding step ${current} of 3`}
+    >
       {[1, 2, 3].map((step) => (
         <View
           key={step}
-          className={`h-2 rounded-pill ${step === current ? "w-10 bg-primary-strong" : "w-2 bg-line-blue-muted"}`}
+          className={`${compact ? "h-1" : "h-2"} rounded-pill ${
+            step === current
+              ? `${compact ? "w-5" : "w-10"} bg-primary-strong`
+              : `${compact ? "w-2.5" : "w-2"} bg-line-blue-muted`
+          }`}
         />
       ))}
     </View>
@@ -75,12 +127,14 @@ function ProgressDots({ phase }: { phase: OnboardingPhase }) {
 }
 
 function PageHeader({
+  compact = false,
   eyebrow,
   onBack,
   onForward,
   phase,
   title
 }: {
+  compact?: boolean;
   eyebrow?: string;
   onBack?: () => void;
   onForward?: () => void;
@@ -88,39 +142,41 @@ function PageHeader({
   title: string;
 }) {
   return (
-    <View className="gap-4">
+    <View className={compact ? "gap-3" : "gap-4"}>
       <View className="flex-row items-center justify-between">
         {onBack ? (
           <Pressable
-            className="h-11 w-11 items-center justify-center rounded-card border border-line-blue bg-surface-card"
+            className={`${compact ? "h-7 w-7 rounded-full" : "h-11 w-11 rounded-card"} items-center justify-center border border-line-blue bg-surface-card`}
+            style={compact ? shadows.card : undefined}
             accessibilityLabel="Go back"
             accessibilityRole="button"
-            hitSlop={6}
+            hitSlop={compact ? 8 : 6}
             onPress={onBack}
           >
-            <Ionicons name="chevron-back" size={24} color={colors.ink} />
+            <Ionicons name="chevron-back" size={compact ? 16 : 24} color={compact ? colors.muted : colors.ink} />
           </Pressable>
         ) : (
-          <View className="h-11 w-11" />
+          <View className={compact ? "h-7 w-7" : "h-11 w-11"} />
         )}
-        <ProgressDots phase={phase} />
+        <ProgressDots compact={compact} phase={phase} />
         {onForward ? (
           <Pressable
-            className="h-11 w-11 items-center justify-center rounded-card border border-line-blue bg-surface-card"
+            className={`${compact ? "h-7 w-7 rounded-full" : "h-11 w-11 rounded-card"} items-center justify-center border border-line-blue bg-surface-card`}
+            style={compact ? shadows.card : undefined}
             accessibilityLabel="Continue to your ready trail"
             accessibilityRole="button"
-            hitSlop={6}
+            hitSlop={compact ? 8 : 6}
             onPress={onForward}
           >
-            <Ionicons name="chevron-forward" size={24} color={colors.ink} />
+            <Ionicons name="chevron-forward" size={compact ? 16 : 24} color={compact ? colors.muted : colors.ink} />
           </Pressable>
         ) : (
-          <View className="h-11 w-11" />
+          <View className={compact ? "h-7 w-7" : "h-11 w-11"} />
         )}
       </View>
       <View className="items-center">
         {eyebrow ? <Text className="text-xs font-black uppercase tracking-widest text-primary-strong">{eyebrow}</Text> : null}
-        <Text className="mt-2 text-center text-3xl font-black text-content">{title}</Text>
+        <Text className={`${compact ? "mt-1 text-xl" : "mt-2 text-3xl"} text-center font-black text-content`}>{title}</Text>
       </View>
     </View>
   );
@@ -388,52 +444,66 @@ export function OnboardingScreen({
   };
 
   const renderHabits = () => (
-    <>
-      <PageHeader onBack={onBackToLanding} phase="habits" title="Choose your trail" />
-      <Text className="text-center text-sm font-semibold leading-5 text-content-muted">
-        Pick any habits that feel useful today. You can change this later.
-      </Text>
-      <Text className="text-center text-sm font-black text-primary-strong">
-        {session.selectedHabitIds.length} {session.selectedHabitIds.length === 1 ? "habit" : "habits"} selected
-      </Text>
-      <View className="gap-3">
+    <View className="flex-1 self-center px-2.5" style={{ maxWidth: 420, width: "100%" }}>
+      <PageHeader compact onBack={onBackToLanding} phase="habits" title="Choose your trail" />
+      <View className="mt-2 items-center px-2">
+        <Text className="max-w-[18rem] text-center text-xs font-semibold leading-4 text-content-muted">
+          Pick any habits that feel useful today.{"\n"}You can change this later.
+        </Text>
+        <View className="mt-2 rounded-pill bg-surface-blue px-3 py-1">
+          <Text className="text-center text-xs font-black text-primary-strong">
+            {session.selectedHabitIds.length} {session.selectedHabitIds.length === 1 ? "habit" : "habits"} selected
+          </Text>
+        </View>
+      </View>
+      <View className="mt-4 gap-2.5">
         {catalog.map((habit) => {
           const isSelected = selectedIds.has(habit.id);
+          const visual = onboardingHabitVisuals[habit.id];
           return (
             <Pressable
               key={habit.id}
-              className={`flex-row items-center rounded-card border p-4 ${isSelected ? "border-line-primary bg-primary-soft" : "border-line bg-surface-card"}`}
+              className={`min-h-14 flex-row items-center rounded-card border px-2.5 py-2 ${
+                isSelected
+                  ? "border-primary-strong bg-surface-blue"
+                  : "border-transparent bg-surface-card"
+              }`}
+              style={shadows.card}
+              accessibilityLabel={`${habit.label}, ${isSelected ? "selected" : "not selected"}`}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: isSelected }}
               onPress={() => toggleHabit(habit.id)}
             >
-              <View className={`h-12 w-12 items-center justify-center rounded-card ${isSelected ? "bg-primary" : "bg-surface-soft"}`}>
-                <Ionicons name={habit.icon} size={25} color={isSelected ? "white" : colors.grayIcon} />
+              <View className={`h-8 w-8 items-center justify-center rounded-lg ${visual.backgroundClassName}`}>
+                <Ionicons name={habit.icon} size={18} color={visual.iconColor} />
               </View>
-              <View className="ml-3 flex-1">
-                <Text className="text-base font-black text-content">{habit.label}</Text>
-                <Text className="mt-1 text-xs font-semibold leading-4 text-content-muted" numberOfLines={2}>
-                  {habit.dailyPrompt}
+              <View className="ml-2.5 min-w-0 flex-1">
+                <Text className="text-xs font-black text-content">{habit.label}</Text>
+                <Text className="text-[9px] font-semibold leading-3 text-content-muted" numberOfLines={2}>
+                  {onboardingHabitDescriptions[habit.id]}
                 </Text>
               </View>
-              <View className={`h-7 w-7 items-center justify-center rounded-full border ${isSelected ? "border-primary bg-primary" : "border-line-muted bg-surface-card"}`}>
-                {isSelected ? <Ionicons name="checkmark" size={17} color="white" /> : null}
+              <View className={`ml-2 h-5 w-5 items-center justify-center rounded-full border-2 ${isSelected ? "border-primary-strong bg-primary-strong" : "border-line-blue bg-surface-card"}`}>
+                {isSelected ? <Ionicons name="checkmark" size={13} color="white" /> : null}
               </View>
             </Pressable>
           );
         })}
       </View>
       <QuestActionButton
+        className="mt-7"
         disabled={session.selectedHabitIds.length === 0}
         icon="arrow-forward"
+        iconPosition="right"
         label="Continue to first quest"
         mode="tap"
         onAction={() => update({ phase: "quest" })}
+        size="compact"
       />
-      <Pressable className="min-h-10 items-center justify-center" accessibilityRole="button" onPress={skipForNow}>
-        <Text className="text-sm font-black text-primary-strong">Skip for now</Text>
+      <Pressable className="min-h-11 items-center justify-center" accessibilityRole="button" onPress={skipForNow}>
+        <Text className="text-xs font-black text-content-muted">Skip for now</Text>
       </Pressable>
-    </>
+    </View>
   );
 
   const renderQuest = () => {
@@ -584,9 +654,12 @@ export function OnboardingScreen({
   return (
     <SafeAreaView className="flex-1 bg-canvas-sky">
       <StatusBar style="dark" />
-      <LinearGradient colors={[colors.sky, colors.mint, colors.cream]} className="flex-1">
+      <LinearGradient
+        colors={session.phase === "habits" ? [colors.blueSoft, colors.card] : [colors.sky, colors.mint, colors.cream]}
+        className="flex-1"
+      >
         <ScrollView
-          contentContainerStyle={{ alignSelf: "center", gap: 16, padding: 20, width: "100%", height: "100%" }}
+          contentContainerStyle={{ alignSelf: "center", flexGrow: 1, gap: 16, padding: 20, width: "100%" }}
           contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
