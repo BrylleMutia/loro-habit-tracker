@@ -23,6 +23,9 @@ import { useAuth } from "../../contexts/authContext";
 import { useScreenContentWidth } from "../../hooks/useScreenContentWidth";
 import { shadows } from "../../styles/shadows";
 import type { AvatarClassId } from "../../types/app";
+import type { AuthView, OnboardingSession } from "../../types/backend";
+import { readOnboardingSession } from "../../services/onboardingSession";
+import { GuestMigrationWarningModal } from "../onboarding";
 
 type HeroVariant = keyof typeof images.authHeroes;
 
@@ -198,7 +201,13 @@ function formatCooldown(seconds: number) {
   return `00:${String(seconds).padStart(2, "0")}`;
 }
 
-export function AuthScreen() {
+export function AuthScreen({
+  initialView = "signIn",
+  onCreateAccount
+}: {
+  initialView?: AuthView;
+  onCreateAccount?: () => void;
+} = {}) {
   const authWidth = useScreenContentWidth() + 40;
   const {
     awaitingAction,
@@ -228,6 +237,16 @@ export function AuthScreen() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [onboardingSession, setOnboardingSession] = useState<OnboardingSession | null>(null);
+  const [isMigrationWarningVisible, setIsMigrationWarningVisible] = useState(false);
+
+  useEffect(() => {
+    setView(initialView);
+  }, [initialView, setView]);
+
+  useEffect(() => {
+    void readOnboardingSession().then(setOnboardingSession);
+  }, []);
 
   useEffect(() => {
     if (resendCooldown <= 0) return undefined;
@@ -243,6 +262,18 @@ export function AuthScreen() {
     void request().catch(() => undefined);
   };
 
+  const runSignUp = () => {
+    run(() =>
+      signUp(
+        displayName,
+        email,
+        password,
+        avatarClassId,
+        getAvatarVariant(avatarClassId, avatarGender)
+      )
+    );
+  };
+
   const submitSignUp = () => {
     if (password.length < 8) {
       setLocalError("Use at least 8 characters for your password.");
@@ -256,15 +287,11 @@ export function AuthScreen() {
       setLocalError("Accept the Terms and Privacy Policy to create an account.");
       return;
     }
-    run(() =>
-      signUp(
-        displayName,
-        email,
-        password,
-        avatarClassId,
-        getAvatarVariant(avatarClassId, avatarGender)
-      )
-    );
+    if (onboardingSession?.source === "guest-migration") {
+      setIsMigrationWarningVisible(true);
+      return;
+    }
+    runSignUp();
   };
 
   const submitPasswordUpdate = () => {
@@ -475,7 +502,10 @@ export function AuthScreen() {
         <Text className="text-center text-xs font-semibold text-content-muted">
           Guest progress stays on this device.
         </Text>
-        <TextAction label="New to Loro? Create account" onPress={() => setView("signUp")} />
+        <TextAction
+          label="New to Loro? Create account"
+          onPress={onCreateAccount ?? (() => setView("signUp"))}
+        />
       </View>
     </>
   );
@@ -504,6 +534,14 @@ export function AuthScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </LinearGradient>
+      <GuestMigrationWarningModal
+        onCancel={() => setIsMigrationWarningVisible(false)}
+        onConfirm={() => {
+          setIsMigrationWarningVisible(false);
+          runSignUp();
+        }}
+        visible={isMigrationWarningVisible}
+      />
     </SafeAreaView>
   );
 }

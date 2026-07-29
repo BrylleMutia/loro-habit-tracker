@@ -13,6 +13,12 @@ import {
 
 import { createSessionFromAuthUrl, getAuthRedirectUrl } from "../../services/authLinks";
 import { clearCachedGameState } from "../../services/gameCache";
+import { completeOnboardingImport } from "../../services/onboardingImport";
+import {
+  clearOnboardingSession,
+  readOnboardingSession
+} from "../../services/onboardingSession";
+import { writeOnboardingCompleted } from "../../services/onboardingSession";
 import {
   readGuestSessionEnabled,
   writeGuestSessionEnabled
@@ -76,6 +82,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // This is intentionally memory-only and is cleared as soon as signup is confirmed or abandoned.
   const pendingPasswordRef = useRef<string | null>(null);
+  const onboardingImportInFlightRef = useRef(false);
+
+  const completeStoredOnboardingImport = useCallback(async () => {
+    const onboardingSession = await readOnboardingSession();
+    if (!onboardingSession || onboardingSession.phase !== "completed") return null;
+    const outcome = await completeOnboardingImport(onboardingSession);
+    await writeOnboardingCompleted(true);
+    if (onboardingSession.source === "guest-migration") {
+      await clearCachedGameState("local-guest");
+    }
+    await clearOnboardingSession();
+    return outcome;
+  }, []);
 
   const setView = useCallback((nextView: AuthView) => {
     setErrorMessage(null);
@@ -87,26 +106,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       setErrorMessage(null);
+      // Session creation emits SIGNED_IN before the awaited auth call returns.
+      // Keep RootGate closed until the onboarding import has committed.
+      onboardingImportInFlightRef.current = true;
       const result = await createSessionFromAuthUrl(url);
       if (result.handled && result.isRecovery) {
+        onboardingImportInFlightRef.current = false;
         setStatus("passwordRecovery");
       } else if (result.handled) {
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
         if (!data.session) throw new Error("The verification link did not create a session.");
+        await completeStoredOnboardingImport();
         await writeGuestSessionEnabled(false);
         pendingPasswordRef.current = null;
         setSession(data.session);
         setPendingEmail(null);
         setAwaitingAction(null);
         setStatus("signedIn");
+        onboardingImportInFlightRef.current = false;
+      } else {
+        onboardingImportInFlightRef.current = false;
       }
     } catch (error) {
+      onboardingImportInFlightRef.current = false;
       setSession(null);
       setStatus("signedOut");
       setErrorMessage(getAuthErrorMessage(error));
     }
-  }, []);
+  }, [completeStoredOnboardingImport]);
 
   useEffect(() => {
     let isMounted = true;
@@ -116,6 +144,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (isSupabaseConfigured) {
+      // Supabase can emit INITIAL_SESSION as soon as this listener is
+      // registered. Initialization below is responsible for completing any
+      // persisted onboarding import before it exposes signed-in app state.
+      onboardingImportInFlightRef.current = true;
       const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
         if (!isMounted) return;
         setSession(nextSession);
@@ -125,7 +157,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else if (nextSession) {
           pendingPasswordRef.current = null;
           void writeGuestSessionEnabled(false);
-          setStatus((current) => (current === "passwordRecovery" ? current : "signedIn"));
+          if (!onboardingImportInFlightRef.current) {
+            setStatus((current) => (current === "passwordRecovery" ? current : "signedIn"));
+          }
         } else {
           setStatus((current) =>
             current === "awaitingVerification" || current === "guest" ? current : "signedOut"
@@ -153,15 +187,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const nextSession = sessionResult.data.session;
         setSession(nextSession);
         if (nextSession) {
+          await completeStoredOnboardingImport();
           pendingPasswordRef.current = null;
           await writeGuestSessionEnabled(false);
           setStatus("signedIn");
+          onboardingImportInFlightRef.current = false;
         } else {
+          onboardingImportInFlightRef.current = false;
           setStatus(guestEnabled ? "guest" : "signedOut");
         }
         if (initialUrl) void handleAuthUrl(initialUrl);
       } catch (error) {
         if (!isMounted) return;
+        onboardingImportInFlightRef.current = false;
         setStatus("signedOut");
         setErrorMessage(getAuthErrorMessage(error));
       }
@@ -172,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       removeAuthListener?.();
       linkListener.remove();
     };
-  }, [handleAuthUrl]);
+  }, [completeStoredOnboardingImport, handleAuthUrl]);
 
   const runAuthRequest = useCallback(async (request: () => Promise<void>) => {
     setIsSubmitting(true);
@@ -180,6 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await request();
     } catch (error) {
+      onboardingImportInFlightRef.current = false;
       setErrorMessage(getAuthErrorMessage(error));
       throw error;
     } finally {
@@ -216,6 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const normalizedEmail = email.trim().toLowerCase();
           if (!normalizedName) throw new Error("Enter the name Lory should call you.");
 
+          onboardingImportInFlightRef.current = true;
           const { data, error } = await supabase.auth.signUp({
             email: normalizedEmail,
             password,
@@ -232,11 +272,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (error) throw error;
 
           if (data.session) {
+            onboardingImportInFlightRef.current = true;
+            await completeStoredOnboardingImport();
             pendingPasswordRef.current = null;
             await writeGuestSessionEnabled(false);
             setSession(data.session);
             setStatus("signedIn");
+            onboardingImportInFlightRef.current = false;
           } else {
+            onboardingImportInFlightRef.current = false;
             pendingPasswordRef.current = password;
             setPendingEmail(normalizedEmail);
             setAwaitingAction("verification");
@@ -258,6 +302,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }),
       refreshVerification: () =>
         runAuthRequest(async () => {
+          // getSession/signInWithPassword may synchronously notify the auth
+          // listener. Block signed-in rendering until the import finishes.
+          onboardingImportInFlightRef.current = true;
           const sessionResult = await supabase.auth.getSession();
           if (sessionResult.error) throw sessionResult.error;
 
@@ -281,11 +328,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           await writeGuestSessionEnabled(false);
+          await completeStoredOnboardingImport();
           pendingPasswordRef.current = null;
           setSession(nextSession);
           setPendingEmail(null);
           setAwaitingAction(null);
           setStatus("signedIn");
+          onboardingImportInFlightRef.current = false;
         }),
       resendVerification: () =>
         runAuthRequest(async () => {
