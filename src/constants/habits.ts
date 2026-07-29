@@ -5,6 +5,7 @@ import type {
   HabitState,
   IconName
 } from "../types/app";
+import { getDailyQuestSummary } from "../utility/habitTargets";
 
 type ChapterBlueprint = {
   id: string;
@@ -22,6 +23,22 @@ export const habitOrder: readonly HabitId[] = [
   "sleep",
   "outdoors"
 ];
+
+export type HabitCatalogEntry = {
+  id: HabitId;
+  label: string;
+  icon: IconName;
+  dailyPrompt: string;
+};
+
+export const defaultHabitTargets: Readonly<Record<HabitId, number>> = {
+  exercise: 15,
+  reading: 10,
+  journaling: 5,
+  water: 6,
+  sleep: 8,
+  outdoors: 10
+};
 
 const chapterBlueprints: Record<HabitId, readonly ChapterBlueprint[]> = {
   exercise: [
@@ -125,7 +142,7 @@ const chapterBlueprints: Record<HabitId, readonly ChapterBlueprint[]> = {
       id: "hydration-springs",
       title: "Hydration Springs",
       description: "Spread hydration checkpoints across the whole day.",
-      primaryTarget: 8,
+      primaryTarget: defaultHabitTargets.water,
       nodeTitles: [
         "First Refill",
         "Morning Springs",
@@ -140,7 +157,7 @@ const chapterBlueprints: Record<HabitId, readonly ChapterBlueprint[]> = {
       id: "river-route",
       title: "River Route",
       description: "Protect the habit during busier daily routines.",
-      primaryTarget: 8,
+      primaryTarget: defaultHabitTargets.water,
       nodeTitles: [
         "Early Current",
         "Bottle Ready",
@@ -157,7 +174,7 @@ const chapterBlueprints: Record<HabitId, readonly ChapterBlueprint[]> = {
       id: "moonlit-camp",
       title: "Moonlit Camp",
       description: "Build a calm wind-down sequence before bed.",
-      primaryTarget: 1,
+      primaryTarget: defaultHabitTargets.sleep,
       nodeTitles: [
         "Set Up Camp",
         "Dim the Lanterns",
@@ -172,7 +189,7 @@ const chapterBlueprints: Record<HabitId, readonly ChapterBlueprint[]> = {
       id: "dreamer-ridge",
       title: "Dreamer Ridge",
       description: "Strengthen timing and reflect on sleep quality.",
-      primaryTarget: 1,
+      primaryTarget: defaultHabitTargets.sleep,
       nodeTitles: [
         "Bedtime Marker",
         "Screen-Free Ridge",
@@ -189,7 +206,7 @@ const chapterBlueprints: Record<HabitId, readonly ChapterBlueprint[]> = {
       id: "sunlit-trail",
       title: "Sunlit Trail",
       description: "Create a simple daily ritual for time outside.",
-      primaryTarget: 1,
+      primaryTarget: defaultHabitTargets.outdoors,
       nodeTitles: [
         "Step Outside",
         "Fresh-Air Crossing",
@@ -204,7 +221,7 @@ const chapterBlueprints: Record<HabitId, readonly ChapterBlueprint[]> = {
       id: "wildway-pass",
       title: "Wildway Pass",
       description: "Keep your outdoor rhythm alive through changing days.",
-      primaryTarget: 1,
+      primaryTarget: defaultHabitTargets.outdoors,
       nodeTitles: [
         "Morning Meadow",
         "Weather Watch",
@@ -237,7 +254,7 @@ function getDailyQuestDetails(
   switch (habitId) {
     case "exercise":
       return {
-        summary: `Complete a ${primaryTarget}-minute ${title.toLowerCase()} movement session.`,
+        summary: getDailyQuestSummary(habitId, title, primaryTarget),
         icon: "barbell-outline",
         energyCost: 1,
         questType: "timed",
@@ -246,7 +263,7 @@ function getDailyQuestDetails(
       };
     case "reading":
       return {
-        summary: `Read with focus for ${primaryTarget} minutes.`,
+        summary: getDailyQuestSummary(habitId, title, primaryTarget),
         icon: "book-outline",
         energyCost: 1,
         questType: "timed",
@@ -255,7 +272,7 @@ function getDailyQuestDetails(
       };
     case "journaling":
       return {
-        summary: `Journal with focus for ${primaryTarget} minutes.`,
+        summary: getDailyQuestSummary(habitId, title, primaryTarget),
         icon: "create-outline",
         energyCost: 1,
         questType: "timed",
@@ -264,7 +281,7 @@ function getDailyQuestDetails(
       };
     case "water":
       return {
-        summary: `Drink ${primaryTarget} glasses of water across your day.`,
+        summary: getDailyQuestSummary(habitId, title, primaryTarget),
         icon: "water-outline",
         energyCost: 0,
         questType: "one-time",
@@ -274,22 +291,22 @@ function getDailyQuestDetails(
       };
     case "sleep":
       return {
-        summary: "Complete your wind-down routine and head to bed on time.",
+        summary: getDailyQuestSummary(habitId, title, primaryTarget),
         icon: "moon-outline",
         energyCost: 0,
         questType: "one-time",
         targetQuantity: primaryTarget,
-        targetUnit: "routine",
+        targetUnit: "hours",
         reward: { coins: 14 + chapterOrder * 2, xp: 24 + chapterOrder * 3 }
       };
     case "outdoors":
       return {
-        summary: "Spend time outdoors today.",
+        summary: getDailyQuestSummary(habitId, title, primaryTarget),
         icon: "leaf-outline",
         energyCost: 0,
         questType: "one-time",
         targetQuantity: primaryTarget,
-        targetUnit: "outdoor visit",
+        targetUnit: "minutes",
         reward: { coins: 13 + chapterOrder * 2, xp: 22 + chapterOrder * 3 }
       };
   }
@@ -396,4 +413,12 @@ export function createInitialHabits(): Record<HabitId, HabitState> {
       "Step outside, breathe deeply, and discover a little more of your world!"
     )
   };
+}
+
+export function getHabitCatalog(): HabitCatalogEntry[] {
+  const habits = createInitialHabits();
+  return habitOrder
+    .map((habitId) => habits[habitId])
+    .filter((habit): habit is HabitState => Boolean(habit))
+    .map(({ id, label, icon, dailyPrompt }) => ({ id, label, icon, dailyPrompt }));
 }

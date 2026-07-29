@@ -43,6 +43,7 @@ import {
 import { habitOrder } from "../../constants/habits";
 import type {
   AppSettings,
+  AppSettingsPatch,
   AppState,
   GuildQuestKind,
   GuildQuestRewardPreview,
@@ -139,7 +140,11 @@ type GameSettingsContextValue = {
 
 type GameActionsContextValue = {
   setActiveHabit: (habitId: HabitId) => void;
-  setTargetOverride: (habitId: HabitId, value: number | null) => void;
+  setEnabledHabitIds: (habitIds: HabitId[]) => Promise<SettingsUpdatedOutcome>;
+  setTargetOverride: (
+    habitId: HabitId,
+    value: number | null
+  ) => Promise<SettingsUpdatedOutcome>;
   startDailyQuest: (habitId: HabitId) => Promise<QuestStartOutcome>;
   completeDailyQuest: (habitId: HabitId) => Promise<QuestCompletionOutcome>;
   claimChapterReward: (habitId: HabitId, sectionId: string) => Promise<RewardClaimOutcome>;
@@ -147,7 +152,7 @@ type GameActionsContextValue = {
   claimGuildQuestReward: (questKind: GuildQuestKind, questId: string) => Promise<GuildQuestRewardOutcome>;
   claimDailyCheckIn: () => Promise<CheckInOutcome>;
   equipItem: (itemId: string) => Promise<EquipmentUpdatedOutcome>;
-  updateSettings: (settings: Partial<AppSettings>) => Promise<SettingsUpdatedOutcome>;
+  updateSettings: (settings: AppSettingsPatch) => Promise<SettingsUpdatedOutcome>;
   updateProfile: (fields: EditableProfileFields) => Promise<ProfileUpdatedOutcome>;
   refreshGameState: () => Promise<void>;
   clearSyncError: () => void;
@@ -222,6 +227,10 @@ export function AppStateProvider({
   const hasHydratedRef = useRef(Boolean(initialState));
   const isOnlineRef = useRef(true);
   const mutationInFlightRef = useRef<GameMutationId | null>(null);
+  // Refreshes can overlap a settings mutation. Incrementing this generation at
+  // both mutation boundaries lets an older snapshot finish harmlessly instead
+  // of replacing a newer optimistic/committed preference order.
+  const mutationGenerationRef = useRef(0);
   const refreshInFlightRef = useRef<Promise<void> | null>(null);
   const stateRef = useRef(state);
 
@@ -235,9 +244,15 @@ export function AppStateProvider({
 
       stateRef.current = {
         ...response.snapshot,
-        activeHabitId: stateRef.current.activeHabitId
+        activeHabitId: response.snapshot.enabledHabitIds.includes(stateRef.current.activeHabitId)
+          ? stateRef.current.activeHabitId
+          : response.snapshot.enabledHabitIds[0] ?? stateRef.current.activeHabitId
       };
-      dispatch({ type: "HYDRATE_GAME_STATE", snapshot: response.snapshot });
+      dispatch({
+        type: "HYDRATE_GAME_STATE",
+        snapshot: response.snapshot,
+        normalizeLocalDefaults: storageMode === "local"
+      });
       setTodayDateKey(response.localDateKey);
       setServerClockOffsetMs(Date.parse(response.serverNow) - Date.now());
       setLastSyncedAt(response.serverNow);
@@ -250,16 +265,24 @@ export function AppStateProvider({
         await writeCachedGameState(userId, response).catch(() => undefined);
       }
     },
-    [userId]
+    [storageMode, userId]
   );
 
   const refreshGameState = useCallback(() => {
     if (refreshInFlightRef.current) return refreshInFlightRef.current;
 
     const refresh = (async () => {
+      const refreshGeneration = mutationGenerationRef.current;
+
       if (storageMode === "local") {
         setSyncStatus(hasHydratedRef.current ? "refreshing" : "loading");
         const cached = await readCachedGameState(userId);
+        if (
+          refreshGeneration !== mutationGenerationRef.current ||
+          mutationInFlightRef.current
+        ) {
+          return;
+        }
         await applyResponse(
           cached ??
             getLocalGameSnapshot(
@@ -277,8 +300,21 @@ export function AppStateProvider({
 
       setSyncStatus(hasHydratedRef.current ? "refreshing" : "loading");
       try {
-        await applyResponse(await getGameSnapshot());
+        const response = await getGameSnapshot();
+        if (
+          refreshGeneration !== mutationGenerationRef.current ||
+          mutationInFlightRef.current
+        ) {
+          return;
+        }
+        await applyResponse(response);
       } catch (error) {
+        if (
+          refreshGeneration !== mutationGenerationRef.current ||
+          mutationInFlightRef.current
+        ) {
+          return;
+        }
         const gameError = toGameError(error);
         setSyncError(gameError);
         setSyncStatus(
@@ -300,8 +336,15 @@ export function AppStateProvider({
     if (storageMode === "local") {
       isOnlineRef.current = true;
       setIsOnline(true);
+      const cacheReadGeneration = mutationGenerationRef.current;
       void readCachedGameState(userId).then((cachedResponse) => {
-        if (!isMounted) return;
+        if (
+          !isMounted ||
+          cacheReadGeneration !== mutationGenerationRef.current ||
+          mutationInFlightRef.current
+        ) {
+          return;
+        }
         void applyResponse(
           cachedResponse ??
             getLocalGameSnapshot(
@@ -317,8 +360,17 @@ export function AppStateProvider({
       };
     }
 
+    const cacheReadGeneration = mutationGenerationRef.current;
     void readCachedGameState(userId).then((cachedResponse) => {
-      if (!isMounted || !cachedResponse || hasHydratedRef.current) return;
+      if (
+        !isMounted ||
+        !cachedResponse ||
+        hasHydratedRef.current ||
+        cacheReadGeneration !== mutationGenerationRef.current ||
+        mutationInFlightRef.current
+      ) {
+        return;
+      }
       void applyResponse(cachedResponse, false);
     });
 
@@ -388,6 +440,7 @@ export function AppStateProvider({
         throw new GameRepositoryError("Another trail action is still syncing.", "UNKNOWN");
       }
 
+      mutationGenerationRef.current += 1;
       mutationInFlightRef.current = mutationId;
       setMutationInFlight(mutationId);
       setSyncError(null);
@@ -401,6 +454,7 @@ export function AppStateProvider({
         setSyncStatus(gameError.code === "NETWORK_ERROR" ? "offline" : "error");
         throw gameError;
       } finally {
+        mutationGenerationRef.current += 1;
         mutationInFlightRef.current = null;
         if (providerActiveRef.current) setMutationInFlight(null);
       }
@@ -422,8 +476,8 @@ export function AppStateProvider({
     [state.habits, todayDateKey]
   );
   const habitList = useMemo(
-    () => habitOrder.map((habitId) => habits[habitId]).filter(Boolean),
-    [habits]
+    () => state.enabledHabitIds.map((habitId) => habits[habitId]).filter(Boolean),
+    [habits, state.enabledHabitIds]
   );
   const activeHabit = habits[state.activeHabitId];
   const activeAdventure = useMemo(
@@ -440,21 +494,93 @@ export function AppStateProvider({
     (habitId: HabitId) => dispatch({ type: "SET_ACTIVE_HABIT", habitId }),
     []
   );
+  const setEnabledHabitIds = useCallback(
+    (enabledHabitIds: HabitId[]) => {
+      const previousEnabledHabitIds = [...stateRef.current.enabledHabitIds];
+      const previousActiveHabitId = stateRef.current.activeHabitId;
+      const uniqueHabitIds = new Set(enabledHabitIds);
+
+      if (
+        enabledHabitIds.length === 0 ||
+        uniqueHabitIds.size !== enabledHabitIds.length ||
+        enabledHabitIds.some((habitId) => !habitOrder.includes(habitId))
+      ) {
+        return Promise.reject(
+          new GameRepositoryError(
+            "Keep at least one available habit selected.",
+            "INVALID_HABIT"
+          )
+        );
+      }
+
+      const nextActiveHabitId = enabledHabitIds.includes(previousActiveHabitId)
+        ? previousActiveHabitId
+        : enabledHabitIds[0];
+      stateRef.current = {
+        ...stateRef.current,
+        activeHabitId: nextActiveHabitId,
+        enabledHabitIds: [...enabledHabitIds]
+      };
+      dispatch({
+        type: "SET_ENABLED_HABITS",
+        activeHabitId: nextActiveHabitId,
+        enabledHabitIds
+      });
+
+      return runMutation("settings", async () =>
+        storageMode === "local"
+          ? updateLocalSettings(
+              stateRef.current,
+              { enabledHabitIds },
+              todayDateKey
+            )
+          : updateSettingsRemote({ enabledHabitIds })
+      ).catch((error) => {
+        stateRef.current = {
+          ...stateRef.current,
+          activeHabitId: previousActiveHabitId,
+          enabledHabitIds: previousEnabledHabitIds
+        };
+        dispatch({
+          type: "SET_ENABLED_HABITS",
+          activeHabitId: previousActiveHabitId,
+          enabledHabitIds: previousEnabledHabitIds
+        });
+        throw error;
+      });
+    },
+    [runMutation, storageMode, todayDateKey]
+  );
   const setTargetOverride = useCallback(
     (habitId: HabitId, value: number | null) => {
+      const previousValue = stateRef.current.targetOverrides[habitId];
       dispatch({ type: "SET_TARGET_OVERRIDE", habitId, value });
-      if (storageMode === "remote") {
-        const nextOverrides = { ...stateRef.current.targetOverrides };
-        if (value === null) {
-          delete nextOverrides[habitId];
-        } else {
-          nextOverrides[habitId] = value;
-        }
-        updateSettingsRemote({ targetOverrides: nextOverrides } as Partial<AppSettings>)
-          .catch(() => undefined);
+
+      const nextOverrides = { ...stateRef.current.targetOverrides };
+      if (value === null) {
+        delete nextOverrides[habitId];
+      } else {
+        nextOverrides[habitId] = value;
       }
+
+      return runMutation("settings", async () =>
+        storageMode === "local"
+          ? updateLocalSettings(
+              stateRef.current,
+              { targetOverrides: nextOverrides },
+              todayDateKey
+            )
+          : updateSettingsRemote({ targetOverrides: nextOverrides })
+      ).catch((error) => {
+        dispatch({
+          type: "SET_TARGET_OVERRIDE",
+          habitId,
+          value: previousValue ?? null
+        });
+        throw error;
+      });
     },
-    [storageMode]
+    [runMutation, storageMode, todayDateKey]
   );
   const startDailyQuest = useCallback(
     (habitId: HabitId) =>
@@ -537,7 +663,7 @@ export function AppStateProvider({
     [runMutation, storageMode, todayDateKey]
   );
   const updateSettings = useCallback(
-    (settings: Partial<AppSettings>) =>
+    (settings: AppSettingsPatch) =>
       runMutation("settings", async () =>
         storageMode === "local"
           ? updateLocalSettings(stateRef.current, settings, todayDateKey)
@@ -625,6 +751,7 @@ export function AppStateProvider({
   const actionsValue = useMemo<GameActionsContextValue>(
     () => ({
       setActiveHabit,
+      setEnabledHabitIds,
       setTargetOverride,
       startDailyQuest,
       completeDailyQuest,
@@ -646,6 +773,7 @@ export function AppStateProvider({
       equipItem,
       claimGuildQuestReward,
       refreshGameState,
+      setEnabledHabitIds,
       setActiveHabit,
       setTargetOverride,
       startDailyQuest,

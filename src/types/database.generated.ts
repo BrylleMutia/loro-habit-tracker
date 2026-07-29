@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       active_buffs: {
@@ -252,6 +247,32 @@ export type Database = {
         }
         Relationships: []
       }
+      equipment_discoveries: {
+        Row: {
+          equipment_item_id: string
+          first_discovered_at: string
+          user_id: string
+        }
+        Insert: {
+          equipment_item_id: string
+          first_discovered_at?: string
+          user_id: string
+        }
+        Update: {
+          equipment_item_id?: string
+          first_discovered_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_discoveries_equipment_item_id_fkey"
+            columns: ["equipment_item_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_items: {
         Row: {
           asset_key: string
@@ -297,32 +318,6 @@ export type Database = {
           },
         ]
       }
-      equipment_discoveries: {
-        Row: {
-          equipment_item_id: string
-          first_discovered_at: string
-          user_id: string
-        }
-        Insert: {
-          equipment_item_id: string
-          first_discovered_at?: string
-          user_id: string
-        }
-        Update: {
-          equipment_item_id?: string
-          first_discovered_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "equipment_discoveries_equipment_item_id_fkey"
-            columns: ["equipment_item_id"]
-            isOneToOne: false
-            referencedRelation: "equipment_items"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       equipment_sets: {
         Row: {
           description: string
@@ -359,6 +354,183 @@ export type Database = {
           id?: string
           label?: string
           sort_order?: number
+        }
+        Relationships: []
+      }
+      guest_onboarding_imports: {
+        Row: {
+          first_habit_id: string | null
+          import_id: string
+          imported_at: string
+          reward_coins: number
+          reward_granted: boolean
+          reward_shields: number
+          reward_xp: number
+          selected_habit_ids: string[]
+          skipped_for_now: boolean
+          source: string
+          user_id: string
+        }
+        Insert: {
+          first_habit_id?: string | null
+          import_id: string
+          imported_at?: string
+          reward_coins?: number
+          reward_granted?: boolean
+          reward_shields?: number
+          reward_xp?: number
+          selected_habit_ids: string[]
+          skipped_for_now?: boolean
+          source: string
+          user_id: string
+        }
+        Update: {
+          first_habit_id?: string | null
+          import_id?: string
+          imported_at?: string
+          reward_coins?: number
+          reward_granted?: boolean
+          reward_shields?: number
+          reward_xp?: number
+          selected_habit_ids?: string[]
+          skipped_for_now?: boolean
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      guild_quest_boards: {
+        Row: {
+          main_candidate_ids: string[]
+          main_locked_ids: string[]
+          main_period_key: string
+          main_reward_previews: Json
+          side_candidate_ids: string[]
+          side_locked_ids: string[]
+          side_period_key: string
+          side_reward_previews: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          main_candidate_ids?: string[]
+          main_locked_ids?: string[]
+          main_period_key: string
+          main_reward_previews?: Json
+          side_candidate_ids?: string[]
+          side_locked_ids?: string[]
+          side_period_key: string
+          side_reward_previews?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          main_candidate_ids?: string[]
+          main_locked_ids?: string[]
+          main_period_key?: string
+          main_reward_previews?: Json
+          side_candidate_ids?: string[]
+          side_locked_ids?: string[]
+          side_period_key?: string
+          side_reward_previews?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      guild_quest_claims: {
+        Row: {
+          claimed_at: string
+          id: string
+          inventory_item_id: string | null
+          period_key: string
+          quest_id: string
+          quest_kind: string
+          reward_coins: number
+          reward_xp: number
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          id?: string
+          inventory_item_id?: string | null
+          period_key: string
+          quest_id: string
+          quest_kind: string
+          reward_coins: number
+          reward_xp: number
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string
+          id?: string
+          inventory_item_id?: string | null
+          period_key?: string
+          quest_id?: string
+          quest_kind?: string
+          reward_coins?: number
+          reward_xp?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guild_quest_claims_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guild_quest_claims_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "guild_quest_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guild_quest_definitions: {
+        Row: {
+          active: boolean
+          description: string
+          icon: string
+          id: string
+          item_rarity_floor: string
+          kind: string
+          metric: string
+          reward_coins: number
+          reward_xp: number
+          secondary_target: number | null
+          target: number
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          description: string
+          icon: string
+          id: string
+          item_rarity_floor: string
+          kind: string
+          metric: string
+          reward_coins: number
+          reward_xp: number
+          secondary_target?: number | null
+          target: number
+          title: string
+        }
+        Update: {
+          active?: boolean
+          description?: string
+          icon?: string
+          id?: string
+          item_rarity_floor?: string
+          kind?: string
+          metric?: string
+          reward_coins?: number
+          reward_xp?: number
+          secondary_target?: number | null
+          target?: number
+          title?: string
         }
         Relationships: []
       }
@@ -713,6 +885,38 @@ export type Database = {
           },
         ]
       }
+      user_habit_preferences: {
+        Row: {
+          enabled: boolean
+          habit_id: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          enabled?: boolean
+          habit_id: string
+          sort_order: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          enabled?: boolean
+          habit_id?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_habit_preferences_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habit_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_inventory: {
         Row: {
           equipped_slot: number | null
@@ -748,6 +952,7 @@ export type Database = {
           daily_reminder_time: string
           haptics_enabled: boolean
           sound_enabled: boolean
+          target_overrides: Json
           time_zone: string
           updated_at: string
           user_id: string
@@ -757,6 +962,7 @@ export type Database = {
           daily_reminder_time?: string
           haptics_enabled?: boolean
           sound_enabled?: boolean
+          target_overrides?: Json
           time_zone?: string
           updated_at?: string
           user_id: string
@@ -766,6 +972,7 @@ export type Database = {
           daily_reminder_time?: string
           haptics_enabled?: boolean
           sound_enabled?: boolean
+          target_overrides?: Json
           time_zone?: string
           updated_at?: string
           user_id?: string
@@ -777,26 +984,58 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_guild_quest: {
+        Args: {
+          p_quest_id: string
+          p_quest_kind: string
+          p_reward_preview: Json
+        }
+        Returns: Json
+      }
       claim_chapter_reward: {
         Args: { p_chapter_id: string; p_habit_id: string }
         Returns: Json
       }
       claim_daily_check_in: { Args: never; Returns: Json }
-      complete_daily_quest: { Args: { p_habit_id: string }; Returns: Json }
-      equip_inventory_item: { Args: { p_item_id: string }; Returns: Json }
-      get_game_snapshot: { Args: never; Returns: Json }
       claim_guild_quest_reward: {
         Args: { p_quest_id: string; p_quest_kind: string }
         Returns: Json
       }
-      accept_guild_quest: {
+      complete_daily_quest: { Args: { p_habit_id: string }; Returns: Json }
+      complete_guest_onboarding:
+        | {
+            Args: {
+              p_first_habit_id?: string
+              p_habit_ids: Json
+              p_import_id: string
+              p_skipped_for_now?: boolean
+              p_source: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_first_habit_id: string
+              p_habit_ids: Json
+              p_import_id: string
+              p_onboarding_quest_completed: boolean
+              p_skipped_for_now: boolean
+              p_source: string
+            }
+            Returns: Json
+          }
+      complete_guest_onboarding_base: {
         Args: {
-          p_quest_id: string;
-          p_quest_kind: string;
-          p_reward_preview: Json;
+          p_first_habit_id?: string
+          p_habit_ids: Json
+          p_import_id: string
+          p_skipped_for_now?: boolean
+          p_source: string
         }
         Returns: Json
       }
+      equip_inventory_item: { Args: { p_item_id: string }; Returns: Json }
+      get_game_snapshot: { Args: never; Returns: Json }
       start_daily_quest: { Args: { p_habit_id: string }; Returns: Json }
       update_profile: { Args: { p_profile_fields: Json }; Returns: Json }
       update_settings: { Args: { p_settings: Json }; Returns: Json }

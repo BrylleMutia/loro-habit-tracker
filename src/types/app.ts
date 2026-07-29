@@ -230,6 +230,12 @@ export type AppSettings = {
   timeZone: string;
 };
 
+export type HabitTargetOverrides = Partial<Record<HabitId, number>>;
+export type AppSettingsPatch = Partial<AppSettings> & {
+  enabledHabitIds?: HabitId[];
+  targetOverrides?: HabitTargetOverrides;
+};
+
 export type ActivityLogEntry = {
   id: string;
   type: "daily-quest" | "chapter-reward" | "daily-check-in";
@@ -243,6 +249,7 @@ export type ActivityLogEntry = {
 
 export type AppState = {
   activeHabitId: HabitId;
+  enabledHabitIds: HabitId[];
   profile: PlayerProfile;
   habits: Record<HabitId, HabitState>;
   dailyStreak: number;
@@ -254,6 +261,6 @@ export type AppState = {
   inventory: InventoryState;
   guildQuestBoard: GuildQuestBoardState;
   settings: AppSettings;
-  targetOverrides: Partial<Record<HabitId, number>>;
+  targetOverrides: HabitTargetOverrides;
   activityLog: ActivityLogEntry[];
 };

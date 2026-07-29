@@ -1,4 +1,4 @@
-import { createInitialHabits } from "../../constants/habits";
+import { createInitialHabits, defaultHabitTargets, habitOrder } from "../../constants/habits";
 import { equipmentSets } from "../../constants/equipment";
 import type { AppState, HabitId } from "../../types/app";
 import type { PersistedGameState } from "../../types/backend";
@@ -6,8 +6,13 @@ import { createGuildQuestBoard } from "../../utility/guildQuests";
 
 export type AppAction =
   | { type: "SET_ACTIVE_HABIT"; habitId: HabitId }
+  | { type: "SET_ENABLED_HABITS"; activeHabitId: HabitId; enabledHabitIds: HabitId[] }
   | { type: "SET_TARGET_OVERRIDE"; habitId: HabitId; value: number | null }
-  | { type: "HYDRATE_GAME_STATE"; snapshot: PersistedGameState };
+  | {
+      type: "HYDRATE_GAME_STATE";
+      snapshot: PersistedGameState;
+      normalizeLocalDefaults?: boolean;
+    };
 
 export type InitialAppStateOptions = {
   playerId?: string;
@@ -39,6 +44,38 @@ function getDateKeyInTimeZone(now: string, timeZone: string) {
   }
 }
 
+const localOneTimeDefaults: Partial<
+  Record<HabitId, { targetQuantity: number; targetUnit: string }>
+> = {
+  water: { targetQuantity: defaultHabitTargets.water, targetUnit: "glasses" },
+  sleep: { targetQuantity: defaultHabitTargets.sleep, targetUnit: "hours" },
+  outdoors: { targetQuantity: defaultHabitTargets.outdoors, targetUnit: "minutes" }
+};
+
+function normalizeLocalHabitDefaults(snapshot: PersistedGameState): PersistedGameState {
+  const habits = { ...snapshot.habits };
+
+  for (const habitId of Object.keys(localOneTimeDefaults) as HabitId[]) {
+    const habit = habits[habitId];
+    const defaults = localOneTimeDefaults[habitId];
+    if (!habit || !defaults) continue;
+
+    habits[habitId] = {
+      ...habit,
+      sections: habit.sections.map((section) => ({
+        ...section,
+        nodes: section.nodes.map((node) =>
+          node.questType === "one-time"
+            ? { ...node, targetQuantity: defaults.targetQuantity, targetUnit: defaults.targetUnit }
+            : node
+        )
+      }))
+    };
+  }
+
+  return { ...snapshot, habits };
+}
+
 export function createInitialAppState({
   playerId = "loading",
   playerName = "Adventurer",
@@ -47,6 +84,7 @@ export function createInitialAppState({
 }: InitialAppStateOptions = {}): AppState {
   return {
     activeHabitId: "exercise",
+    enabledHabitIds: [...habitOrder],
     profile: {
       id: playerId,
       name: playerName,
@@ -98,6 +136,12 @@ export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case "SET_ACTIVE_HABIT":
       return { ...state, activeHabitId: action.habitId };
+    case "SET_ENABLED_HABITS":
+      return {
+        ...state,
+        activeHabitId: action.activeHabitId,
+        enabledHabitIds: [...action.enabledHabitIds]
+      };
     case "SET_TARGET_OVERRIDE": {
       const next = { ...state.targetOverrides };
       if (action.value === null) {
@@ -107,14 +151,22 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       }
       return { ...state, targetOverrides: next };
     }
-    case "HYDRATE_GAME_STATE":
+    case "HYDRATE_GAME_STATE": {
+      const snapshot = action.normalizeLocalDefaults
+        ? normalizeLocalHabitDefaults(action.snapshot)
+        : action.snapshot;
+
       return {
-        ...action.snapshot,
-        activeHabitId: state.activeHabitId,
-        targetOverrides: action.snapshot.targetOverrides && Object.keys(action.snapshot.targetOverrides).length > 0
-          ? action.snapshot.targetOverrides
-          : state.targetOverrides
+        ...snapshot,
+        activeHabitId: snapshot.enabledHabitIds.includes(state.activeHabitId)
+          ? state.activeHabitId
+          : snapshot.enabledHabitIds[0] ?? state.activeHabitId,
+        targetOverrides:
+          snapshot.targetOverrides !== undefined
+            ? snapshot.targetOverrides
+            : state.targetOverrides
       };
+    }
     default:
       return state;
   }

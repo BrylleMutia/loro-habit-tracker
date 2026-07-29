@@ -8,6 +8,54 @@ import type {
 
 export type PersistedGameState = Omit<AppState, "activeHabitId">;
 
+export type OnboardingPhase =
+  | "choice"
+  | "habits"
+  | "quest"
+  | "ready"
+  | "guest-confirmation"
+  | "completed";
+
+export type OnboardingSource = "direct-signup" | "guest-migration";
+
+export type OnboardingStarterReward = {
+  coins: number;
+  xp: number;
+  streakShields: number;
+};
+
+export type OnboardingSession = {
+  importId: string;
+  phase: OnboardingPhase;
+  selectedHabitIds: HabitId[];
+  firstHabitId: HabitId | null;
+  onboardingQuestCompleted: boolean;
+  starterReward: OnboardingStarterReward | null;
+  skippedForNow: boolean;
+  source: OnboardingSource;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type GuestOnboardingImport = {
+  importId: string;
+  source: OnboardingSource;
+  selectedHabitIds: HabitId[];
+  firstHabitId: HabitId | null;
+  skippedForNow: boolean;
+  onboardingQuestCompleted: boolean;
+};
+
+export type GuestOnboardingImportOutcome = {
+  kind: "guest-onboarding-imported";
+  importId: string;
+  source: OnboardingSource;
+  alreadyImported: boolean;
+  enabledHabitIds: HabitId[];
+  rewardGranted: boolean;
+  starterReward: OnboardingStarterReward;
+};
+
 export type AuthStatus =
   | "awaitingVerification"
   | "booting"
@@ -48,6 +96,8 @@ export type QuestCompletionOutcome = {
   coinReward: number;
   xpReward: number;
   streak: number;
+  streakShieldConsumed: boolean;
+  remainingStreakShields: number;
   lootItem: InventoryItem | null;
   alreadyCompleted: boolean;
 };

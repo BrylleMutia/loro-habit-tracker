@@ -1,5 +1,5 @@
 import type {
-  AppSettings,
+  AppSettingsPatch,
   AppState,
   DateKey,
   GuildQuestKind,
@@ -25,15 +25,16 @@ import type {
 } from "../types/backend";
 import { GameRepositoryError } from "../types/backend";
 import { loadoutSlots } from "../constants/profile";
+import { habitOrder } from "../constants/habits";
 import { normalizeEquipmentSetOrder } from "../utility/equipmentCollections";
 import {
   createNodeCompletion,
   getActiveNodeLocation,
   getApplicableTimedQuestProgress,
-  getNextStreak,
-  isSectionComplete,
-  isStreakReset
+  isSectionComplete
 } from "../utility/adventurePath";
+import { getEffectiveHabitTarget } from "../utility/habitTargets";
+import { calculateStreakShieldOutcome } from "../utility/streakShield";
 import {
   createEquipmentLootItem,
   createEquipmentLootPreview,
@@ -210,6 +211,8 @@ export function completeLocalDailyQuest(
         coinReward: existing.reward.coins,
         xpReward: existing.reward.xp,
         streak: habit.streak,
+        streakShieldConsumed: false,
+        remainingStreakShields: state.inventory.streakShields,
         lootItem,
         alreadyCompleted: true
       },
@@ -227,10 +230,11 @@ export function completeLocalDailyQuest(
     if (!timer) {
       throw new GameRepositoryError("Start the quest timer before completing it.", "TIMER_NOT_STARTED");
     }
-    const override = state.targetOverrides[habitId];
-    const effectiveDuration = override !== undefined
-      ? Math.max(5, override) * 60
-      : node.targetDurationSeconds;
+    const effectiveDuration = getEffectiveHabitTarget(
+      habitId,
+      node,
+      state.targetOverrides[habitId]
+    ) * 60;
     if (Date.parse(now) - Date.parse(timer.startedAt) < effectiveDuration * 1000) {
       throw new GameRepositoryError(
         "Keep going until the quest timer reaches its target.",
@@ -241,20 +245,14 @@ export function completeLocalDailyQuest(
     throw new GameRepositoryError("You need more energy for that quest.", "INSUFFICIENT_ENERGY");
   }
 
-  const habitStreakBase = getNextStreak(habit.streak, habit.lastCompletedDateKey, localDateKey);
-  const dailyStreakBase = getNextStreak(state.dailyStreak, state.lastStreakDateKey, localDateKey);
-  const habitStreakWouldReset =
-    habit.streak > 0 && isStreakReset(habit.lastCompletedDateKey, localDateKey);
-  const dailyStreakWouldReset =
-    state.dailyStreak > 0 && isStreakReset(state.lastStreakDateKey, localDateKey);
-  const shieldConsumed =
-    state.inventory.streakShields > 0 && (habitStreakWouldReset || dailyStreakWouldReset);
-  const habitStreak = shieldConsumed && habitStreakWouldReset
-    ? habit.streak + 1
-    : habitStreakBase;
-  const dailyStreak = shieldConsumed && dailyStreakWouldReset
-    ? state.dailyStreak + 1
-    : dailyStreakBase;
+  const { dailyStreak, habitStreak, shieldConsumed } = calculateStreakShieldOutcome({
+    availableShields: state.inventory.streakShields,
+    currentDateKey: localDateKey,
+    dailyStreak: state.dailyStreak,
+    lastDailyDateKey: state.lastStreakDateKey,
+    habitStreak: habit.streak,
+    lastHabitDateKey: habit.lastCompletedDateKey
+  });
   const lootItem = rollEquipmentLoot({
     habitId,
     nodeId: node.id,
@@ -322,6 +320,8 @@ export function completeLocalDailyQuest(
       coinReward: node.reward.coins,
       xpReward: node.reward.xp,
       streak: habitStreak,
+      streakShieldConsumed: shieldConsumed,
+      remainingStreakShields: nextState.inventory.streakShields,
       lootItem,
       alreadyCompleted: false
     },
@@ -461,12 +461,31 @@ export function claimLocalDailyCheckIn(
 
 export function updateLocalSettings(
   state: AppState,
-  settings: Partial<AppSettings>,
+  settings: AppSettingsPatch,
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
   state = withCurrentGuildQuestBoard(state, localDateKey);
-  const nextState = { ...state, settings: { ...state.settings, ...settings } };
+  const { enabledHabitIds, targetOverrides, ...settingsPatch } = settings;
+  if (
+    enabledHabitIds !== undefined &&
+    (enabledHabitIds.length === 0 ||
+      new Set(enabledHabitIds).size !== enabledHabitIds.length ||
+      enabledHabitIds.some((habitId) => !habitOrder.includes(habitId)))
+  ) {
+    throw new GameRepositoryError(
+      "Keep at least one available habit selected.",
+      "INVALID_HABIT"
+    );
+  }
+  const nextState: AppState = {
+    ...state,
+    settings: { ...state.settings, ...settingsPatch },
+    ...(enabledHabitIds === undefined ? {} : { enabledHabitIds: [...enabledHabitIds] }),
+    ...(targetOverrides === undefined
+      ? {}
+      : { targetOverrides: { ...targetOverrides } })
+  };
   return response<SettingsUpdatedOutcome>(
     nextState,
     { kind: "settings-updated" },

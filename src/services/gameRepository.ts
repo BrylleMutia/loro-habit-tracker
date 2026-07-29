@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 
 import type {
-  AppSettings,
+  AppSettingsPatch,
   GuildQuestKind,
   GuildQuestRewardPreview,
   HabitId,
@@ -273,6 +273,11 @@ function isPersistedGameState(value: unknown): value is PersistedGameState {
     isFiniteNumber(value.longestStreak) &&
     value.longestStreak >= 0 &&
     isNullableString(value.lastStreakDateKey) &&
+    (value.enabledHabitIds === undefined ||
+      (Array.isArray(value.enabledHabitIds) &&
+        value.enabledHabitIds.length > 0 &&
+        new Set(value.enabledHabitIds).size === value.enabledHabitIds.length &&
+        value.enabledHabitIds.every(isHabitId))) &&
     isFiniteNumber(value.coins) &&
     value.coins >= 0 &&
     isRecord(value.energy) &&
@@ -391,6 +396,9 @@ function parseOutcome(value: unknown): GameOutcome {
         value.xpReward >= 0 &&
         isFiniteNumber(value.streak) &&
         value.streak >= 0 &&
+        isBoolean(value.streakShieldConsumed) &&
+        isFiniteNumber(value.remainingStreakShields) &&
+        value.remainingStreakShields >= 0 &&
         (value.lootItem === undefined || value.lootItem === null || isInventoryItem(value.lootItem)) &&
         isBoolean(value.alreadyCompleted)
       ) {
@@ -402,6 +410,8 @@ function parseOutcome(value: unknown): GameOutcome {
           coinReward: value.coinReward,
           xpReward: value.xpReward,
           streak: value.streak,
+          streakShieldConsumed: value.streakShieldConsumed,
+          remainingStreakShields: value.remainingStreakShields,
           lootItem: isInventoryItem(value.lootItem) ? value.lootItem : null,
           alreadyCompleted: value.alreadyCompleted
         };
@@ -509,6 +519,10 @@ export function parseGameResponse(value: unknown): GameResponse {
   );
   const snapshot: PersistedGameState = {
     ...parsedSnapshot,
+    enabledHabitIds:
+      Array.isArray(parsedSnapshot.enabledHabitIds) && parsedSnapshot.enabledHabitIds.length > 0
+        ? parsedSnapshot.enabledHabitIds
+        : habitIds,
     targetOverrides: isRecord(parsedSnapshot.targetOverrides)
       ? Object.fromEntries(
           Object.entries(parsedSnapshot.targetOverrides).filter(
@@ -702,7 +716,7 @@ export function claimGuildQuestReward(questKind: GuildQuestKind, questId: string
   );
 }
 
-export function updateSettings(settings: Partial<AppSettings>) {
+export function updateSettings(settings: AppSettingsPatch) {
   return unwrapRpcResult<SettingsUpdatedOutcome>(
     supabase.rpc("update_settings", { p_settings: settings as unknown as Json }),
     "settings-updated"
