@@ -263,7 +263,7 @@ const GuildQuestCard = memo(function GuildQuestCard({
                alignSelf: "stretch",
                flexGrow: 0,
                flexShrink: 0,
-               height: GUILD_QUEST_CARD_HEIGHT,
+               minHeight: GUILD_QUEST_CARD_HEIGHT,
             },
          ]}
       >
