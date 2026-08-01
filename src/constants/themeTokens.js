@@ -51,6 +51,9 @@ const themeColors = {
     soft: "#FFF3D6",
     earned: "#C78A12"
   },
+  accent: {
+    teal: "#1BAAB5"
+  },
   rarity: {
     common: "#A96F45",
     "common-soft": "#F7EBDD",

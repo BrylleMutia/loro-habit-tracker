@@ -19,6 +19,7 @@ export const colors = {
   red: themeColors.danger.DEFAULT,
   gold: themeColors.reward.DEFAULT,
   goldSoft: themeColors.reward.soft,
+  teal: themeColors.accent.teal,
   rarity: {
     common: themeColors.rarity.common,
     uncommon: themeColors.rarity.uncommon,

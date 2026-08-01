@@ -59,10 +59,10 @@ const LORY_BRIEFING_MAX_HEIGHT =
 // while giving every habit its own visual anchor on the home screen.
 const activeHabitAccentColors: Record<HabitId, string> = {
    exercise: colors.blueDark,
-   reading: colors.rarity.rare,
+   reading: colors.rarity.epic,
    journaling: colors.red,
-   water: colors.blue,
-   sleep: colors.rarity.epic,
+   water: colors.teal,
+   sleep: colors.gold,
    outdoors: colors.green,
 };
 
