@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <title>Confirm your Loro email</title>
+    <style>
+      @media screen and (max-width: 620px) {
+        .email-shell-cell {
+          padding: 14px 8px !important;
+        }
+
+        .email-card {
+          border-radius: 18px !important;
+        }
+
+        .email-content {
+          padding: 30px 22px !important;
+        }
+
+        .email-title {
+          font-size: 28px !important;
+          line-height: 1.12 !important;
+        }
+
+        .email-button {
+          display: block !important;
+          width: auto !important;
+        }
+      }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0; background: #dff5ff; color: #0b2551; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
+    <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; color: transparent;">
+      Confirm your email to unlock your first quest in Loro.
+    </div>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background: #dff5ff;">
+      <tr>
+        <td class="email-shell-cell" align="center" style="padding: 28px 12px;">
+          <table class="email-card" role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; max-width: 560px; overflow: hidden; border: 1px solid #d8eaf4; border-radius: 24px; background: #fffdf7; box-shadow: 0 8px 18px rgba(122, 167, 191, 0.12);">
+            <tr>
+              <td style="height: 8px; background: #56a6f7; font-size: 0; line-height: 0;">&nbsp;</td>
+            </tr>
+
+            <tr>
+              <td class="email-content" style="padding: 36px 40px 38px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td align="center">
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                        <tr>
+                          <td style="width: 12px; height: 12px; border-radius: 50%; background: #56a6f7; font-size: 0; line-height: 0;">&nbsp;</td>
+                          <td style="width: 8px; font-size: 0; line-height: 0;">&nbsp;</td>
+                          <td style="width: 12px; height: 12px; border-radius: 50%; background: #56c878; font-size: 0; line-height: 0;">&nbsp;</td>
+                          <td style="width: 8px; font-size: 0; line-height: 0;">&nbsp;</td>
+                          <td style="width: 12px; height: 12px; border-radius: 50%; background: #f5b739; font-size: 0; line-height: 0;">&nbsp;</td>
+                        </tr>
+                      </table>
+
+                      <p style="margin: 12px 0 0; color: #0b2551; font-size: 16px; font-weight: 800; letter-spacing: 0.08em; line-height: 1.2;">LORO</p>
+                      <p style="margin: 5px 0 0; color: #6d7890; font-size: 12px; font-weight: 700; line-height: 1.4;">Gamified habits</p>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td style="padding-top: 34px;">
+                      <p style="margin: 0 0 10px; color: #6d7890; font-size: 13px; font-weight: 700; line-height: 1.4;">A note from Lory, your Trail Captain</p>
+                      <h1 class="email-title" style="margin: 0; color: #111d35; font-size: 34px; font-weight: 900; letter-spacing: -0.02em; line-height: 1.1;">Unlock your first quest</h1>
+                      <p style="margin: 18px 0 0; color: #0b2551; font-size: 16px; font-weight: 600; line-height: 1.65;">Welcome to Loro. Confirm your email address to finish creating your account and start your first trail.</p>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td align="center" style="padding-top: 28px;">
+                      <a class="email-button" href="{{ .ConfirmationURL }}" role="button" aria-label="Confirm your Loro email address" style="display: inline-block; border-radius: 10px; background: #2f80ed; color: #ffffff; font-size: 16px; font-weight: 800; line-height: 1; padding: 16px 24px; text-decoration: none;">Confirm your email</a>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td style="padding-top: 28px;">
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border: 1px solid #d8eaf4; border-radius: 14px; background: #e7f4ff;">
+                        <tr>
+                          <td style="padding: 16px 18px;">
+                            <p style="margin: 0; color: #0b2551; font-size: 14px; font-weight: 700; line-height: 1.55;">After you tap the link, return to Loro to finish creating your account and enter the app.</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td style="padding-top: 26px;">
+                      <p style="margin: 0; color: #6d7890; font-size: 13px; font-weight: 600; line-height: 1.6;">If the button does not work, copy and paste this link into your browser:</p>
+                      <p style="margin: 8px 0 0; overflow-wrap: anywhere; word-break: break-word; color: #2f80ed; font-size: 12px; font-weight: 600; line-height: 1.5;"><a href="{{ .ConfirmationURL }}" style="color: #2f80ed; text-decoration: underline;">{{ .ConfirmationURL }}</a></p>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td style="padding-top: 30px;">
+                      <p style="margin: 0; color: #6d7890; font-size: 12px; font-weight: 600; line-height: 1.6;">If you did not create a Loro account, you can safely ignore this email. No changes will be made.</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="border-top: 1px solid #e6edf2; padding: 18px 24px; text-align: center;">
+                <p style="margin: 0; color: #7e899b; font-size: 12px; font-weight: 700; line-height: 1.5;">Loro &#183; Choose a habit. Complete a quest. Advance your trail.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

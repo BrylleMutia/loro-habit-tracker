@@ -60,6 +60,7 @@ export type AuthStatus =
   | "awaitingVerification"
   | "booting"
   | "guest"
+  | "linkingIdentity"
   | "passwordRecovery"
   | "signedIn"
   | "signedOut";

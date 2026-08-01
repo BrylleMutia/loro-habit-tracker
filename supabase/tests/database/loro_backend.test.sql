@@ -1,6 +1,6 @@
 begin;
 
-select plan(138);
+select plan(140);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'user_habit_preferences', 'user habit preference table exists');
@@ -163,6 +163,40 @@ values
     '',
     '',
     ''
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '33333333-3333-3333-3333-333333333333',
+    'authenticated',
+    'authenticated',
+    'google.given@example.com',
+    extensions.crypt('trail-ready-password', extensions.gen_salt('bf')),
+    now(),
+    '{"provider":"google","providers":["google"]}',
+    '{"given_name":"Google","full_name":"Google Test Person","time_zone":"UTC","avatar_class_id":"wizard","avatar_variant":"default"}',
+    now(),
+    now(),
+    '',
+    '',
+    '',
+    ''
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '44444444-4444-4444-4444-444444444444',
+    'authenticated',
+    'authenticated',
+    'google.name@example.com',
+    extensions.crypt('trail-ready-password', extensions.gen_salt('bf')),
+    now(),
+    '{"provider":"google","providers":["google"]}',
+    '{"name":"Name Fallback Example","time_zone":"UTC"}',
+    now(),
+    now(),
+    '',
+    '',
+    '',
+    ''
   );
 
 select throws_ok(
@@ -194,6 +228,16 @@ select is(
   (select display_name from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
   'Trail One',
   'signup trigger provisions profile metadata'
+);
+select is(
+  (select display_name from public.profiles where id = '33333333-3333-3333-3333-333333333333'),
+  'Google',
+  'signup trigger uses the Google given name when no explicit display name exists'
+);
+select is(
+  (select display_name from public.profiles where id = '44444444-4444-4444-4444-444444444444'),
+  'Name',
+  'signup trigger falls back to the first word of the provider name'
 );
 select is(
   (select avatar_class_id from public.profiles where id = '11111111-1111-1111-1111-111111111111'),

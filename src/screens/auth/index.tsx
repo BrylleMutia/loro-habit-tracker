@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Image,
   KeyboardAvoidingView,
@@ -37,20 +37,41 @@ const authHeroImageStyle = {
   width: "100%"
 } as const;
 
-function AuthMessage({ message, tone = "error" }: { message: string; tone?: "error" | "info" }) {
+function AuthMessage({
+  actionLabel,
+  message,
+  onAction,
+  tone = "error"
+}: {
+  actionLabel?: string;
+  message: string;
+  onAction?: () => void;
+  tone?: "error" | "info";
+}) {
   return (
     <View
-      className={`flex-row rounded-card border p-3 ${
+      className={`rounded-card border p-3 ${
         tone === "error" ? "border-line-red bg-surface-red" : "border-line-blue bg-primary-soft"
       }`}
       accessibilityRole="alert"
     >
-      <Ionicons
-        name={tone === "error" ? "alert-circle-outline" : "information-circle-outline"}
-        size={18}
-        color={tone === "error" ? colors.red : colors.blueDark}
-      />
-      <Text className="ml-2 flex-1 text-xs font-semibold leading-5 text-content">{message}</Text>
+      <View className="flex-row">
+        <Ionicons
+          name={tone === "error" ? "alert-circle-outline" : "information-circle-outline"}
+          size={18}
+          color={tone === "error" ? colors.red : colors.blueDark}
+        />
+        <Text className="ml-2 flex-1 text-xs font-semibold leading-5 text-content">{message}</Text>
+      </View>
+      {actionLabel && onAction ? (
+        <Pressable
+          className="mt-2 min-h-10 items-center justify-center self-start px-1"
+          accessibilityRole="button"
+          onPress={onAction}
+        >
+          <Text className="text-sm font-black text-primary-strong">{actionLabel}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -211,8 +232,11 @@ export function AuthScreen({
   const authWidth = useScreenContentWidth() + 40;
   const {
     awaitingAction,
+    cancelGoogleLinkRecovery,
     continueAsGuest,
+    continueWithEmailSession,
     errorMessage,
+    googleLinkPending,
     isConfigured,
     isSubmitting,
     pendingEmail,
@@ -222,6 +246,7 @@ export function AuthScreen({
     returnToSignIn,
     setView,
     signIn,
+    signInWithGoogle,
     signUp,
     status,
     updatePassword,
@@ -239,10 +264,13 @@ export function AuthScreen({
   const [resendCooldown, setResendCooldown] = useState(0);
   const [onboardingSession, setOnboardingSession] = useState<OnboardingSession | null>(null);
   const [isMigrationWarningVisible, setIsMigrationWarningVisible] = useState(false);
+  const appliedInitialViewRef = useRef<AuthView | null>(null);
 
   useEffect(() => {
-    setView(initialView);
-  }, [initialView, setView]);
+    if (appliedInitialViewRef.current === initialView) return;
+    appliedInitialViewRef.current = initialView;
+    if (view !== initialView) setView(initialView);
+  }, [initialView, setView, view]);
 
   useEffect(() => {
     void readOnboardingSession().then(setOnboardingSession);
@@ -316,7 +344,29 @@ export function AuthScreen({
 
   const messages = (
     <>
-      {localError || errorMessage ? <AuthMessage message={localError ?? errorMessage ?? ""} /> : null}
+      {localError || errorMessage ? (
+        <AuthMessage
+          actionLabel={
+            status === "linkingIdentity"
+              ? "Continue with email"
+              : googleLinkPending
+                ? "Try a different Google account"
+                : undefined
+          }
+          message={localError ?? errorMessage ?? ""}
+          onAction={
+            status === "linkingIdentity"
+              ? () => run(continueWithEmailSession)
+              : googleLinkPending
+                ? () => {
+                    cancelGoogleLinkRecovery();
+                    run(signInWithGoogle);
+                  }
+                : undefined
+          }
+          tone={status === "linkingIdentity" ? "info" : "error"}
+        />
+      ) : null}
       {!isConfigured ? (
         <AuthMessage
           message="Account sign-in needs the Supabase environment values. Guest mode is ready now."
@@ -324,6 +374,24 @@ export function AuthScreen({
         />
       ) : null}
     </>
+  );
+
+  const renderGoogleAuth = () => (
+    <View className="gap-2">
+      <QuestActionButton
+        accessibilityLabel="Continue with Google"
+        disabled={!isConfigured || googleLinkPending || status === "linkingIdentity"}
+        icon="logo-google"
+        label="Continue with Google"
+        loading={isSubmitting}
+        mode="tap"
+        onAction={() => run(signInWithGoogle)}
+        variant="primary"
+      />
+      <Text className="text-center text-xs font-semibold leading-5 text-content-muted">
+        By continuing with Google, you agree to the Terms and Privacy Policy.
+      </Text>
+    </View>
   );
 
   const resendEmail = () => {
@@ -449,6 +517,8 @@ export function AuthScreen({
         {messages}
         <QuestActionButton disabled={!displayName || !email || !password || !confirmPassword || !acceptedTerms || !isConfigured} icon="person-add" label="Continue to signup" loading={isSubmitting} mode="tap" onAction={submitSignUp} />
         <Divider />
+        {renderGoogleAuth()}
+        <Divider />
         <QuestActionButton icon="compass-outline" label="Continue as guest" loading={isSubmitting} mode="tap" onAction={() => run(continueAsGuest)} variant="secondary" />
         <TextAction label="Already have an account? Log in" onPress={() => setView("signIn")} />
       </View>
@@ -504,7 +574,17 @@ export function AuthScreen({
         <AuthField autoComplete="current-password" label="Password" onChangeText={setPassword} placeholder="Your password" secureTextEntry value={password} />
         <View className="items-end"><TextAction label="Forgot password?" onPress={() => setView("forgotPassword")} /></View>
         {messages}
-        <QuestActionButton disabled={!email || !password || !isConfigured} icon="log-in" label="Log in" loading={isSubmitting} mode="tap" onAction={() => run(() => signIn(email, password))} />
+        <QuestActionButton
+          accessibilityLabel={googleLinkPending ? "Sign in to connect Google" : "Log in"}
+          disabled={!email || !password || !isConfigured}
+          icon="log-in"
+          label={googleLinkPending ? "Sign in to connect Google" : "Log in"}
+          loading={isSubmitting}
+          mode="tap"
+          onAction={() => run(() => signIn(email, password))}
+        />
+        <Divider />
+        {renderGoogleAuth()}
         <Divider />
         <QuestActionButton icon="compass-outline" label="Continue as guest" loading={isSubmitting} mode="tap" onAction={() => run(continueAsGuest)} variant="secondary" />
         <Text className="text-center text-xs font-semibold text-content-muted">
@@ -529,7 +609,7 @@ export function AuthScreen({
   return (
     <SafeAreaView className="flex-1 bg-canvas-sky">
       <StatusBar style="dark" />
-      <LinearGradient colors={[colors.sky, colors.mint, colors.cream]} className="flex-1">
+      <LinearGradient colors={[colors.blueSoft, colors.card]} className="flex-1">
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <ScrollView
             contentContainerClassName="flex-grow"

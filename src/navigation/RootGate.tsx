@@ -84,7 +84,7 @@ function TrailLoadingScreen() {
 }
 
 export function RootGate() {
-  const { continueAsGuest, session, status } = useAuth();
+  const { continueAsGuest, errorMessage, session, status } = useAuth();
   const [onboardingSession, setOnboardingSession] = useState<OnboardingSession | null>(null);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [hasLoadedOnboardingState, setHasLoadedOnboardingState] = useState(false);
@@ -128,6 +128,13 @@ export function RootGate() {
       setAuthMode("auth");
     }
   }, [authMode, hasCompletedOnboarding, onboardingSession?.phase, status]);
+
+  useEffect(() => {
+    if (status === "signedOut" && errorMessage && authMode !== "auth") {
+      setAuthInitialView("signIn");
+      setAuthMode("auth");
+    }
+  }, [authMode, errorMessage, status]);
 
   const createSession = () => {
     if (onboardingSession?.phase && onboardingSession.phase !== "completed") {
@@ -243,6 +250,13 @@ export function RootGate() {
         <TrailLoadingScreen />
       </AppStateProvider>
     );
+  }
+
+  // Recovery and verification links can open the app in a fresh browser
+  // session where authMode is still "landing". Route those callback states
+  // directly to AuthScreen so it can render the appropriate handoff form.
+  if (status === "passwordRecovery" || status === "awaitingVerification") {
+    return <AuthScreen initialView="signIn" onCreateAccount={createSession} />;
   }
 
   if (status !== "signedIn" || !session) {
