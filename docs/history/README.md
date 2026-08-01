@@ -10,6 +10,7 @@
 
 | Month | Archive | Coverage |
 |-------|---------|----------|
+| August 2026 | [`2026-08.md`](./2026-08.md) | Google OAuth SSO implementation and provider setup documentation |
 | July 2026 | [`2026-07.md`](./2026-07.md) | Initial roadmap audit through the documentation/history restructure |
 
 ## Maintenance Rules
