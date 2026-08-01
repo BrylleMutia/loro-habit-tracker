@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
 type VerificationCodeInputProps = {
@@ -10,7 +10,9 @@ const CODE_LENGTH = 6;
 
 export function VerificationCodeInput({ code, onChangeCode }: VerificationCodeInputProps) {
   const inputRef = useRef<TextInput>(null);
+  const [isFocused, setIsFocused] = useState(false);
   const cells = Array.from({ length: CODE_LENGTH }, (_, index) => code[index] ?? "");
+  const activeCellIndex = Math.min(code.length, CODE_LENGTH - 1);
 
   return (
     <View className="relative">
@@ -24,7 +26,7 @@ export function VerificationCodeInput({ code, onChangeCode }: VerificationCodeIn
           <View
             key={index}
             className={`h-14 flex-1 items-center justify-center rounded-card border bg-surface-card ${
-              index === code.length
+              isFocused && index === activeCellIndex
                 ? "border-primary bg-primary-soft"
                 : digit
                   ? "border-line-blue-accent"
@@ -44,6 +46,8 @@ export function VerificationCodeInput({ code, onChangeCode }: VerificationCodeIn
         keyboardType="number-pad"
         maxLength={CODE_LENGTH}
         onChangeText={(value) => onChangeCode(value.replace(/\D/g, "").slice(0, CODE_LENGTH))}
+        onBlur={() => setIsFocused(false)}
+        onFocus={() => setIsFocused(true)}
         textContentType="oneTimeCode"
         value={code}
       />
