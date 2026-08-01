@@ -12,6 +12,7 @@ import { shadows } from "../styles/shadows";
 import type { AvatarClassId } from "../types/app";
 
 type AvatarClassSelectorProps = {
+  className?: string;
   gender: AvatarGender;
   onClassChange: (classId: AvatarClassId) => void;
   onGenderChange: (gender: AvatarGender) => void;
@@ -26,6 +27,7 @@ const genderOptions = [
 const avatarPreviewStyle = { height: 112, width: 112 } as const;
 
 export function AvatarClassSelector({
+  className,
   gender,
   onClassChange,
   onGenderChange,
@@ -35,7 +37,7 @@ export function AvatarClassSelector({
   const selectedClass = avatarClassOptions.find((option) => option.id === selectedClassId);
 
   return (
-    <View className="flex-row items-start gap-3 mt-10">
+    <View className={`flex-row items-start gap-3 ${className ?? "mt-10"}`}>
       <View className="w-32 gap-2">
         <Text className="text-xs font-black text-content-muted">Avatar preview</Text>
         <View className="h-32 items-center justify-center rounded-card border border-line-blue bg-primary-soft p-2">

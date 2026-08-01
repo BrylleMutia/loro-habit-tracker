@@ -37,6 +37,7 @@ function AppNavigatorContent() {
   const [isDailyCheckInVisible, setIsDailyCheckInVisible] = useState(false);
   const [isHomeLootVisible, setIsHomeLootVisible] = useState(false);
   const [moreExpandHabitTargets, setMoreExpandHabitTargets] = useState(false);
+  const [moreExpandProfile, setMoreExpandProfile] = useState(false);
   const [unlockQueue, setUnlockQueue] = useState<NewUnlockDetails[]>([]);
   const promptedDateKeyRef = useRef<string | null>(null);
   const previousProfileLevelRef = useRef<number | null>(null);
@@ -125,6 +126,7 @@ function AppNavigatorContent() {
               onDailyCheckInPress={openDailyCheckIn}
               onLootVisibilityChange={setIsHomeLootVisible}
               onNavigateToMoreSettings={() => {
+                setMoreExpandProfile(false);
                 setMoreExpandHabitTargets(true);
                 onNavigateToTab("more");
               }}
@@ -133,28 +135,39 @@ function AppNavigatorContent() {
             />
           );
         case "profile":
-          return <ProfileScreen onNavigateToTab={onNavigateToTab} />;
+          return (
+            <ProfileScreen
+              onEditProfile={() => {
+                setMoreExpandHabitTargets(false);
+                setMoreExpandProfile(true);
+                onNavigateToTab("more");
+              }}
+              onNavigateToTab={onNavigateToTab}
+            />
+          );
         case "stash":
           return <StashScreen onDailyCheckInPress={openDailyCheckIn} />;
         case "more":
           return (
             <MoreScreen
               expandHabitTargets={moreExpandHabitTargets}
+              expandProfile={moreExpandProfile}
               onDailyCheckInPress={openDailyCheckIn}
               onHabitTargetsToggled={() => setMoreExpandHabitTargets(false)}
+              onProfileToggled={() => setMoreExpandProfile(false)}
             />
           );
         case "guild":
           return <GuildScreen onDailyCheckInPress={openDailyCheckIn} />;
       }
     },
-    [enqueueNewUnlock, openDailyCheckIn, moreExpandHabitTargets]
+    [enqueueNewUnlock, openDailyCheckIn, moreExpandHabitTargets, moreExpandProfile]
   );
 
   return (
     <SafeAreaView className="flex-1 bg-canvas-mint">
       <StatusBar style="dark" />
-      <LinearGradient colors={[colors.sky, colors.mint, colors.cream]} className="flex-1">
+      <LinearGradient colors={[colors.sky, colors.cardSoft, colors.cream]} className="flex-1">
         <SyncStatusBanner />
         <PersistentTabHost initialTab={defaultTabId} renderScene={renderTabScene} />
       </LinearGradient>

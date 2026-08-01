@@ -29,6 +29,10 @@ export function getAvatarVariant(classId: AvatarClassId, gender: AvatarGender) {
   return genderVariants[classId][gender];
 }
 
+export function getAvatarGender(classId: AvatarClassId, variant: AvatarVariant): AvatarGender {
+  return genderVariants[classId].male === variant ? "male" : "female";
+}
+
 export function getAvatarImage(classId: AvatarClassId, gender: AvatarGender) {
   return getAvatarVariant(classId, gender) === "alternate"
     ? images.classAvatarAlternates[classId]

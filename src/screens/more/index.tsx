@@ -4,26 +4,36 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { AvatarClassSelector } from "../../components/AvatarClassSelector";
+import { AuthField } from "../../components/AuthField";
 import { QuestActionButton } from "../../components/QuestActionButton";
 import { ResourceBar } from "../../components/ResourceBar";
+import {
+  getAvatarGender,
+  getAvatarVariant,
+  type AvatarGender
+} from "../../constants/avatarClasses";
 import { colors } from "../../constants/colors";
 import { defaultHabitTargets } from "../../constants/habits";
 import { useAuth } from "../../contexts/authContext";
 import {
   useGameActions,
   useGameHabits,
+  useGameProfile,
   useGameSettings,
   useGameSync
 } from "../../contexts/appContext";
 import { useHaptics } from "../../hooks/useHaptics";
 import { shadows } from "../../styles/shadows";
-import type { AppSettings, HabitId } from "../../types/app";
+import type { AppSettings, AvatarClassId, HabitId } from "../../types/app";
 import { habitTargetMinimums } from "../../utility/habitTargets";
 
 type MoreScreenProps = {
   expandHabitTargets?: boolean;
+  expandProfile?: boolean;
   onDailyCheckInPress: () => void;
   onHabitTargetsToggled?: () => void;
+  onProfileToggled?: () => void;
 };
 
 const HABIT_TARGET_DEFAULTS: Record<
@@ -196,25 +206,44 @@ function SettingsRow({
 
 export function MoreScreen({
   expandHabitTargets,
+  expandProfile,
   onDailyCheckInPress,
-  onHabitTargetsToggled
+  onHabitTargetsToggled,
+  onProfileToggled
 }: MoreScreenProps) {
   const insets = useSafeAreaInsets();
   const { isGuest, isSubmitting: isSigningOut, signOut, user } = useAuth();
+  const { profile } = useGameProfile();
   const { settings, targetOverrides } = useGameSettings();
   const { habitList } = useGameHabits();
   const { mutationInFlight } = useGameSync();
-  const { setEnabledHabitIds, setTargetOverride, updateSettings } = useGameActions();
+  const { setEnabledHabitIds, setTargetOverride, updateProfile, updateSettings } = useGameActions();
   const [optimistic, setOptimistic] = useState<AppSettings | null>(null);
   const [isHabitTargetsExpanded, setIsHabitTargetsExpanded] = useState(false);
+  const [isProfileExpanded, setIsProfileExpanded] = useState(false);
+  const [profileName, setProfileName] = useState(profile.name);
+  const [profileClassId, setProfileClassId] = useState<AvatarClassId>(profile.avatarClassId);
+  const [profileGender, setProfileGender] = useState(() =>
+    getAvatarGender(profile.avatarClassId, profile.avatarVariant)
+  );
+  const [profileSaveStatus, setProfileSaveStatus] = useState<"idle" | "saved">("idle");
   const [isResetConfirmVisible, setIsResetConfirmVisible] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [habitPreferenceError, setHabitPreferenceError] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const { medium } = useHaptics();
 
   const current = optimistic ?? settings;
   const contentPaddingBottom = Math.max(112, insets.bottom + 96);
   const isTargetUpdatePending = mutationInFlight === "settings";
+  const isProfileUpdatePending = mutationInFlight === "profile";
+  const normalizedProfileName = profileName.trim().slice(0, 40);
+  const nextProfileAvatarVariant = getAvatarVariant(profileClassId, profileGender);
+  const isProfileDirty =
+    normalizedProfileName !== profile.name.trim().slice(0, 40) ||
+    profileClassId !== profile.avatarClassId ||
+    nextProfileAvatarVariant !== profile.avatarVariant;
+  const isProfileSaved = profileSaveStatus === "saved" && !isProfileDirty;
   const enabledHabitIds = useMemo(() => habitList.map((habit) => habit.id), [habitList]);
   const orderedHabitIds = useMemo(
     () => [
@@ -265,9 +294,31 @@ export function MoreScreen({
   useEffect(() => {
     if (expandHabitTargets) {
       setIsHabitTargetsExpanded(true);
+      setIsProfileExpanded(false);
       onHabitTargetsToggled?.();
     }
   }, [expandHabitTargets, onHabitTargetsToggled]);
+
+  const resetProfileDraft = useCallback(() => {
+    setProfileName(profile.name);
+    setProfileClassId(profile.avatarClassId);
+    setProfileGender(getAvatarGender(profile.avatarClassId, profile.avatarVariant));
+    setProfileSaveStatus("idle");
+    setProfileError(null);
+  }, [profile.avatarClassId, profile.avatarVariant, profile.name]);
+
+  useEffect(() => {
+    if (expandProfile) {
+      resetProfileDraft();
+      setIsProfileExpanded(true);
+      setIsHabitTargetsExpanded(false);
+      onProfileToggled?.();
+    }
+  }, [expandProfile, onProfileToggled, resetProfileDraft]);
+
+  useEffect(() => {
+    if (!isProfileExpanded) resetProfileDraft();
+  }, [isProfileExpanded, resetProfileDraft]);
 
   const handleToggle = useCallback(
     (key: keyof AppSettings) => (nextValue: boolean) => {
@@ -298,6 +349,62 @@ export function MoreScreen({
   const hasAnyOverride = ALL_HABIT_IDS.some(
     (habitId) => targetOverrides[habitId] !== undefined
   );
+
+  const toggleHabitTargets = useCallback(() => {
+    setIsHabitTargetsExpanded((currentExpanded) => {
+      const nextExpanded = !currentExpanded;
+      if (nextExpanded) setIsProfileExpanded(false);
+      return nextExpanded;
+    });
+  }, []);
+
+  const toggleProfile = useCallback(() => {
+    setIsProfileExpanded((currentExpanded) => {
+      const nextExpanded = !currentExpanded;
+      if (nextExpanded) setIsHabitTargetsExpanded(false);
+      return nextExpanded;
+    });
+  }, []);
+
+  const handleProfileNameChange = useCallback((value: string) => {
+    setProfileName(value);
+    setProfileSaveStatus("idle");
+  }, []);
+
+  const handleProfileClassChange = useCallback((classId: AvatarClassId) => {
+    setProfileClassId(classId);
+    setProfileSaveStatus("idle");
+  }, []);
+
+  const handleProfileGenderChange = useCallback((gender: AvatarGender) => {
+    setProfileGender(gender);
+    setProfileSaveStatus("idle");
+  }, []);
+
+  const handleSaveProfile = useCallback(async () => {
+    if (!isProfileDirty) return;
+
+    const nextName = normalizedProfileName;
+    if (!nextName) {
+      setProfileError("Choose a name between 1 and 40 characters.");
+      return;
+    }
+
+    setProfileError(null);
+    try {
+      await updateProfile({
+        avatarClassId: profileClassId,
+        avatarVariant: nextProfileAvatarVariant,
+        name: nextName
+      });
+      setProfileSaveStatus("saved");
+    } catch (error) {
+      setProfileSaveStatus("idle");
+      setProfileError(
+        error instanceof Error ? error.message : "Lory could not save your profile yet."
+      );
+    }
+  }, [isProfileDirty, normalizedProfileName, nextProfileAvatarVariant, profileClassId, updateProfile]);
 
   return (
     <>
@@ -344,9 +451,9 @@ export function MoreScreen({
             activeOpacity={0.7}
             accessibilityLabel={isHabitTargetsExpanded ? "Collapse habit targets" : "Expand habit targets"}
             accessibilityRole="button"
-            onPress={() => setIsHabitTargetsExpanded((prev) => !prev)}
+            onPress={toggleHabitTargets}
           >
-            <Text className="text-sm font-black text-content">Habit Targets</Text>
+            <Text className="text-sm font-black text-content">Habits</Text>
             <Ionicons
               name={isHabitTargetsExpanded ? "chevron-up" : "chevron-down"}
               size={18}
@@ -410,6 +517,65 @@ export function MoreScreen({
                 />
               ) : null}
             </>
+          ) : null}
+        </View>
+
+        <View className="mt-4 rounded-card border border-line bg-surface-card p-4" style={shadows.card}>
+          <TouchableOpacity
+            className="flex-row items-center justify-between"
+            activeOpacity={0.7}
+            accessibilityLabel={isProfileExpanded ? "Collapse profile" : "Expand profile"}
+            accessibilityRole="button"
+            onPress={toggleProfile}
+          >
+            <Text className="text-sm font-black text-content">Profile</Text>
+            <Ionicons
+              name={isProfileExpanded ? "chevron-up" : "chevron-down"}
+              size={18}
+              color={colors.muted}
+            />
+          </TouchableOpacity>
+
+          {isProfileExpanded ? (
+            <View className="mt-3 gap-4 border-t border-line-subtle pt-3">
+              <Text className="text-xs font-semibold leading-5 text-content-muted">
+                Update the name and avatar Lory uses throughout your adventure.
+              </Text>
+
+              <AuthField
+                autoCapitalize="words"
+                autoComplete="name"
+                label="Name"
+                maxLength={40}
+                onChangeText={handleProfileNameChange}
+                placeholder="Your name"
+                value={profileName}
+              />
+
+              <AvatarClassSelector
+                className="mt-0"
+                gender={profileGender}
+                onClassChange={handleProfileClassChange}
+                onGenderChange={handleProfileGenderChange}
+                selectedClassId={profileClassId}
+              />
+
+              {profileError ? (
+                <Text className="text-xs font-semibold leading-5 text-danger" accessibilityRole="alert">
+                  {profileError}
+                </Text>
+              ) : null}
+
+              <QuestActionButton
+                accessibilityLabel={isProfileSaved ? "Profile saved" : "Save profile"}
+                disabled={isProfileUpdatePending || !isProfileDirty}
+                icon={isProfileSaved ? "checkmark-circle" : "checkmark-circle-outline"}
+                label={isProfileSaved ? "Saved" : "Save"}
+                loading={isProfileUpdatePending}
+                mode="tap"
+                onAction={() => void handleSaveProfile()}
+              />
+            </View>
           ) : null}
         </View>
 

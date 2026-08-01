@@ -65,10 +65,11 @@ function formatClassName(classId: string) {
 }
 
 type ProfileScreenProps = {
+  onEditProfile: () => void;
   onNavigateToTab: (tab: TabId) => void;
 };
 
-export function ProfileScreen({ onNavigateToTab }: ProfileScreenProps) {
+export function ProfileScreen({ onEditProfile, onNavigateToTab }: ProfileScreenProps) {
   const { habitList } = useGameHabits();
   const { dailyStreak, longestStreak, profile } = useGameProfile();
   const { inventory } = useGameInventory();
@@ -187,9 +188,20 @@ export function ProfileScreen({ onNavigateToTab }: ProfileScreenProps) {
         <View className="absolute inset-0 px-5 pt-5">
           <View className="flex-row items-start justify-between">
             <View className="flex-1 pr-3">
-              <Text className="font-display text-2xl font-black text-content">
-                {profile.name}
-              </Text>
+              <View className="flex-row items-center">
+                <Text className="min-w-0 flex-1 font-display text-2xl font-black text-content" numberOfLines={1}>
+                  {profile.name}
+                </Text>
+                <TouchableOpacity
+                  className="ml-2 h-11 w-11 items-center justify-center rounded-card bg-surface-card"
+                  activeOpacity={0.82}
+                  accessibilityLabel="Edit name"
+                  accessibilityRole="button"
+                  onPress={onEditProfile}
+                >
+                  <Ionicons name="pencil" size={16} color={colors.blueDark} />
+                </TouchableOpacity>
+              </View>
               <Text className="mt-1 text-xs font-extrabold uppercase text-content-blue-muted">
                 {formatClassName(profile.avatarClassId)}
               </Text>
@@ -241,11 +253,11 @@ export function ProfileScreen({ onNavigateToTab }: ProfileScreenProps) {
             setId={fullyEquippedSetId}
           />
           <TouchableOpacity
-            className="absolute right-2 top-2 h-9 w-9 items-center justify-center rounded-card bg-surface-card"
+            className="absolute right-2 top-2 h-11 w-11 items-center justify-center rounded-card bg-surface-card"
             activeOpacity={0.82}
             accessibilityLabel="Edit avatar"
             accessibilityRole="button"
-            onPress={() => onNavigateToTab("stash")}
+            onPress={onEditProfile}
           >
             <Ionicons name="pencil" size={16} color={colors.blueDark} />
           </TouchableOpacity>

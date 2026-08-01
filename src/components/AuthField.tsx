@@ -11,6 +11,7 @@ type AuthFieldProps = {
   icon?: IconName;
   keyboardType?: ComponentProps<typeof TextInput>["keyboardType"];
   label: string;
+  maxLength?: number;
   onChangeText: (value: string) => void;
   placeholder: string;
   returnKeyType?: ComponentProps<typeof TextInput>["returnKeyType"];
@@ -24,6 +25,7 @@ export function AuthField({
   icon,
   keyboardType,
   label,
+  maxLength,
   onChangeText,
   placeholder,
   returnKeyType,
@@ -31,12 +33,17 @@ export function AuthField({
   value
 }: AuthFieldProps) {
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const isPassword = Boolean(secureTextEntry);
 
   return (
     <View className="gap-2">
       <Text className="text-xs font-extrabold text-content-muted">{label}</Text>
-      <View className="h-14 flex-row items-center rounded-card border border-line-blue bg-surface-card px-3">
+      <View
+        className={`h-14 flex-row items-center rounded-card border bg-surface-card px-3 ${
+          isFocused ? "border-primary" : "border-line-blue"
+        }`}
+      >
         {icon ? <Ionicons name={icon} size={19} color={colors.blueDark} /> : null}
         <TextInput
           className={`${icon ? "ml-3" : ""} flex-1 text-base font-semibold text-content`}
@@ -45,7 +52,10 @@ export function AuthField({
           autoCorrect={false}
           accessibilityLabel={label}
           keyboardType={keyboardType}
+          maxLength={maxLength}
           onChangeText={onChangeText}
+          onBlur={() => setIsFocused(false)}
+          onFocus={() => setIsFocused(true)}
           placeholder={placeholder}
           placeholderTextColor={colors.tabInactive}
           returnKeyType={returnKeyType}
