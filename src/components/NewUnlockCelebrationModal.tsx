@@ -146,7 +146,7 @@ export function NewUnlockCelebrationModal({
                         >
                           <Ionicons name={reward.icon} size={17} color={reward.color} />
                         </View>
-                        <Text className="ml-3 flex-1 text-md font-black text-content">
+                        <Text className="ml-3 shrink text-center text-md font-black text-content">
                           {reward.label}
                         </Text>
                       </View>
