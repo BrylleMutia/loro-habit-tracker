@@ -16,13 +16,15 @@ import Animated, {
 import { colors } from "../constants/colors";
 import { useGameInventory, useGameProfile, useGameResources } from "../contexts/appContext";
 import { shadows } from "../styles/shadows";
+import {
+  getEffectiveEnergyCurrent,
+  getEnergyRefillMinutesRemaining
+} from "../utility/energy";
 import { ResourcePill } from "./ResourcePill";
 
 type ResourceBarProps = {
   onDailyCheckInPress: () => void;
 };
-
-const ENERGY_REFILL_INTERVAL_MS = 30 * 60 * 1000; // 1 energy per 30 minutes
 
 export function ResourceBar({ onDailyCheckInPress }: ResourceBarProps) {
   const { dailyStreak } = useGameProfile();
@@ -35,25 +37,17 @@ export function ResourceBar({ onDailyCheckInPress }: ResourceBarProps) {
     return () => clearInterval(interval);
   }, []);
 
-  let effectiveCurrent = energy.current;
+  const effectiveCurrent = getEffectiveEnergyCurrent(energy, nowMs);
   let energyValue = `${energy.current}/${energy.max}`;
   let energySuffix: string | undefined;
 
-  if (energy.current < energy.max && energy.lastRefillAt) {
-    const elapsed = nowMs - Date.parse(energy.lastRefillAt);
-    const pointsGained = Math.floor(elapsed / ENERGY_REFILL_INTERVAL_MS);
-    effectiveCurrent = Math.min(energy.max, energy.current + pointsGained);
+  if (effectiveCurrent > energy.current) {
+    energyValue = `${effectiveCurrent}/${energy.max}`;
+  }
 
-    if (effectiveCurrent > energy.current) {
-      energyValue = `${effectiveCurrent}/${energy.max}`;
-    }
-
-    if (effectiveCurrent < energy.max) {
-      const remaining =
-        ENERGY_REFILL_INTERVAL_MS - (elapsed % ENERGY_REFILL_INTERVAL_MS);
-      const minutes = Math.max(1, Math.ceil(remaining / 60_000));
-      energySuffix = `+1 in ${minutes}m`;
-    }
+  const refillMinutes = getEnergyRefillMinutesRemaining(energy, nowMs);
+  if (refillMinutes !== null) {
+    energySuffix = `+1 in ${refillMinutes}m`;
   }
 
   return (

@@ -6,7 +6,8 @@ import type {
   GuildQuestRewardPreview,
   HabitId,
   InventoryItem,
-  PlayerProfile
+  PlayerProfile,
+  ShopItemId
 } from "../types/app";
 import type {
   CheckInOutcome,
@@ -21,6 +22,7 @@ import type {
   QuestCompletionOutcome,
   QuestStartOutcome,
   RewardClaimOutcome,
+  ShopPurchaseOutcome,
   SettingsUpdatedOutcome,
   SnapshotOutcome
 } from "../types/backend";
@@ -28,6 +30,7 @@ import { GameRepositoryError } from "../types/backend";
 import type { Json } from "../types/database.generated";
 import { normalizeEquipmentSetOrder } from "../utility/equipmentCollections";
 import { createGuildQuestBoard } from "../utility/guildQuests";
+import { createInitialShopState } from "../utility/shop";
 import { isSupabaseConfigured, supabase } from "./supabaseClient";
 
 const habitIds: HabitId[] = [
@@ -48,16 +51,19 @@ const equipmentAttributeIds = [
   "strength",
   "vitality"
 ];
+const shopItemIds: ShopItemId[] = ["streak-shield", "energy-elixir", "xp-charm"];
 
 const domainErrorMessages: Partial<Record<GameErrorCode, string>> = {
   CHAPTER_INCOMPLETE: "Complete every quest in this chapter before claiming its reward.",
   INVALID_EQUIPMENT_SLOT: "That equipment slot is not available.",
+  INSUFFICIENT_COINS: "You need more coins for that shop item.",
   INSUFFICIENT_ENERGY: "You need more energy for that quest.",
   INVALID_AVATAR_CLASS: "That adventurer class is not available.",
   INVALID_AVATAR_VARIANT: "That avatar style is not available.",
   INVALID_CHAPTER: "That chapter is no longer available.",
   INVALID_DISPLAY_NAME: "Choose a display name between 1 and 40 characters.",
   INVALID_HABIT: "That habit is no longer available.",
+  INVALID_SHOP_IDEMPOTENCY_KEY: "That shop action could not be retried safely.",
   INVALID_SET_ORDER: "That set order is no longer available.",
   GUILD_QUEST_ALREADY_CLAIMED: "That Guild Quest reward has already been claimed.",
   GUILD_QUEST_INVALID_SELECTION: "That Guild Quest cannot be accepted right now.",
@@ -68,6 +74,10 @@ const domainErrorMessages: Partial<Record<GameErrorCode, string>> = {
   PROFILE_NOT_FOUND: "Your player profile could not be loaded.",
   QUEST_ALREADY_COMPLETED: "Today’s quest is already complete.",
   QUEST_NOT_TIMED: "This quest does not use a timer.",
+  ENERGY_FULL: "Your energy is already full.",
+  SHOP_ITEM_NOT_FOUND: "That shop item is no longer available.",
+  SHOP_IDEMPOTENCY_CONFLICT: "That shop action is already linked to another item.",
+  SHOP_WEEKLY_LIMIT_REACHED: "You have reached this item’s limit for the week.",
   SETTINGS_NOT_FOUND: "Your settings could not be loaded.",
   TIMER_NOT_FINISHED: "Keep going until the quest timer reaches its target.",
   TIMER_NOT_STARTED: "Start the quest timer before completing it.",
@@ -92,6 +102,10 @@ function isBoolean(value: unknown): value is boolean {
 
 function isHabitId(value: unknown): value is HabitId {
   return isString(value) && habitIds.includes(value as HabitId);
+}
+
+function isShopItemId(value: unknown): value is ShopItemId {
+  return isString(value) && shopItemIds.includes(value as ShopItemId);
 }
 
 function isNullableString(value: unknown): value is string | null {
@@ -162,6 +176,26 @@ function isGuildQuestBoard(value: unknown) {
               isString(preview.rarity) &&
               equipmentRarities.includes(preview.rarity)
           )))
+  );
+}
+
+function isShopState(value: unknown) {
+  if (!isRecord(value) || !isString(value.periodKey) || !Array.isArray(value.items)) {
+    return false;
+  }
+
+  return value.items.length === shopItemIds.length && value.items.every(
+    (item) =>
+      isRecord(item) &&
+      isShopItemId(item.id) &&
+      isFiniteNumber(item.priceCoins) &&
+      item.priceCoins >= 0 &&
+      isFiniteNumber(item.purchasesThisPeriod) &&
+      item.purchasesThisPeriod >= 0 &&
+      isFiniteNumber(item.remainingPurchases) &&
+      item.remainingPurchases >= 0 &&
+      isFiniteNumber(item.weeklyLimit) &&
+      item.weeklyLimit > 0
   );
 }
 
@@ -310,7 +344,9 @@ function isPersistedGameState(value: unknown): value is PersistedGameState {
         isRecord(buff) &&
         isString(buff.id) &&
         isString(buff.label) &&
-        isString(buff.expiresAt)
+        isString(buff.expiresAt) &&
+        (buff.remainingUses === undefined ||
+          (isFiniteNumber(buff.remainingUses) && buff.remainingUses >= 0))
     ) &&
     isRecord(value.settings) &&
     isBoolean(value.settings.dailyReminderEnabled) &&
@@ -341,7 +377,8 @@ function isPersistedGameState(value: unknown): value is PersistedGameState {
         isFiniteNumber(activity.xpEarned) &&
         activity.xpEarned >= 0
     ) &&
-    (value.guildQuestBoard === undefined || isGuildQuestBoard(value.guildQuestBoard));
+    (value.guildQuestBoard === undefined || isGuildQuestBoard(value.guildQuestBoard)) &&
+    (value.shop === undefined || isShopState(value.shop));
 
   return baseStateIsValid;
 }
@@ -487,6 +524,30 @@ function parseOutcome(value: unknown): GameOutcome {
         } as GuildQuestRewardOutcome;
       }
       break;
+    case "shop-purchased":
+      if (
+        isShopItemId(value.itemId) &&
+        isFiniteNumber(value.priceCoins) &&
+        value.priceCoins >= 0 &&
+        isFiniteNumber(value.purchasesThisPeriod) &&
+        value.purchasesThisPeriod >= 0 &&
+        isFiniteNumber(value.remainingPurchases) &&
+        value.remainingPurchases >= 0 &&
+        isFiniteNumber(value.activeXpUses) &&
+        value.activeXpUses >= 0 &&
+        isBoolean(value.alreadyProcessed)
+      ) {
+        return {
+          kind: value.kind,
+          activeXpUses: value.activeXpUses,
+          alreadyProcessed: value.alreadyProcessed,
+          itemId: value.itemId,
+          priceCoins: value.priceCoins,
+          purchasesThisPeriod: value.purchasesThisPeriod,
+          remainingPurchases: value.remainingPurchases
+        } as ShopPurchaseOutcome;
+      }
+      break;
   }
 
   throw new GameRepositoryError("The server returned an invalid action result.", "INVALID_RESPONSE");
@@ -517,6 +578,17 @@ export function parseGameResponse(value: unknown): GameResponse {
         parsedItems.map((item) => item.itemDefinitionId)
     )
   );
+  const activeBuffs = parsedInventory.activeBuffs.map((buff) => {
+    const remainingUses = (buff as { remainingUses?: unknown }).remainingUses;
+    return {
+      ...buff,
+      remainingUses:
+        isFiniteNumber(remainingUses) && remainingUses >= 0 ? remainingUses : 0
+    };
+  });
+  const shop = isShopState(parsedSnapshot.shop)
+    ? parsedSnapshot.shop
+    : createInitialShopState(value.localDateKey);
   const snapshot: PersistedGameState = {
     ...parsedSnapshot,
     enabledHabitIds:
@@ -537,8 +609,10 @@ export function parseGameResponse(value: unknown): GameResponse {
     inventory: {
       ...parsedInventory,
       items: parsedItems,
-      discoveredItemDefinitionIds
+      discoveredItemDefinitionIds,
+      activeBuffs
     },
+    shop,
     habits: Object.fromEntries(
       habitIds.map((habitId) => [
         habitId,
@@ -738,5 +812,15 @@ export function equipItem(itemId: string) {
   return unwrapRpcResult<EquipmentUpdatedOutcome>(
     supabase.rpc("equip_inventory_item", { p_item_id: itemId }),
     "equipment-updated"
+  );
+}
+
+export function purchaseShopItem(itemId: ShopItemId, idempotencyKey: string) {
+  return unwrapRpcResult<ShopPurchaseOutcome>(
+    supabase.rpc("purchase_shop_item", {
+      p_idempotency_key: idempotencyKey,
+      p_shop_item_id: itemId
+    }),
+    "shop-purchased"
   );
 }

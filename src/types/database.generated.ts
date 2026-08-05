@@ -14,18 +14,21 @@ export type Database = {
           buff_id: string
           expires_at: string
           label: string
+          remaining_uses: number
           user_id: string
         }
         Insert: {
           buff_id: string
           expires_at: string
           label: string
+          remaining_uses?: number
           user_id: string
         }
         Update: {
           buff_id?: string
           expires_at?: string
           label?: string
+          remaining_uses?: number
           user_id?: string
         }
         Relationships: []
@@ -885,6 +888,68 @@ export type Database = {
           },
         ]
       }
+      shop_item_definitions: {
+        Row: {
+          active: boolean
+          effect_uses: number
+          id: string
+          price_coins: number
+          weekly_limit: number
+        }
+        Insert: {
+          active?: boolean
+          effect_uses?: number
+          id: string
+          price_coins: number
+          weekly_limit: number
+        }
+        Update: {
+          active?: boolean
+          effect_uses?: number
+          id?: string
+          price_coins?: number
+          weekly_limit?: number
+        }
+        Relationships: []
+      }
+      shop_purchases: {
+        Row: {
+          id: string
+          idempotency_key: string
+          period_key: string
+          price_coins: number
+          purchased_at: string
+          shop_item_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          idempotency_key: string
+          period_key: string
+          price_coins: number
+          purchased_at?: string
+          shop_item_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          idempotency_key?: string
+          period_key?: string
+          price_coins?: number
+          purchased_at?: string
+          shop_item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_purchases_shop_item_id_fkey"
+            columns: ["shop_item_id"]
+            isOneToOne: false
+            referencedRelation: "shop_item_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_habit_preferences: {
         Row: {
           enabled: boolean
@@ -1036,6 +1101,10 @@ export type Database = {
       }
       equip_inventory_item: { Args: { p_item_id: string }; Returns: Json }
       get_game_snapshot: { Args: never; Returns: Json }
+      purchase_shop_item: {
+        Args: { p_idempotency_key: string; p_shop_item_id: string }
+        Returns: Json
+      }
       start_daily_quest: { Args: { p_habit_id: string }; Returns: Json }
       update_profile: { Args: { p_profile_fields: Json }; Returns: Json }
       update_settings: { Args: { p_settings: Json }; Returns: Json }

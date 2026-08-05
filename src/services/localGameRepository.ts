@@ -1,4 +1,5 @@
 import type {
+  ActiveBuff,
   AppSettingsPatch,
   AppState,
   DateKey,
@@ -6,7 +7,8 @@ import type {
   GuildQuestRewardPreview,
   HabitId,
   HabitState,
-  PlayerProfile
+  PlayerProfile,
+  ShopItemId
 } from "../types/app";
 import type {
   CheckInOutcome,
@@ -20,11 +22,13 @@ import type {
   QuestCompletionOutcome,
   QuestStartOutcome,
   RewardClaimOutcome,
+  ShopPurchaseOutcome,
   SettingsUpdatedOutcome,
   SnapshotOutcome
 } from "../types/backend";
 import { GameRepositoryError } from "../types/backend";
 import { loadoutSlots } from "../constants/profile";
+import { shopItemsById } from "../constants/shop";
 import { habitOrder } from "../constants/habits";
 import { normalizeEquipmentSetOrder } from "../utility/equipmentCollections";
 import {
@@ -34,12 +38,20 @@ import {
   isSectionComplete
 } from "../utility/adventurePath";
 import { getEffectiveHabitTarget } from "../utility/habitTargets";
+import { applyPassiveEnergyRefill } from "../utility/energy";
 import { calculateStreakShieldOutcome } from "../utility/streakShield";
 import {
   createEquipmentLootItem,
   createEquipmentLootPreview,
   rollEquipmentLoot
 } from "../utility/equipmentLoot";
+import {
+  getActiveXpCharmUses,
+  getShopItemStatus,
+  getShopPeriodExpiresAt,
+  refreshShopState,
+  removeExpiredShopBuffs
+} from "../utility/shop";
 import {
   createGuildQuestBoard,
   getGuildQuestDefinition,
@@ -57,12 +69,36 @@ function toSnapshot(state: AppState): PersistedGameState {
   return snapshot;
 }
 
-function withCurrentGuildQuestBoard(state: AppState, localDateKey: DateKey) {
+function withCurrentGameState(
+  state: AppState,
+  localDateKey: DateKey,
+  now = new Date().toISOString()
+) {
   const currentBoard = state.guildQuestBoard ?? createGuildQuestBoard(localDateKey);
   const refreshedBoard = refreshGuildQuestBoard(currentBoard, localDateKey);
-  return refreshedBoard === currentBoard
-    ? state
-    : { ...state, guildQuestBoard: refreshedBoard };
+  const refreshedShop = refreshShopState(state.shop, localDateKey);
+  const actionTime = new Date(now);
+  const refreshedEnergy = applyPassiveEnergyRefill(state.energy, actionTime);
+  const refreshedBuffs = removeExpiredShopBuffs(state.inventory.activeBuffs, actionTime);
+
+  return {
+    ...state,
+    energy: refreshedEnergy,
+    inventory:
+      refreshedBuffs === state.inventory.activeBuffs
+        ? state.inventory
+        : { ...state.inventory, activeBuffs: refreshedBuffs },
+    shop: refreshedShop,
+    guildQuestBoard: refreshedBoard
+  };
+}
+
+function consumeXpCharm(activeBuffs: readonly ActiveBuff[]) {
+  return activeBuffs.flatMap((buff) => {
+    if (buff.id !== "xp-charm") return [buff];
+    if (buff.remainingUses <= 1) return [];
+    return [{ ...buff, remainingUses: buff.remainingUses - 1 }];
+  });
 }
 
 function response<TOutcome extends GameOutcome>(
@@ -114,7 +150,7 @@ export function getLocalGameSnapshot(
   now = new Date().toISOString()
 ) {
   return response<SnapshotOutcome>(
-    withCurrentGuildQuestBoard(state, localDateKey),
+    withCurrentGameState(state, localDateKey, now),
     { kind: "snapshot" },
     localDateKey,
     now
@@ -127,7 +163,7 @@ export function startLocalDailyQuest(
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
-  state = withCurrentGuildQuestBoard(state, localDateKey);
+  state = withCurrentGameState(state, localDateKey, now);
   const habit = requireHabit(state, habitId);
   if (habit.lastCompletedDateKey === localDateKey) {
     throw new GameRepositoryError("Today's quest is already complete.", "QUEST_ALREADY_COMPLETED");
@@ -196,7 +232,7 @@ export function completeLocalDailyQuest(
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
-  state = withCurrentGuildQuestBoard(state, localDateKey);
+  state = withCurrentGameState(state, localDateKey, now);
   const habit = requireHabit(state, habitId);
   const existing = habit.completions.find((completion) => completion.completedOn === localDateKey);
   if (existing) {
@@ -224,6 +260,14 @@ export function completeLocalDailyQuest(
   const location = getActiveNodeLocation(habit);
   if (!location) throw new GameRepositoryError("This adventure path is complete.", "PATH_COMPLETE");
   const { node, section } = location;
+  const xpCharmActive = getActiveXpCharmUses(
+    state.inventory.activeBuffs,
+    new Date(now)
+  ) > 0;
+  const questReward = {
+    ...node.reward,
+    xp: node.reward.xp * (xpCharmActive ? 2 : 1)
+  };
 
   if (node.questType === "timed") {
     const timer = getApplicableTimedQuestProgress(habit, node.id, localDateKey);
@@ -267,23 +311,26 @@ export function completeLocalDailyQuest(
       activeTimedQuest: null,
       completions: [
         ...habit.completions,
-        createNodeCompletion(section.id, node.id, localDateKey, now, node.reward, lootItem.id)
+        createNodeCompletion(section.id, node.id, localDateKey, now, questReward, lootItem.id)
       ]
     },
-    node.reward.xp
+    questReward.xp
   );
   const completionEnergyCost = node.questType === "one-time" ? node.energyCost : 0;
   const nextState: AppState = {
     ...state,
-    coins: state.coins + node.reward.coins,
+    coins: state.coins + questReward.coins,
     energy: { ...state.energy, current: state.energy.current - completionEnergyCost, lastRefillAt: now },
-    profile: addProfileXp(state.profile, node.reward.xp),
+    profile: addProfileXp(state.profile, questReward.xp),
     dailyStreak,
     longestStreak: Math.max(state.longestStreak, dailyStreak),
     lastStreakDateKey: localDateKey,
     habits: { ...state.habits, [habitId]: completedHabit },
     inventory: {
       ...state.inventory,
+      activeBuffs: xpCharmActive
+        ? consumeXpCharm(state.inventory.activeBuffs)
+        : state.inventory.activeBuffs,
       streakShields: shieldConsumed
         ? state.inventory.streakShields - 1
         : state.inventory.streakShields,
@@ -303,8 +350,8 @@ export function completeLocalDailyQuest(
         sectionId: section.id,
         nodeId: node.id,
         occurredAt: now,
-        coinsEarned: node.reward.coins,
-        xpEarned: node.reward.xp
+        coinsEarned: questReward.coins,
+        xpEarned: questReward.xp
       },
       ...state.activityLog
     ]
@@ -317,8 +364,8 @@ export function completeLocalDailyQuest(
       habitId,
       nodeId: node.id,
       sectionId: section.id,
-      coinReward: node.reward.coins,
-      xpReward: node.reward.xp,
+      coinReward: questReward.coins,
+      xpReward: questReward.xp,
       streak: habitStreak,
       streakShieldConsumed: shieldConsumed,
       remainingStreakShields: nextState.inventory.streakShields,
@@ -337,7 +384,7 @@ export function claimLocalChapterReward(
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
-  state = withCurrentGuildQuestBoard(state, localDateKey);
+  state = withCurrentGameState(state, localDateKey, now);
   const habit = requireHabit(state, habitId);
   const section = habit.sections.find((candidate) => candidate.id === sectionId);
   if (!section) throw new GameRepositoryError("That chapter is not available.", "INVALID_CHAPTER");
@@ -412,7 +459,7 @@ export function claimLocalDailyCheckIn(
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
-  state = withCurrentGuildQuestBoard(state, localDateKey);
+  state = withCurrentGameState(state, localDateKey, now);
   const { rewardCoins, rewardEnergy } = state.dailyCheckIn;
   if (state.dailyCheckIn.lastClaimedDateKey === localDateKey) {
     return response<CheckInOutcome>(
@@ -459,13 +506,108 @@ export function claimLocalDailyCheckIn(
   );
 }
 
+export function purchaseLocalShopItem(
+  state: AppState,
+  itemId: ShopItemId,
+  idempotencyKey: string,
+  localDateKey: DateKey,
+  now = new Date().toISOString()
+) {
+  void idempotencyKey;
+  state = withCurrentGameState(state, localDateKey, now);
+  const definition = shopItemsById[itemId];
+  if (!definition) {
+    throw new GameRepositoryError("That shop item is no longer available.", "SHOP_ITEM_NOT_FOUND");
+  }
+
+  const status = getShopItemStatus(state.shop, itemId);
+  if (status.remainingPurchases <= 0) {
+    throw new GameRepositoryError(
+      "You have reached this item’s limit for the week.",
+      "SHOP_WEEKLY_LIMIT_REACHED"
+    );
+  }
+  if (state.coins < status.priceCoins) {
+    throw new GameRepositoryError("You need more coins for that shop item.", "INSUFFICIENT_COINS");
+  }
+  if (itemId === "energy-elixir" && state.energy.current >= state.energy.max) {
+    throw new GameRepositoryError("Your energy is already full.", "ENERGY_FULL");
+  }
+
+  const purchasesThisPeriod = status.purchasesThisPeriod + 1;
+  const nextShop = {
+    ...state.shop,
+    items: state.shop.items.map((item) =>
+      item.id === itemId
+        ? {
+            ...item,
+            purchasesThisPeriod,
+            remainingPurchases: item.weeklyLimit - purchasesThisPeriod
+          }
+        : item
+    )
+  };
+  let activeBuffs = state.inventory.activeBuffs;
+  let energy = state.energy;
+
+  if (itemId === "energy-elixir") {
+    energy = {
+      ...state.energy,
+      current: Math.min(state.energy.max, state.energy.current + 3),
+      lastRefillAt: now
+    };
+  }
+
+  if (itemId === "xp-charm") {
+    const existingUses = getActiveXpCharmUses(
+      state.inventory.activeBuffs,
+      new Date(now)
+    );
+    activeBuffs = [
+      ...state.inventory.activeBuffs.filter((buff) => buff.id !== "xp-charm"),
+      {
+        id: "xp-charm",
+        label: "XP Charm",
+        expiresAt: getShopPeriodExpiresAt(localDateKey, state.settings.timeZone),
+        remainingUses: existingUses + 3
+      }
+    ];
+  }
+
+  const nextState: AppState = {
+    ...state,
+    coins: state.coins - status.priceCoins,
+    energy,
+    inventory: {
+      ...state.inventory,
+      activeBuffs
+    },
+    shop: nextShop
+  };
+
+  return response<ShopPurchaseOutcome>(
+    nextState,
+    {
+      kind: "shop-purchased",
+      activeXpUses: getActiveXpCharmUses(nextState.inventory.activeBuffs, new Date(now)),
+      alreadyProcessed: false,
+      itemId,
+      priceCoins: status.priceCoins,
+      purchasesThisPeriod,
+      remainingPurchases: status.remainingPurchases - 1
+    },
+    localDateKey,
+    now
+  );
+}
+
 export function updateLocalSettings(
   state: AppState,
   settings: AppSettingsPatch,
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
-  state = withCurrentGuildQuestBoard(state, localDateKey);
+  state = withCurrentGameState(state, localDateKey, now);
   const { enabledHabitIds, targetOverrides, ...settingsPatch } = settings;
   if (
     enabledHabitIds !== undefined &&
@@ -500,7 +642,7 @@ export function equipLocalItem(
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
-  state = withCurrentGuildQuestBoard(state, localDateKey);
+  state = withCurrentGameState(state, localDateKey, now);
   const item = state.inventory.items.find((candidate) => candidate.id === itemId);
   if (!item) {
     throw new GameRepositoryError("That item is not in your inventory.", "ITEM_NOT_OWNED");
@@ -566,7 +708,7 @@ export function acceptLocalGuildQuest(
   rewardPreview?: GuildQuestRewardPreview,
   now = new Date().toISOString()
 ) {
-  state = withCurrentGuildQuestBoard(state, localDateKey);
+  state = withCurrentGameState(state, localDateKey, now);
   const periodState = state.guildQuestBoard[questKind];
   const acceptanceLimit = questKind === "side" ? 2 : 1;
   if (periodState.lockedIds.length >= acceptanceLimit) {
@@ -626,7 +768,7 @@ export function claimLocalGuildQuestReward(
   localDateKey: DateKey,
   now = new Date().toISOString()
 ) {
-  state = withCurrentGuildQuestBoard(state, localDateKey);
+  state = withCurrentGameState(state, localDateKey, now);
   const definition = getGuildQuestDefinition(questId);
   const periodState = state.guildQuestBoard[questKind];
   if (!definition || definition.kind !== questKind || !periodState.lockedIds.includes(questId)) {

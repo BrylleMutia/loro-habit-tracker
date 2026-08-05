@@ -24,6 +24,7 @@ export type QuestTrackingType = "timed" | "one-time";
 export type AvatarClassId = "druid" | "mercenary" | "ranger" | "warrior" | "wizard";
 export type AvatarVariant = "default" | "alternate";
 export type EquipmentRarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
+export type ShopItemId = "streak-shield" | "energy-elixir" | "xp-charm";
 export type GuildQuestKind = "side" | "main";
 export type GuildQuestMetric =
   | "same-habit-days"
@@ -184,6 +185,20 @@ export type ActiveBuff = {
   id: string;
   label: string;
   expiresAt: string;
+  remainingUses: number;
+};
+
+export type ShopItemStatus = {
+  id: ShopItemId;
+  priceCoins: number;
+  purchasesThisPeriod: number;
+  remainingPurchases: number;
+  weeklyLimit: number;
+};
+
+export type ShopState = {
+  periodKey: DateKey;
+  items: ShopItemStatus[];
 };
 
 export type InventoryItem = {
@@ -259,6 +274,7 @@ export type AppState = {
   energy: EnergyState;
   dailyCheckIn: DailyCheckInState;
   inventory: InventoryState;
+  shop: ShopState;
   guildQuestBoard: GuildQuestBoardState;
   settings: AppSettings;
   targetOverrides: HabitTargetOverrides;

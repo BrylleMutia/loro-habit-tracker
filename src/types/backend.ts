@@ -3,7 +3,8 @@ import type {
   DateKey,
   EquipmentSlotId,
   HabitId,
-  InventoryItem
+  InventoryItem,
+  ShopItemId
 } from "./app";
 
 export type PersistedGameState = Omit<AppState, "activeHabitId">;
@@ -79,6 +80,7 @@ export type GameMutationId =
   | "profile"
   | "quest-complete"
   | "quest-start"
+  | "shop-purchase"
   | "settings";
 
 export type QuestStartOutcome = {
@@ -144,6 +146,16 @@ export type EquipmentUpdatedOutcome = {
   slotId: EquipmentSlotId;
 };
 
+export type ShopPurchaseOutcome = {
+  kind: "shop-purchased";
+  activeXpUses: number;
+  alreadyProcessed: boolean;
+  itemId: ShopItemId;
+  priceCoins: number;
+  purchasesThisPeriod: number;
+  remainingPurchases: number;
+};
+
 export type GameOutcome =
   | CheckInOutcome
   | EquipmentUpdatedOutcome
@@ -153,6 +165,7 @@ export type GameOutcome =
   | QuestCompletionOutcome
   | QuestStartOutcome
   | RewardClaimOutcome
+  | ShopPurchaseOutcome
   | SettingsUpdatedOutcome
   | SnapshotOutcome;
 
@@ -173,8 +186,10 @@ export type GameErrorCode =
   | "INVALID_AVATAR_VARIANT"
   | "INVALID_DISPLAY_NAME"
   | "INVALID_HABIT"
+  | "INVALID_SHOP_IDEMPOTENCY_KEY"
   | "INVALID_RESPONSE"
   | "INVALID_SET_ORDER"
+  | "INSUFFICIENT_COINS"
   | "GUILD_QUEST_ALREADY_CLAIMED"
   | "GUILD_QUEST_INVALID_SELECTION"
   | "GUILD_QUEST_NOT_READY"
@@ -186,6 +201,10 @@ export type GameErrorCode =
   | "PROFILE_NOT_FOUND"
   | "QUEST_ALREADY_COMPLETED"
   | "QUEST_NOT_TIMED"
+  | "ENERGY_FULL"
+  | "SHOP_ITEM_NOT_FOUND"
+  | "SHOP_IDEMPOTENCY_CONFLICT"
+  | "SHOP_WEEKLY_LIMIT_REACHED"
   | "SETTINGS_NOT_FOUND"
   | "TIMER_NOT_FINISHED"
   | "TIMER_NOT_STARTED"

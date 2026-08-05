@@ -3,6 +3,7 @@ import { equipmentSets } from "../../constants/equipment";
 import type { AppState, HabitId } from "../../types/app";
 import type { PersistedGameState } from "../../types/backend";
 import { createGuildQuestBoard } from "../../utility/guildQuests";
+import { createInitialShopState } from "../../utility/shop";
 
 export type AppAction =
   | { type: "SET_ACTIVE_HABIT"; habitId: HabitId }
@@ -119,6 +120,7 @@ export function createInitialAppState({
       streakShields: 0,
       activeBuffs: []
     },
+    shop: createInitialShopState(getDateKeyInTimeZone(now, timeZone)),
     guildQuestBoard: createGuildQuestBoard(getDateKeyInTimeZone(now, timeZone)),
     settings: {
       dailyReminderEnabled: true,

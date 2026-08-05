@@ -74,7 +74,7 @@ function formatExpiryLabel(dateKey: DateKey) {
   }).format(toUtcDate(dateKey));
 }
 
-function getStartOfDateInTimeZone(dateKey: DateKey, timeZone: string) {
+export function getStartOfDateInTimeZone(dateKey: DateKey, timeZone: string) {
   const dateAtUtcMidnight = toUtcDate(dateKey);
   let guess = dateAtUtcMidnight;
 

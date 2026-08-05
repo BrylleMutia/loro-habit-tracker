@@ -23,6 +23,7 @@ import {
   getGameSnapshot,
   acceptGuildQuest as acceptGuildQuestRemote,
   claimGuildQuestReward as claimGuildQuestRewardRemote,
+  purchaseShopItem as purchaseShopItemRemote,
   startDailyQuest as startDailyQuestRemote,
   updateProfile as updateProfileRemote,
   updateSettings as updateSettingsRemote
@@ -36,6 +37,7 @@ import {
   getLocalGameSnapshot,
   acceptLocalGuildQuest,
   claimLocalGuildQuestReward,
+  purchaseLocalShopItem,
   startLocalDailyQuest,
   updateLocalProfile,
   updateLocalSettings
@@ -49,7 +51,8 @@ import type {
   GuildQuestRewardPreview,
   HabitId,
   HabitState,
-  PlayerProfile
+  PlayerProfile,
+  ShopItemId
 } from "../../types/app";
 import type {
   CheckInOutcome,
@@ -62,6 +65,7 @@ import type {
   QuestCompletionOutcome,
   QuestStartOutcome,
   RewardClaimOutcome,
+  ShopPurchaseOutcome,
   SettingsUpdatedOutcome,
   SyncStatus
 } from "../../types/backend";
@@ -103,6 +107,10 @@ type GameProfileContextValue = {
 
 type GameInventoryContextValue = {
   inventory: AppState["inventory"];
+};
+
+type GameShopContextValue = {
+  shop: AppState["shop"];
 };
 
 type GameResourcesContextValue = {
@@ -151,6 +159,10 @@ type GameActionsContextValue = {
   acceptGuildQuest: (questKind: GuildQuestKind, questId: string) => Promise<GuildQuestAcceptanceOutcome>;
   claimGuildQuestReward: (questKind: GuildQuestKind, questId: string) => Promise<GuildQuestRewardOutcome>;
   claimDailyCheckIn: () => Promise<CheckInOutcome>;
+  purchaseShopItem: (
+    itemId: ShopItemId,
+    idempotencyKey: string
+  ) => Promise<ShopPurchaseOutcome>;
   equipItem: (itemId: string) => Promise<EquipmentUpdatedOutcome>;
   updateSettings: (settings: AppSettingsPatch) => Promise<SettingsUpdatedOutcome>;
   updateProfile: (fields: EditableProfileFields) => Promise<ProfileUpdatedOutcome>;
@@ -168,6 +180,7 @@ type AppStateProviderProps = {
 const GameHabitsContext = createContext<GameHabitsContextValue | null>(null);
 const GameProfileContext = createContext<GameProfileContextValue | null>(null);
 const GameInventoryContext = createContext<GameInventoryContextValue | null>(null);
+const GameShopContext = createContext<GameShopContextValue | null>(null);
 const GameResourcesContext = createContext<GameResourcesContextValue | null>(null);
 const GameQuestsContext = createContext<GameQuestsContextValue | null>(null);
 const GameSyncContext = createContext<GameSyncContextValue | null>(null);
@@ -283,12 +296,14 @@ export function AppStateProvider({
         ) {
           return;
         }
+        const cachedState = cached
+          ? { ...cached.snapshot, activeHabitId: stateRef.current.activeHabitId }
+          : stateRef.current;
         await applyResponse(
-          cached ??
-            getLocalGameSnapshot(
-              stateRef.current,
-              getDateKeyInTimeZone(stateRef.current.settings.timeZone)
-            )
+          getLocalGameSnapshot(
+            cachedState,
+            getDateKeyInTimeZone(stateRef.current.settings.timeZone)
+          )
         );
         return;
       }
@@ -345,12 +360,14 @@ export function AppStateProvider({
         ) {
           return;
         }
+        const cachedState = cachedResponse
+          ? { ...cachedResponse.snapshot, activeHabitId: stateRef.current.activeHabitId }
+          : stateRef.current;
         void applyResponse(
-          cachedResponse ??
-            getLocalGameSnapshot(
-              stateRef.current,
-              getDateKeyInTimeZone(stateRef.current.settings.timeZone)
-            )
+          getLocalGameSnapshot(
+            cachedState,
+            getDateKeyInTimeZone(stateRef.current.settings.timeZone)
+          )
         );
       });
 
@@ -653,6 +670,20 @@ export function AppStateProvider({
       ),
     [runMutation, storageMode, todayDateKey]
   );
+  const purchaseShopItem = useCallback(
+    (itemId: ShopItemId, idempotencyKey: string) =>
+      runMutation("shop-purchase", async () =>
+        storageMode === "local"
+          ? purchaseLocalShopItem(
+              stateRef.current,
+              itemId,
+              idempotencyKey,
+              todayDateKey
+            )
+          : purchaseShopItemRemote(itemId, idempotencyKey)
+      ),
+    [runMutation, storageMode, todayDateKey]
+  );
   const equipItem = useCallback(
     (itemId: string) =>
       runMutation("equipment", async () =>
@@ -699,6 +730,10 @@ export function AppStateProvider({
   const inventoryValue = useMemo<GameInventoryContextValue>(
     () => ({ inventory: state.inventory }),
     [state.inventory]
+  );
+  const shopValue = useMemo<GameShopContextValue>(
+    () => ({ shop: state.shop }),
+    [state.shop]
   );
   const resourcesValue = useMemo<GameResourcesContextValue>(
     () => ({
@@ -759,6 +794,7 @@ export function AppStateProvider({
       acceptGuildQuest,
       claimGuildQuestReward,
       claimDailyCheckIn,
+      purchaseShopItem,
       equipItem,
       updateSettings,
       updateProfile,
@@ -772,6 +808,7 @@ export function AppStateProvider({
       completeDailyQuest,
       equipItem,
       claimGuildQuestReward,
+      purchaseShopItem,
       refreshGameState,
       setEnabledHabitIds,
       setActiveHabit,
@@ -787,19 +824,21 @@ export function AppStateProvider({
     <GameHabitsContext.Provider value={habitsValue}>
       <GameProfileContext.Provider value={profileValue}>
         <GameInventoryContext.Provider value={inventoryValue}>
-          <GameResourcesContext.Provider value={resourcesValue}>
-            <GameQuestsContext.Provider value={questsValue}>
-              <GameSyncContext.Provider value={syncValue}>
-                <GameBriefingContext.Provider value={briefingValue}>
-                  <GameSettingsContext.Provider value={settingsValue}>
-                    <GameActionsContext.Provider value={actionsValue}>
-                      {children}
-                    </GameActionsContext.Provider>
-                  </GameSettingsContext.Provider>
-                </GameBriefingContext.Provider>
-              </GameSyncContext.Provider>
-            </GameQuestsContext.Provider>
-          </GameResourcesContext.Provider>
+          <GameShopContext.Provider value={shopValue}>
+            <GameResourcesContext.Provider value={resourcesValue}>
+              <GameQuestsContext.Provider value={questsValue}>
+                <GameSyncContext.Provider value={syncValue}>
+                  <GameBriefingContext.Provider value={briefingValue}>
+                    <GameSettingsContext.Provider value={settingsValue}>
+                      <GameActionsContext.Provider value={actionsValue}>
+                        {children}
+                      </GameActionsContext.Provider>
+                    </GameSettingsContext.Provider>
+                  </GameBriefingContext.Provider>
+                </GameSyncContext.Provider>
+              </GameQuestsContext.Provider>
+            </GameResourcesContext.Provider>
+          </GameShopContext.Provider>
         </GameInventoryContext.Provider>
       </GameProfileContext.Provider>
     </GameHabitsContext.Provider>
@@ -822,6 +861,10 @@ export function useGameProfile() {
 
 export function useGameInventory() {
   return useRequiredContext(GameInventoryContext, "useGameInventory");
+}
+
+export function useGameShop() {
+  return useRequiredContext(GameShopContext, "useGameShop");
 }
 
 export function useGameResources() {

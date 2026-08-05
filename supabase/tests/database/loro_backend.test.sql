@@ -1,6 +1,6 @@
 begin;
 
-select plan(140);
+select plan(163);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'user_habit_preferences', 'user habit preference table exists');
@@ -1002,6 +1002,144 @@ select is(
   (select streak_shields from public.profiles where id = '22222222-2222-2222-2222-222222222222'),
   1,
   'a null prior completion leaves the stored shield count unchanged'
+);
+
+reset role;
+delete from public.shop_purchases
+where user_id = '11111111-1111-1111-1111-111111111111';
+delete from public.active_buffs
+where user_id = '11111111-1111-1111-1111-111111111111';
+update public.profiles
+set coins = 2_000,
+    energy_current = 5,
+    last_energy_refill_at = now(),
+    streak_shields = 0
+where id = '11111111-1111-1111-1111-111111111111';
+set local role authenticated;
+set local "request.jwt.claims" = '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}';
+
+select has_table('public', 'shop_item_definitions', 'shop item catalog exists');
+select has_table('public', 'shop_purchases', 'shop purchase ledger exists');
+select has_column('public', 'active_buffs', 'remaining_uses', 'active buffs store use counts');
+select is(
+  (select count(*) from public.shop_item_definitions where active),
+  3::bigint,
+  'the first shop catalog contains three active gameplay items'
+);
+select is(
+  (select price_coins from public.shop_item_definitions where id = 'streak-shield'),
+  200,
+  'streak shields use the authoritative 200 coin price'
+);
+select is(
+  (select price_coins from public.shop_item_definitions where id = 'energy-elixir'),
+  150,
+  'energy elixirs use the authoritative 150 coin price'
+);
+select is(
+  (select price_coins from public.shop_item_definitions where id = 'xp-charm'),
+  150,
+  'XP charms use the authoritative 150 coin price'
+);
+select is(
+  (
+    select (item ->> 'remainingPurchases')::integer
+    from jsonb_array_elements(public.get_game_snapshot() #> '{snapshot,shop,items}') item
+    where item ->> 'id' = 'streak-shield'
+  ),
+  3,
+  'a new shop period starts with three shield purchases available'
+);
+select is(
+  (
+    public.purchase_shop_item(
+      'streak-shield',
+      '00000000-0000-0000-0000-000000000001'
+    ) #>> '{outcome,alreadyProcessed}'
+  )::boolean,
+  false,
+  'a first shop purchase is processed once'
+);
+select is(
+  (select coins from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
+  1_800,
+  'a shield purchase deducts the authoritative price atomically'
+);
+select is(
+  (select streak_shields from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
+  1,
+  'a shield purchase increments the shield inventory'
+);
+select is(
+  (
+    public.purchase_shop_item(
+      'streak-shield',
+      '00000000-0000-0000-0000-000000000001'
+    ) #>> '{outcome,alreadyProcessed}'
+  )::boolean,
+  true,
+  'retrying the same shop idempotency key does not purchase again'
+);
+select is(
+  (select coins from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
+  1_800,
+  'an idempotent shop retry does not double-spend coins'
+);
+select lives_ok(
+  $$select public.purchase_shop_item('streak-shield', '00000000-0000-0000-0000-000000000002')$$,
+  'the second shield purchase succeeds'
+);
+select lives_ok(
+  $$select public.purchase_shop_item('streak-shield', '00000000-0000-0000-0000-000000000003')$$,
+  'the third shield purchase succeeds'
+);
+select throws_like(
+  $$select public.purchase_shop_item('streak-shield', '00000000-0000-0000-0000-000000000004')$$,
+  '%limit for the week%',
+  'the fourth shield purchase is rejected for the current week'
+);
+select is(
+  (
+    select count(*)
+    from public.shop_purchases
+    where user_id = '11111111-1111-1111-1111-111111111111'
+      and shop_item_id = 'streak-shield'
+  ),
+  3::bigint,
+  'the weekly shield ledger contains exactly three successful purchases'
+);
+select lives_ok(
+  $$select public.purchase_shop_item('energy-elixir', '00000000-0000-0000-0000-000000000005')$$,
+  'an energy elixir purchase succeeds below the energy cap'
+);
+select is(
+  (select energy_current from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
+  8,
+  'an energy elixir restores three energy'
+);
+select lives_ok(
+  $$select public.purchase_shop_item('xp-charm', '00000000-0000-0000-0000-000000000006')$$,
+  'an XP charm purchase succeeds'
+);
+select is(
+  (select remaining_uses from public.active_buffs where user_id = '11111111-1111-1111-1111-111111111111' and buff_id = 'xp-charm'),
+  3,
+  'an XP charm starts with three active Daily Quest charges'
+);
+select is(
+  (
+    select (item ->> 'remainingPurchases')::integer
+    from jsonb_array_elements(public.get_game_snapshot() #> '{snapshot,shop,items}') item
+    where item ->> 'id' = 'xp-charm'
+  ),
+  2,
+  'the snapshot exposes remaining XP charm purchases'
+);
+select throws_ok(
+  $$insert into public.shop_purchases (user_id, shop_item_id, period_key, price_coins, idempotency_key) values (auth.uid(), 'xp-charm', current_date, 150, '00000000-0000-0000-0000-000000000007')$$,
+  '42501',
+  null,
+  'authenticated clients cannot write directly to the shop ledger'
 );
 
 reset role;

@@ -11,6 +11,7 @@ import { EquipmentLoadoutGrid } from "../../components/EquipmentLoadoutGrid";
 import { InventoryStackDetailsModal } from "../../components/InventoryStackDetailsModal";
 import { INVENTORY_PAGE_SIZE, InventoryStashGrid } from "../../components/InventoryStashGrid";
 import { ResourceBar } from "../../components/ResourceBar";
+import { ShopSection } from "../../components/ShopSection";
 import { colors } from "../../constants/colors";
 import { loadoutSlots } from "../../constants/profile";
 import {
@@ -246,6 +247,8 @@ export function StashScreen({ onDailyCheckInPress }: StashScreenProps) {
                 </Text>
               </View>
             )}
+
+            <ShopSection />
 
             <InventoryStackDetailsModal
               loading={mutationInFlight === "equipment" && pendingItemId !== null}
