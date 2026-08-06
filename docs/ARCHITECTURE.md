@@ -195,6 +195,20 @@ The exact union should grow only as implemented behavior requires. Components sh
 - Test cross-user denial, anonymous denial, invalid IDs, duplicate retries, and direct-table-write denial.
 - Regenerate `src/types/database.generated.ts` after schema changes.
 
+## Migration History Repair Procedure
+
+Migration filenames and the remote `supabase_migrations.schema_migrations` history are separate sources of truth. A remote version missing locally is a deployment blocker until its exact behavior is reconciled.
+
+Before creating, repairing, or pushing migrations:
+
+1. Inspect the worktree, complete migration matrix, and `supabase db push --dry-run`.
+2. Compare local migrations with the linked schema, including columns, constraints, indexes, policies, grants, function bodies, and relevant catalog data.
+3. If exact equivalence cannot be proven, stop; do not use blind pulls, force flags, `--include-all`, or guessed repairs.
+4. For proven equivalence, record the remote/local versions and evidence, repair history in an auditable order, and rerun the dry run before any push.
+5. Push only the verified pending set with explicit authorization for a shared remote.
+
+After a repair or push, verify matching local/remote history, an up-to-date dry run, critical deployed RPC/snapshot/security properties, and the applicable local reset, pgTAP, lint, generated-types, and TypeScript checks. Keep a factual entry in the current monthly history file for non-trivial repairs.
+
 ## Read Models and Snapshot Size
 
 The main game snapshot should contain the compact state required to render the core application. It should not become an unbounded transport for every historical record.
@@ -396,13 +410,13 @@ A roadmap feature moves to `☑ Complete` only when all applicable conditions ar
 6. Accessibility, reduced motion, safe areas, large text, and narrow-screen overflow are verified.
 7. Pure utilities, repositories/RPCs, critical component states, and the user flow have appropriate tests.
 8. TypeScript, Expo compatibility, Supabase tests, and bundle/device checks pass as applicable.
-9. Migrations, generated types, configuration/secrets, rollout notes, and `docs/PLANS.md` are updated.
+9. Migrations, generated types, configuration/secrets, rollout notes, `docs/PLANS.md`, and the matching `docs/features/feature-XX.md` are updated.
 
 ## Documentation Ownership
 
 - This file owns stable engineering architecture, security, persistence, testing, and delivery standards.
 - [`PRODUCT.md`](./PRODUCT.md) owns product rules, terminology, tone, and UX boundaries.
-- [`PLANS.md`](./PLANS.md) owns feature status, feature-specific implementation contracts, priorities, and dependencies.
+- [`PLANS.md`](./PLANS.md) owns feature priority and status; [`features/`](./features/) owns feature-specific implementation contracts and blueprints; [`decisions/`](./decisions/) owns focused roadmap decisions.
 - [`history/README.md`](./history/README.md) indexes monthly implementation history, significant decisions, verification, and follow-up records.
 - [`../AGENTS.md`](../AGENTS.md) owns mandatory agent workflow and document-routing rules.
 - Source code, tests, migrations, and deployed configuration remain the final truth for current implementation behavior.

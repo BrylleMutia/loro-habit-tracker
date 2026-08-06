@@ -6,7 +6,9 @@ Loro - Gamified Habits is an Expo app whose durable game state is backed by Supa
 
 - [`docs/PRODUCT.md`](docs/PRODUCT.md) — product concept, game-loop rules, terminology, Lory voice, UX boundaries, and visual direction
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — client/backend architecture, state ownership, security, persistence, testing, and delivery standards
-- [`docs/PLANS.md`](docs/PLANS.md) — feature priorities, statuses, implementation blueprints, dependencies, and technical debt
+- [`docs/PLANS.md`](docs/PLANS.md) — compact feature priority and status index
+- [`docs/features/`](docs/features/) — per-feature scope, implementation notes, and delivery blueprints
+- [`docs/decisions/`](docs/decisions/) — focused product and engineering decision records
 - [`docs/history/README.md`](docs/history/README.md) — monthly implementation history and significant engineering/product decisions
 - [`AGENTS.md`](AGENTS.md) — mandatory agent workflow, repository safeguards, verification, and documentation-routing rules
 

@@ -33,6 +33,8 @@
 **Implemented first slice:**
 
 - Streak Shield, Energy Elixir, and XP Charm are available in the Stash Shop section with authoritative prices, weekly remaining counts, affordability states, and active XP-charge display.
+- Shop card purchase icons open a reusable item details modal with the item art, description, effect, price, weekly availability, and the full `cart + Buy` purchase action.
+- Daily Quest completion outcomes expose the authoritative XP multiplier, so the reward page can label XP Charm rewards such as `+52 XP (2x)` without recalculating the reward client-side.
 - Authenticated purchases use a locked, idempotent RPC and server catalog; guests use equivalent local repository rules.
 - The remaining roadmap work is permanent Lory cosmetics and their ownership/equipped presentation.
 

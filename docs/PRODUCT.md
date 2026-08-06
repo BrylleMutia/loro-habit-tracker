@@ -218,6 +218,6 @@ Unless the roadmap explicitly changes these decisions:
 
 - This file owns stable product intent, terminology, game rules, tone, and UX boundaries.
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) owns engineering and delivery standards.
-- [`PLANS.md`](./PLANS.md) owns feature scope, priority, status, and dependencies.
+- [`PLANS.md`](./PLANS.md) owns feature priority and status; [`features/`](./features/) owns feature-specific scope, implementation notes, and blueprints; [`decisions/`](./decisions/) owns focused product and engineering decision records.
 - [`history/README.md`](./history/README.md) indexes monthly implementation history and significant decisions.
 - Source code, tests, migrations, and deployed configuration remain the final truth for current implementation behavior.
